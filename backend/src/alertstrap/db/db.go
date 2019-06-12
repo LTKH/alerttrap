@@ -6,8 +6,7 @@ import (
   //"database/sql"
   "github.com/jmoiron/sqlx"
   _ "github.com/go-sql-driver/mysql"
-  "showcase/config"
-  //"showcase/alerts"
+  "alertstrap/config"
 )
 
 var (

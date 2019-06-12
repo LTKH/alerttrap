@@ -9,8 +9,8 @@ import (
   "time"
   "io/ioutil"
   "encoding/json"
-  "showcase/db"
-  "showcase/config"
+  "alertstrap/db"
+  "alertstrap/config"
 )
 
 var (

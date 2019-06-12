@@ -11,9 +11,9 @@ import (
   //"html"
   "runtime"
   "flag"
-  "showcase/db"
-  "showcase/api"
-  "showcase/config"
+  "alertstrap/db"
+  "alertstrap/api"
+  "alertstrap/config"
 )
 
 func main() {
