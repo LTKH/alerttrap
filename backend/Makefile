@@ -1,5 +1,5 @@
 GOPATH=`pwd`
 
 build:
-	@echo "Building confd..."
+	@echo "Building Alertstrap..."
 	@GOPATH=${GOPATH} go build -o bin/alertstrap .
