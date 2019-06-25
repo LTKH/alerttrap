@@ -7,8 +7,6 @@ import (
   "os"
   "os/signal"
   "syscall"
-  //"fmt"
-  //"html"
   "runtime"
   "flag"
   "alertstrap/db"
@@ -18,34 +16,44 @@ import (
 
 func main() {
 
+  //limits the number of operating system threads
   runtime.GOMAXPROCS(runtime.NumCPU())
 
+  //command-line flag parsing
   cfFile := flag.String("config", "", "config file")
   flag.Parse()
 
+  //loading configuration file
   cfg, err := config.LoadConfigFile(*cfFile)
   if err != nil {
-    log.Fatalf("[error] v%", err)
+    log.Fatalf("[error] %v", err)
   }
 
+  //cache initialization
+  api.StoreInit()
+
+  //database connection
   db.Conn = db.ConnectDb(cfg)
   if db.Conn != nil {
     db.CreateSchema()
     api.LoadAlerts()
   }
 
-  go http.ListenAndServe(cfg.Showcase.Listen_port, &(api.Api{ Cfg: cfg }))
+  //opening port for requests
+  go http.ListenAndServe(cfg.Alertstrap.Listen_port, &(api.Api{ Cfg: cfg }))
 
-  log.Print("[info] showcase started ^_^")
+  log.Print("[info] alertstrap started ^_^")
 
+  //program completion signal processing
   c := make(chan os.Signal, 2)
   signal.Notify(c, os.Interrupt, syscall.SIGTERM)
   go func() {
     <- c
-    log.Print("[info] showcase stopped")
+    log.Print("[info] alertstrap stopped")
     os.Exit(0)
   }()
 
+  //daemon mode
   for {
     time.Sleep(10 * time.Second)
 

@@ -6,86 +6,134 @@ import (
   "crypto/sha1"
   "encoding/base64"
   "strings"
+  "reflect"
+  "regexp"
   "time"
   "io/ioutil"
   "encoding/json"
   "alertstrap/db"
   "alertstrap/config"
+  "github.com/patrickmn/go-cache"
 )
 
 var (
-  Alerts = make(map[string](*db.Alert))
+  alerts *cache.Cache = cache.New(30*time.Minute, 5*time.Minute)
 )
 
 type Api struct {
-  Cfg config.Config
+  Cfg    config.Config
 }
 
-func LoadAlerts() {
-  //for _, value := range db.LoadAlerts() {
-  //  Alerts[value.Mess_id] = value
-  //}
-  //log.Print("[info] alerts loaded from database")
-  return
+func StoreInit() *cache.Cache {
+  alerts := cache.New(30*time.Minute, 5*time.Minute)
+  return alerts
 }
 
-func GetAlerts() (map[string](*db.Alert)) {
-  return Alerts
+func getFieldString(a map[string]interface{}, field string) string {
+  r := reflect.ValueOf(a)
+  f := reflect.Indirect(r).FieldByName(field)
+
+  return f.String()
 }
 
-func DelAlert(id string) {
-  delete(Alerts, id)
-  return
+func checkMatch(alrt map[string]interface{}, prms map[string]*regexp.Regexp) bool {
+  for key, prm := range prms {
+    field := getFieldString(alrt, strings.Title(key))
+    if !prm.Match([]byte(field)) {
+      return false
+    }
+  }
+  return true
 }
 
-func GetHash(bv []byte) (string) {
+func getHash(bv []byte) (string) {
   hasher := sha1.New()
   hasher.Write(bv)
   return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
-func GetSvLevel(lv string) (int) {
-  return 5
+func getSvLevel(sv string) (int) {
+  switch sv {
+    case "normal":   return 1
+    case "ok":       return 1
+    case "info":     return 2
+    case "warning":  return 2
+    case "average":  return 3
+    case "error":    return 4
+    case "critical": return 5
+  }
+  return 0
 }
 
-func AddAlert(dat *db.Alert) {
+func GetAlerts() {
+  //for _, alrt := range alerts.Items() {
+    log.Printf("[info] %v", alerts.Items())
+  //}
+}
+
+func LoadAlerts() bool {
+  var alerts []map[string]interface{}
+  for _, alrt := range db.LoadAlerts() {
+    alerts = append(alerts, alrt)
+  }
+  log.Print("[info] alerts loaded from database")
+  return true
+}
+
+func addAlert(dat map[string]interface{}) bool {
   var datetime = time.Now()
   datetime.Format(time.RFC3339)
-  dat.Ts_unix  = int32(time.Now().Unix())
-  dat.Severity = strings.ToLower(dat.Severity)
-  dat.Sv_level = GetSvLevel(dat.Severity)
-  dat.Mgrp_id  = GetHash([]byte(dat.Host+dat.Param+dat.Instance+dat.Object))
-  dat.Mess_id  = GetHash([]byte(string(dat.Ts_unix)+dat.Mgrp_id+dat.Severity))
+  if dat["severity"] == nil { dat["severity"] = "unknown" }
+  if dat["param"]    == nil { dat["param"]    = "" }
+  if dat["appl_id"]  == nil { dat["appl_id"]  = "" }
+  if dat["instance"] == nil { dat["instance"] = "" }
+  if dat["object"]   == nil { dat["object"]   = "" }
+  dat["ts_unix"]  = int32(time.Now().Unix())
+  dat["severity"] = strings.ToLower(dat["severity"].(string))
+  dat["sv_level"] = getSvLevel(dat["severity"].(string))
+  dat["mgrp_id"]  = getHash([]byte(dat["host"].(string)+dat["param"].(string)+dat["appl_id"].(string)+dat["instance"].(string)+dat["object"].(string)))
+  //dat["mess_id"]  = getHash([]byte(dat["ts_unix"].(string)+dat["mgrp_id"].(string)+dat["severity"].(string)))
 
-  if _, ok := Alerts[dat.Mgrp_id]; ok {
-    Alerts[dat.Mgrp_id].Duplicate += 1
-    Alerts[dat.Mgrp_id].Text = dat.Text
-    Alerts[dat.Mgrp_id].Severity = dat.Severity
-    Alerts[dat.Mgrp_id].Sv_level = dat.Sv_level
-    Alerts[dat.Mgrp_id].Zone = dat.Zone
-    Alerts[dat.Mgrp_id].Stand = dat.Stand
-    Alerts[dat.Mgrp_id].Ts_max = datetime
-    Alerts[dat.Mgrp_id].Ts_unix = dat.Ts_unix
-    go db.UpdAlert(Alerts[dat.Mgrp_id])
+  /*
+  if _, ok := Alerts[dat["mgrp_id"]]; ok {
+    Alerts[dat["mgrp_id"]].Duplicate += 1
+    Alerts[dat["mgrp_id"]].Text = dat.Text
+    Alerts[dat["mgrp_id"]].Severity = dat.Severity
+    Alerts[dat["mgrp_id"]].Sv_level = dat.Sv_level
+    Alerts[dat["mgrp_id"]].Ts_max = datetime
+    Alerts[dat["mgrp_id"]].Ts_unix = dat.Ts_unix
+    go db.UpdAlert(Alerts[dat["mgrp_id"]])
   } else {
-    Alerts[dat.Mgrp_id] = dat
-    Alerts[dat.Mgrp_id].Ts_min = datetime
-    Alerts[dat.Mgrp_id].Ts_max = datetime
-    Alerts[dat.Mgrp_id].Duplicate = 1
-    go db.AddAlert(Alerts[dat.Mgrp_id])
+    Alerts[dat["mgrp_id"]] = dat
+    Alerts[dat["mgrp_id"]].Ts_min = datetime
+    Alerts[dat["mgrp_id"]].Ts_max = datetime
+    Alerts[dat["mgrp_id"]].Duplicate = 1
+    go db.AddAlert(Alerts[dat["mgrp_id"]])
   }
-  return
+  */
+
+  alerts.Set(dat["mgrp_id"].(string), dat, cache.DefaultExpiration)
+
+  return true
 }
 
 func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
   if r.URL.Path == "/get/alerts" {
 
-    var alts []*db.Alert
-    for _, value := range GetAlerts() {
-      alts = append(alts, value)
+    prms := make(map[string]*regexp.Regexp)
+    re := regexp.MustCompile(",")
+    for key, values := range r.URL.Query() {
+      st := re.ReplaceAllString("("+strings.Join(values, "|")+")", `|`)
+      prms[key] = regexp.MustCompile(string(st))
     }
 
+    //var alts []cache.Item
+    for _, alrt := range alerts.Items() {
+      //if checkMatch(alrt, prms) { alts = append(alts, alrt) }
+      log.Printf("[error] %v", alrt)
+    }
+/*
     jsn, err := json.Marshal(alts)
     if err != nil {
       log.Printf("[error] %v - %s", err, r.URL.Path)
@@ -93,6 +141,7 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     }
 
     w.Write([]byte(jsn))
+*/
     return
   }
 
@@ -104,29 +153,33 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   }
 
   if r.URL.Path == "/add/alert" {
-     var dat db.Alert
+     var dat map[string]interface{}
 
     if err := json.Unmarshal(body, &dat); err != nil {
       log.Printf("[error] %v - %s", err, r.URL.Path)
     }
-    if dat.Host == "" {
+
+    if dat["host"].(string) == "" {
       w.Write([]byte("{\"error\": \"field host\"}"))
       return
     }
-    if dat.Severity == "" {
+
+    if dat["severity"].(string) == "" {
       w.Write([]byte("{\"error\": \"field severity\"}"))
       return
     }
-    if dat.Text == "" {
+
+    if dat["text"].(string) == "" {
       w.Write([]byte("{\"error\": \"field text\"}"))
       return
     }
 
-    AddAlert(&dat)
+    addAlert(dat)
 
     w.WriteHeader(204)
     return
   }
+
 
 
 

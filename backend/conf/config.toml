@@ -1,0 +1,20 @@
+[mysql]
+conn_string  = "root@/showcase"
+alerts_table = "messages.mon_alerts"
+alerts_view  = "messages.mon_v_alerts"
+hosts_table  = "showcase.mon_hosts"
+tasks_table  = "showcase.mon_tasks"
+
+[alertstrap]
+listen_port  = ":8100"
+login        = ""
+passwd       = ""
+get_alerts   = "http://localhost:8100/get/alerts"
+
+[jiramanager]
+login        = "da.litokh@gmail.com"
+passwd       = "JGb1dlCpple1zMDb0GPd2F86"
+jira_api     = "https://ltkh.atlassian.net/rest/api/2"
+interval     = 10
+debug        = true
+templates    = "./conf/tamplates"
