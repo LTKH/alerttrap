@@ -2,6 +2,7 @@ package main
 
 import (
   "net/http"
+  "crypto/tls"
   "time"
   "log"
   "os"
@@ -27,6 +28,10 @@ var (
 )
 
 func newRequest(method string, url string, jsonStr []byte, login string, password string) ([]byte, error) {
+
+  //ignore certificate
+  http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
   req, err := http.NewRequest(method, url, bytes.NewBuffer(jsonStr))
   if err != nil {
     return nil, err
