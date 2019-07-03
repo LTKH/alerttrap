@@ -20,13 +20,16 @@ type Config struct {
     Login        string
     Passwd       string
   }
-  Jiramanager struct {
+  Alertsender struct {
+    Search       bool
+    Search_tmpl  string
+    Create_tmpl  string
+    Templates    string
     Jira_api     string
     Interval     time.Duration
     Login        string
     Passwd       string
     Debug        bool
-    Templates    string
   }
 }
 
