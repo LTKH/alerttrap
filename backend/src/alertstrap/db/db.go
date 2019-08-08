@@ -3,7 +3,6 @@ package db
 import (
   "log"
   "database/sql"
-  //"github.com/jmoiron/sqlx"
   _ "github.com/go-sql-driver/mysql"
   "alertstrap/config"
 )
@@ -83,13 +82,13 @@ func LoadAlerts() ([]map[string]interface{}) {
 func UpdateTask(mgrp_id string, task_key string) bool {
   key := GetTaskKey(mgrp_id)
   if key != "" {
-    _, err := Conn.Exec("update "+Conf.Mysql.Tasks_table+" set task_key=? where mgrp_id=?", task_key, mgrp_id)
+    err := Conn.QueryRow("update "+Conf.Mysql.Tasks_table+" set task_key=? where mgrp_id=?", task_key, mgrp_id)
   	if err != nil {
       log.Printf("[error] %v", err)
   		return false
   	}
   } else {
-    _, err := Conn.Exec("insert into "+Conf.Mysql.Tasks_table+" (mgrp_id, task_key) values (?, ?)", mgrp_id, task_key)
+    err := Conn.QueryRow("insert into "+Conf.Mysql.Tasks_table+" (mgrp_id, task_key) values (?, ?)", mgrp_id, task_key)
   	if err != nil {
       log.Printf("[error] %v", err)
   		return false
@@ -99,16 +98,13 @@ func UpdateTask(mgrp_id string, task_key string) bool {
 }
 
 func GetTaskKey(mgrp_id string) string {
-/*
   var task_key string
-	err := Conn.Get(&task_key, "select task_key from "+Conf.Mysql.Tasks_table+" where mgrp_id=?", mgrp_id)
+  err := Conn.QueryRow("select task_key from "+Conf.Mysql.Tasks_table+" where mgrp_id = ?", mgrp_id).Scan(&task_key)
   if err != nil {
     log.Printf("[error] %v", err)
     return ""
   }
   return task_key
-*/
-  return ""
 }
 
 func CreateSchema() {

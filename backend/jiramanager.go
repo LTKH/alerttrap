@@ -128,7 +128,7 @@ func createTask(cfg config.Config, tmpl string, alrt map[string]interface{}) boo
 
   def := newTemplate(cfg, tmpl, alrt)
   if string(def) == "" {
-    log.Printf("[warn] default template is empty (%v)", alrt["mgrp_id"].(string))
+    if cfg.Jiramanager.Debug { log.Printf("[debug] default template is empty (%v)", alrt["mgrp_id"].(string)) }
     return false
   }
   if cfg.Jiramanager.Debug { log.Printf("[debug] %v", string(def)) }
@@ -201,7 +201,6 @@ func main() {
 
     //database connection
     db.Conn = db.ConnectDb(cfg)
-    defer db.Conn.Close()
 
     //
     body, err := newRequest(cfg, "GET", cfg.Jiramanager.Get_alerts, []byte(""), "", "")
@@ -223,6 +222,9 @@ func main() {
         }
       }
     }
+
+    //
+    db.Conn.Close()
 
     time.Sleep(cfg.Jiramanager.Interval * time.Second)
   }
