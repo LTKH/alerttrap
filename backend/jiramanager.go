@@ -53,7 +53,6 @@ func newRequest(method string, url string, jsonStr []byte, login string, passwor
 
   var dat interface{}
   if err := json.Unmarshal(body, &dat); err != nil {
-    log.Printf("[error] %v", err)
     return nil, err
   }
 
@@ -62,7 +61,7 @@ func newRequest(method string, url string, jsonStr []byte, login string, passwor
 }
 
 func newTemplate(name string, vals interface{}) []byte {
-  tmpl, err := template.ParseGlob(cfg.Alertsender.Templates+"/*.tmpl")
+  tmpl, err := template.New(name).ParseFiles(cfg.Jiramanager.Tmpl_dir+"/"+name+".tmpl")
   if err != nil {
     log.Printf("[error] %v", err)
     return []byte("")
@@ -92,43 +91,56 @@ func parseJson(jsn []byte) (map[string]interface{}, error) {
 }
 
 func searchTask(tmpl string, alrt map[string]interface{}) bool {
-  if cfg.Alertsender.Debug { log.Print("[debug] serching old task") }
+  if cfg.Jiramanager.Debug { log.Print("[debug] serching old task") }
 
   alrt["task_key"] = db.GetTaskKey(alrt["mgrp_id"].(string))
   if alrt["task_key"] == "" {
-    if cfg.Alertsender.Debug { log.Print("[debug] task_key is empty") }
-    return true
+    if cfg.Jiramanager.Debug { log.Print("[debug] task_key is empty") }
+    return false
   }
 
   def := newTemplate(tmpl, alrt)
-  if cfg.Alertsender.Debug { log.Printf("[debug] %v", string(def)) }
+  if cfg.Jiramanager.Debug { log.Printf("[debug] %v", string(def)) }
 
-  sch, err := newRequest("POST", cfg.Alertsender.Jira_api+"/search", def, cfg.Alertsender.Login, cfg.Alertsender.Passwd)
+  sch, err := newRequest("POST", cfg.Jiramanager.Jira_api+"/search", def, cfg.Jiramanager.Login, cfg.Jiramanager.Passwd)
   if err != nil {
-    if cfg.Alertsender.Debug { log.Printf("[debug] %v", err) }
-    return false
+    if cfg.Jiramanager.Debug { log.Printf("[debug] %v", err) }
+    return true
   }
-  if cfg.Alertsender.Debug { log.Printf("[debug] %v", string(sch)) }
+  if cfg.Jiramanager.Debug { log.Printf("[debug] %v", string(sch)) }
 
   js, err := parseJson(sch)
   if err != nil {
     log.Printf("[error] %v", err)
-    return false
+    return true
   }
 
   if js["issues"] != nil {
     arr := js["issues"].([]interface{})
-    if len(arr) > 0 { return false }
+    if len(arr) > 0 {
+      return true
+    }
   }
 
-  return true
+  return false
 }
 
 func createTask(tmpl string, alrt map[string]interface{}) bool {
-  if cfg.Alertsender.Debug { log.Print("[debug] creating new task") }
+  if cfg.Jiramanager.Debug { log.Print("[debug] creating new task") }
 
   def := newTemplate(tmpl, alrt)
-  if cfg.Alertsender.Debug { log.Printf("[debug] %v", string(def)) }
+  if string(def) == "" {
+    log.Printf("[warn] default template is empty (%v)", alrt["mgrp_id"].(string))
+    return false
+  }
+  if cfg.Jiramanager.Debug { log.Printf("[debug] %v", string(def)) }
+
+  if cfg.Jiramanager.Search {
+    if searchTask("search", alrt) {
+      log.Printf("[info] task already exists (%v)", alrt["mgrp_id"].(string))
+      return false
+    }
+  }
 
   _, err := parseJson(def)
   if err != nil {
@@ -136,12 +148,12 @@ func createTask(tmpl string, alrt map[string]interface{}) bool {
     return false
   }
 
-  crt, err := newRequest("POST", cfg.Alertsender.Jira_api+"/issue", def, cfg.Alertsender.Login, cfg.Alertsender.Passwd)
+  crt, err := newRequest("POST", cfg.Jiramanager.Jira_api+"/issue", def, cfg.Jiramanager.Login, cfg.Jiramanager.Passwd)
   if err != nil {
     log.Printf("[error] %v", err)
     return false
   }
-  if cfg.Alertsender.Debug { log.Printf("[debug] %v", string(crt)) }
+  if cfg.Jiramanager.Debug { log.Printf("[debug] %v", string(crt)) }
 
   js, err := parseJson(crt)
   if err != nil {
@@ -194,14 +206,14 @@ func main() {
     defer db.Conn.Close()
 
     //
-    if cfg.Alertsender.Debug { log.Print("[debug] running get_alerts function") }
-    body, err := newRequest("GET", cfg.Alertstrap.Get_alerts, []byte(""), "", "")
+    if cfg.Jiramanager.Debug { log.Print("[debug] running get_alerts function") }
+    body, err := newRequest("GET", cfg.Jiramanager.Get_alerts, []byte(""), "", "")
     if err != nil {
       log.Printf("[error] %v", err)
     } else {
 
       //
-      if cfg.Alertsender.Debug { log.Printf("[debug] %v", string(body)) }
+      if cfg.Jiramanager.Debug { log.Print("[debug] parsing alerts") }
       var dat []map[string]interface{}
       if err := json.Unmarshal(body, &dat); err != nil {
           log.Printf("[error] %v", err)
@@ -210,23 +222,23 @@ func main() {
       //
       for _, alrt := range dat {
         if reflect.TypeOf(alrt).Kind() == reflect.Map {
-
-          def := newTemplate("default", alrt)
-          if string(def) == "" {
-            if cfg.Alertsender.Debug { log.Print("[debug] default template is empty") }
-          } else {
-            if cfg.Alertsender.Search {
-              if searchTask(cfg.Alertsender.Search_tmpl, alrt) {
-                createTask(cfg.Alertsender.Create_tmpl, alrt)
-              }
-            } else {
-              createTask(cfg.Alertsender.Create_tmpl, alrt)
-            }
-          }
+          createTask("default", alrt)
+          //def := newTemplate("default", alrt)
+          //if string(def) == "" {
+          //  if cfg.Jiramanager.Debug { log.Print("[debug] default template is empty") }
+          //} else {
+          //  if cfg.Jiramanager.Search {
+          //    if searchTask(alrt) == false {
+          //
+          //    }
+          //  } else {
+          //    createTask(alrt)
+          //  }
+          //}
         }
       }
     }
 
-    time.Sleep(cfg.Alertsender.Interval * time.Second)
+    time.Sleep(cfg.Jiramanager.Interval * time.Second)
   }
 }

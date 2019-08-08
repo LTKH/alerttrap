@@ -9,7 +9,7 @@ import (
   "syscall"
   "runtime"
   "flag"
-  "alertstrap/db"
+  //"alertstrap/db"
   "alertstrap/api"
   "alertstrap/config"
 )
@@ -30,14 +30,14 @@ func main() {
   }
 
   //cache initialization
-  api.StoreInit()
+  //api.StoreInit()
 
   //database connection
-  db.Conn = db.ConnectDb(cfg)
-  if db.Conn != nil {
-    db.CreateSchema()
-    api.LoadAlerts()
-  }
+  //db.Conn = db.ConnectDb(cfg)
+  //if db.Conn != nil {
+  //  db.CreateSchema()
+  //  api.LoadAlerts()
+  //}
 
   //opening port for requests
   go http.ListenAndServe(cfg.Alertstrap.Listen_port, &(api.Api{ Cfg: cfg }))
@@ -57,11 +57,11 @@ func main() {
   for {
     time.Sleep(10 * time.Second)
 
-    if db.Conn == nil {
-      db.Conn = db.ConnectDb(cfg)
-      if db.Conn != nil {
-        api.LoadAlerts()
-      }
-    }
+    //if db.Conn == nil {
+    //  db.Conn = db.ConnectDb(cfg)
+    //  if db.Conn != nil {
+    //    api.LoadAlerts()
+    //  }
+    //}
   }
 }

@@ -6,29 +6,79 @@ import (
   "crypto/sha1"
   "encoding/base64"
   "strings"
-  "reflect"
-  "regexp"
+  //"reflect"
+  //"regexp"
   "time"
   "io/ioutil"
   "encoding/json"
-  "alertstrap/db"
-  "alertstrap/config"
+  //"alertstrap/db"
+  //"alertstrap/config"
   "github.com/patrickmn/go-cache"
 )
 
 var (
-  alerts *cache.Cache = cache.New(30*time.Minute, 5*time.Minute)
+  Alerts *cache.Cache   = cache.New(30*time.Minute, 5*time.Minute)
+  //Config *config.Config = config.LoadConfigFile("conf/config.toml")
 )
 
-type Api struct {
-  Cfg    config.Config
+func getHash(bv []byte) (string) {
+  hasher := sha1.New()
+  hasher.Write(bv)
+  return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
-func StoreInit() *cache.Cache {
-  alerts := cache.New(30*time.Minute, 5*time.Minute)
-  return alerts
+/*
+func LoadAlerts() bool {
+  var alerts []map[string]interface{}
+  for _, alrt := range db.LoadAlerts() {
+    Alerts = append(Alerts, alrt)
+  }
+  log.Print("[info] alerts loaded from database")
+  return true
+}
+*/
+
+func addAlert(dat map[string]interface{}) bool {
+  var datetime = time.Now()
+  datetime.Format(time.RFC3339)
+
+  if dat["host"]     == nil { dat["host"]     = "localhost" }
+  if dat["severity"] == nil { dat["severity"] = "unknown" }
+  if dat["sv_level"] == nil { dat["sv_level"] = 0 }
+  if dat["param"]    == nil { dat["param"]    = "" }
+  if dat["appl_id"]  == nil { dat["appl_id"]  = "" }
+  if dat["instance"] == nil { dat["instance"] = "" }
+  if dat["object"]   == nil { dat["object"]   = "" }
+  if dat["text"]     == nil { dat["text"]     = "" }
+
+  dat["sv_level"] = strings.ToLower(dat["severity"].(string))
+  dat["ts_unix"]  = int32(time.Now().Unix())
+  dat["mgrp_id"]  = getHash([]byte(dat["host"].(string)+dat["param"].(string)+dat["appl_id"].(string)+dat["instance"].(string)+dat["object"].(string)))
+  dat["mess_id"]  = getHash([]byte(dat["ts_unix"].(string)+dat["mgrp_id"].(string)+dat["severity"].(string)))
+
+  alert, found := Alerts.Get(dat["mgrp_id"].(string))
+	if found {
+    //alert[dat["mgrp_id"]].duplicate += 1
+    //alert[dat["mgrp_id"]].text = dat.text
+    //alert[dat["mgrp_id"]].severity = dat.severity
+    //alert[dat["mgrp_id"]].sv_level = dat.sv_level
+    //alert[dat["mgrp_id"]].ts_max = datetime
+    //alert[dat["mgrp_id"]].ts_unix = dat.ts_unix
+    //Alerts.Set(dat["mgrp_id"], alert, cache.DefaultExpiration)
+    //go db.UpdAlert(Alerts[dat["mgrp_id"]])
+	} else {
+    var i interface{}
+    dat["ts_min"] = datetime
+    dat["ts_max"] = datetime
+    i = dat
+    Alerts.Set(dat["mgrp_id"].(string), i, cache.DefaultExpiration)
+    //go db.AddAlert(Alerts[dat["mgrp_id"]])
+  }
+  return true
 }
 
+
+/*
 func getFieldString(a map[string]interface{}, field string) string {
   r := reflect.ValueOf(a)
   f := reflect.Indirect(r).FieldByName(field)
@@ -46,24 +96,7 @@ func checkMatch(alrt map[string]interface{}, prms map[string]*regexp.Regexp) boo
   return true
 }
 
-func getHash(bv []byte) (string) {
-  hasher := sha1.New()
-  hasher.Write(bv)
-  return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
-}
 
-func getSvLevel(sv string) (int) {
-  switch sv {
-    case "normal":   return 1
-    case "ok":       return 1
-    case "info":     return 2
-    case "warning":  return 2
-    case "average":  return 3
-    case "error":    return 4
-    case "critical": return 5
-  }
-  return 0
-}
 
 func GetAlerts() {
   //for _, alrt := range alerts.Items() {
@@ -71,69 +104,29 @@ func GetAlerts() {
   //}
 }
 
-func LoadAlerts() bool {
-  var alerts []map[string]interface{}
-  for _, alrt := range db.LoadAlerts() {
-    alerts = append(alerts, alrt)
-  }
-  log.Print("[info] alerts loaded from database")
-  return true
-}
 
-func addAlert(dat map[string]interface{}) bool {
-  var datetime = time.Now()
-  datetime.Format(time.RFC3339)
-  if dat["severity"] == nil { dat["severity"] = "unknown" }
-  if dat["param"]    == nil { dat["param"]    = "" }
-  if dat["appl_id"]  == nil { dat["appl_id"]  = "" }
-  if dat["instance"] == nil { dat["instance"] = "" }
-  if dat["object"]   == nil { dat["object"]   = "" }
-  dat["ts_unix"]  = int32(time.Now().Unix())
-  dat["severity"] = strings.ToLower(dat["severity"].(string))
-  dat["sv_level"] = getSvLevel(dat["severity"].(string))
-  dat["mgrp_id"]  = getHash([]byte(dat["host"].(string)+dat["param"].(string)+dat["appl_id"].(string)+dat["instance"].(string)+dat["object"].(string)))
-  //dat["mess_id"]  = getHash([]byte(dat["ts_unix"].(string)+dat["mgrp_id"].(string)+dat["severity"].(string)))
 
-  /*
-  if _, ok := Alerts[dat["mgrp_id"]]; ok {
-    Alerts[dat["mgrp_id"]].Duplicate += 1
-    Alerts[dat["mgrp_id"]].Text = dat.Text
-    Alerts[dat["mgrp_id"]].Severity = dat.Severity
-    Alerts[dat["mgrp_id"]].Sv_level = dat.Sv_level
-    Alerts[dat["mgrp_id"]].Ts_max = datetime
-    Alerts[dat["mgrp_id"]].Ts_unix = dat.Ts_unix
-    go db.UpdAlert(Alerts[dat["mgrp_id"]])
-  } else {
-    Alerts[dat["mgrp_id"]] = dat
-    Alerts[dat["mgrp_id"]].Ts_min = datetime
-    Alerts[dat["mgrp_id"]].Ts_max = datetime
-    Alerts[dat["mgrp_id"]].Duplicate = 1
-    go db.AddAlert(Alerts[dat["mgrp_id"]])
-  }
-  */
-
-  alerts.Set(dat["mgrp_id"].(string), dat, cache.DefaultExpiration)
-
-  return true
-}
+*/
 
 func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
   if r.URL.Path == "/get/alerts" {
-
+/*
     prms := make(map[string]*regexp.Regexp)
     re := regexp.MustCompile(",")
     for key, values := range r.URL.Query() {
       st := re.ReplaceAllString("("+strings.Join(values, "|")+")", `|`)
       prms[key] = regexp.MustCompile(string(st))
     }
+*/
 
-    //var alts []cache.Item
-    for _, alrt := range alerts.Items() {
+    var alts []cache.Item
+    for _, alrt := range Alerts.Items() {
       //if checkMatch(alrt, prms) { alts = append(alts, alrt) }
-      log.Printf("[error] %v", alrt)
+      alts = append(alts, alrt)
+      //log.Printf("[error] %v", alrt)
     }
-/*
+
     jsn, err := json.Marshal(alts)
     if err != nil {
       log.Printf("[error] %v - %s", err, r.URL.Path)
@@ -141,7 +134,7 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     }
 
     w.Write([]byte(jsn))
-*/
+
     return
   }
 
@@ -157,21 +150,6 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
     if err := json.Unmarshal(body, &dat); err != nil {
       log.Printf("[error] %v - %s", err, r.URL.Path)
-    }
-
-    if dat["host"].(string) == "" {
-      w.Write([]byte("{\"error\": \"field host\"}"))
-      return
-    }
-
-    if dat["severity"].(string) == "" {
-      w.Write([]byte("{\"error\": \"field severity\"}"))
-      return
-    }
-
-    if dat["text"].(string) == "" {
-      w.Write([]byte("{\"error\": \"field text\"}"))
-      return
     }
 
     addAlert(dat)

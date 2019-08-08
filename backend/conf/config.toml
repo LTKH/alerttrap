@@ -9,15 +9,13 @@ tasks_table  = "showcase.mon_tasks"
 listen_port  = ":8100"
 login        = ""
 passwd       = ""
-get_alerts   = "http://localhost:8100/get/alerts"
 
-[alertsender]
+[jiramanager]
+get_alerts   = "http://localhost:8500/get/alerts"
+jira_api     = "https://ltkh.atlassian.net/rest/api/2"
 search       = true
-search_tmpl  = "search"
-create_tmpl  = "default"
-templates    = "./conf/tamplates"
+tmpl_dir     = "./conf/tamplates"
 login        = "da.litokh@gmail.com"
 passwd       = "****"
-jira_api     = "https://ltkh.atlassian.net/rest/api/2"
-interval     = 10
+interval     = 60
 debug        = true

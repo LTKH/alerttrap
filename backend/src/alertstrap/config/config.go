@@ -16,19 +16,17 @@ type Config struct {
   }
   Alertstrap struct {
     Listen_port  string
-    Get_alerts   string
     Login        string
     Passwd       string
   }
-  Alertsender struct {
-    Search       bool
-    Search_tmpl  string
-    Create_tmpl  string
-    Templates    string
+  Jiramanager struct {
+    Tmpl_dir     string
+    Get_alerts   string
     Jira_api     string
-    Interval     time.Duration
     Login        string
     Passwd       string
+    Search       bool
+    Interval     time.Duration
     Debug        bool
   }
 }
