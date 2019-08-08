@@ -11,10 +11,10 @@ login        = ""
 passwd       = ""
 
 [jiramanager]
-get_alerts   = "http://localhost:8500/get/alerts"
+get_alerts   = "http://localhost:8000/alerts.json"
 jira_api     = "https://ltkh.atlassian.net/rest/api/2"
-search       = true
-tmpl_dir     = "./conf/tamplates"
+search       = false
+tmpl_dir     = "backend/conf/templates"
 login        = "da.litokh@gmail.com"
 passwd       = "****"
 interval     = 60

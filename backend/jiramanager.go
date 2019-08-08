@@ -23,11 +23,8 @@ import (
   //_ "github.com/go-sql-driver/mysql"
 )
 
-var (
-  cfg  config.Config
-)
-
-func newRequest(method string, url string, jsonStr []byte, login string, password string) ([]byte, error) {
+func newRequest(cfg config.Config, method string, url string, jsonStr []byte, login string, password string) ([]byte, error) {
+  if cfg.Jiramanager.Debug { log.Printf("[debug] -- new request (%v)", url) }
 
   //ignore certificate
   http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -60,7 +57,9 @@ func newRequest(method string, url string, jsonStr []byte, login string, passwor
 
 }
 
-func newTemplate(name string, vals interface{}) []byte {
+func newTemplate(cfg config.Config, name string, vals interface{}) []byte {
+  if cfg.Jiramanager.Debug { log.Printf("[debug] -- create new template (%v)", name) }
+
   tmpl, err := template.New(name).ParseFiles(cfg.Jiramanager.Tmpl_dir+"/"+name+".tmpl")
   if err != nil {
     log.Printf("[error] %v", err)
@@ -90,8 +89,8 @@ func parseJson(jsn []byte) (map[string]interface{}, error) {
   return dat, nil
 }
 
-func searchTask(tmpl string, alrt map[string]interface{}) bool {
-  if cfg.Jiramanager.Debug { log.Print("[debug] serching old task") }
+func searchTask(cfg config.Config, tmpl string, alrt map[string]interface{}) bool {
+  if cfg.Jiramanager.Debug { log.Printf("[debug] -- serching old task (%v)", tmpl) }
 
   alrt["task_key"] = db.GetTaskKey(alrt["mgrp_id"].(string))
   if alrt["task_key"] == "" {
@@ -99,10 +98,10 @@ func searchTask(tmpl string, alrt map[string]interface{}) bool {
     return false
   }
 
-  def := newTemplate(tmpl, alrt)
+  def := newTemplate(cfg, tmpl, alrt)
   if cfg.Jiramanager.Debug { log.Printf("[debug] %v", string(def)) }
 
-  sch, err := newRequest("POST", cfg.Jiramanager.Jira_api+"/search", def, cfg.Jiramanager.Login, cfg.Jiramanager.Passwd)
+  sch, err := newRequest(cfg, "POST", cfg.Jiramanager.Jira_api+"/search", def, cfg.Jiramanager.Login, cfg.Jiramanager.Passwd)
   if err != nil {
     if cfg.Jiramanager.Debug { log.Printf("[debug] %v", err) }
     return true
@@ -125,10 +124,9 @@ func searchTask(tmpl string, alrt map[string]interface{}) bool {
   return false
 }
 
-func createTask(tmpl string, alrt map[string]interface{}) bool {
-  if cfg.Jiramanager.Debug { log.Print("[debug] creating new task") }
+func createTask(cfg config.Config, tmpl string, alrt map[string]interface{}) bool {
 
-  def := newTemplate(tmpl, alrt)
+  def := newTemplate(cfg, tmpl, alrt)
   if string(def) == "" {
     log.Printf("[warn] default template is empty (%v)", alrt["mgrp_id"].(string))
     return false
@@ -136,7 +134,7 @@ func createTask(tmpl string, alrt map[string]interface{}) bool {
   if cfg.Jiramanager.Debug { log.Printf("[debug] %v", string(def)) }
 
   if cfg.Jiramanager.Search {
-    if searchTask("search", alrt) {
+    if searchTask(cfg, "search", alrt) {
       log.Printf("[info] task already exists (%v)", alrt["mgrp_id"].(string))
       return false
     }
@@ -148,7 +146,7 @@ func createTask(tmpl string, alrt map[string]interface{}) bool {
     return false
   }
 
-  crt, err := newRequest("POST", cfg.Jiramanager.Jira_api+"/issue", def, cfg.Jiramanager.Login, cfg.Jiramanager.Passwd)
+  crt, err := newRequest(cfg, "POST", cfg.Jiramanager.Jira_api+"/issue", def, cfg.Jiramanager.Login, cfg.Jiramanager.Passwd)
   if err != nil {
     log.Printf("[error] %v", err)
     return false
@@ -206,8 +204,7 @@ func main() {
     defer db.Conn.Close()
 
     //
-    if cfg.Jiramanager.Debug { log.Print("[debug] running get_alerts function") }
-    body, err := newRequest("GET", cfg.Jiramanager.Get_alerts, []byte(""), "", "")
+    body, err := newRequest(cfg, "GET", cfg.Jiramanager.Get_alerts, []byte(""), "", "")
     if err != nil {
       log.Printf("[error] %v", err)
     } else {
@@ -222,19 +219,7 @@ func main() {
       //
       for _, alrt := range dat {
         if reflect.TypeOf(alrt).Kind() == reflect.Map {
-          createTask("default", alrt)
-          //def := newTemplate("default", alrt)
-          //if string(def) == "" {
-          //  if cfg.Jiramanager.Debug { log.Print("[debug] default template is empty") }
-          //} else {
-          //  if cfg.Jiramanager.Search {
-          //    if searchTask(alrt) == false {
-          //
-          //    }
-          //  } else {
-          //    createTask(alrt)
-          //  }
-          //}
+          createTask(cfg, "default", alrt)
         }
       }
     }
