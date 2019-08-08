@@ -60,14 +60,14 @@ func newRequest(cfg config.Config, method string, url string, jsonStr []byte, lo
 func newTemplate(cfg config.Config, name string, vals interface{}) []byte {
   if cfg.Jiramanager.Debug { log.Printf("[debug] -- create new template (%v)", name) }
 
-  tmpl, err := template.New(name).ParseFiles(cfg.Jiramanager.Tmpl_dir+"/"+name+".tmpl")
+  tmpl, err := template.ParseFiles(cfg.Jiramanager.Tmpl_dir+"/"+name+".tmpl")
   if err != nil {
     log.Printf("[error] %v", err)
     return []byte("")
   }
 
   var tpl bytes.Buffer
-  if err = tmpl.ExecuteTemplate(&tpl, name, &vals); err != nil {
+  if err = tmpl.Execute(&tpl, &vals); err != nil {
     log.Printf("[error] %v", err)
     return []byte("")
   }

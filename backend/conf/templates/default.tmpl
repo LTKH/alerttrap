@@ -1,4 +1,3 @@
-{{ define "default" }}
 {{ if eq .severity "critical" -}}
   {{- if eq .param "diagCentralRemoteState" -}}
     {{ template "create_task" . }}
@@ -7,7 +6,6 @@
     {{ template "create_task" . }}
   {{- end -}}
 {{ end -}}
-{{ end }}
 {{ define "create_task" }}
 {
   "fields": {
