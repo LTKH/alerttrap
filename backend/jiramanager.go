@@ -71,7 +71,7 @@ func newTemplate(cfg config.Config, name string, vals interface{}) []byte {
     },
   }
 
-  tmpl, err := template.New("").Funcs(funcMap).ParseFiles(cfg.Jiramanager.Tmpl_dir+"/"+name+".tmpl")
+  tmpl, err := template.New(name+".tmpl").Funcs(funcMap).ParseFiles(cfg.Jiramanager.Tmpl_dir+"/"+name+".tmpl")
   if err != nil {
     log.Printf("[error] %v", err)
     return []byte("")
