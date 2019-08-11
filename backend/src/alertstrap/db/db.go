@@ -9,17 +9,16 @@ import (
 
 var (
   Conn    *sql.DB
-  Conf    config.Config
 )
 
-func ConnectDb(cfg config.Config) (*sql.DB) {
-  Conf = cfg
+func ConnectDb(cfg config.Config) (error) {
   db, err := sql.Open("mysql", cfg.Mysql.Conn_string)
   if err != nil {
     log.Printf("[error] %v", err)
-    return nil
+    return err
   }
-  return db
+  Conn = db
+  return nil
 }
 
 func AddAlert(alrt map[string]interface{}) {
@@ -79,16 +78,16 @@ func LoadAlerts() ([]map[string]interface{}) {
   return alts
 }
 
-func UpdateTask(mgrp_id string, task_key string) bool {
-  key := GetTaskKey(mgrp_id)
+func UpdateTask(cfg config.Config, mgrp_id string, task_key string) bool {
+  key := GetTaskKey(cfg, mgrp_id)
   if key != "" {
-    err := Conn.QueryRow("update "+Conf.Mysql.Tasks_table+" set task_key=? where mgrp_id=?", task_key, mgrp_id)
+    err := Conn.QueryRow("update "+cfg.Mysql.Tasks_table+" set task_key=? where mgrp_id=?", task_key, mgrp_id)
   	if err != nil {
       log.Printf("[error] %v", err)
   		return false
   	}
   } else {
-    err := Conn.QueryRow("insert into "+Conf.Mysql.Tasks_table+" (mgrp_id, task_key) values (?, ?)", mgrp_id, task_key)
+    err := Conn.QueryRow("insert into "+cfg.Mysql.Tasks_table+" (mgrp_id, task_key) values (?, ?)", mgrp_id, task_key)
   	if err != nil {
       log.Printf("[error] %v", err)
   		return false
@@ -97,9 +96,9 @@ func UpdateTask(mgrp_id string, task_key string) bool {
   return true
 }
 
-func GetTaskKey(mgrp_id string) string {
+func GetTaskKey(cfg config.Config, mgrp_id string) string {
   var task_key string
-  err := Conn.QueryRow("select task_key from "+Conf.Mysql.Tasks_table+" where mgrp_id = ?", mgrp_id).Scan(&task_key)
+  err := Conn.QueryRow("select task_key from "+cfg.Mysql.Tasks_table+" where mgrp_id = ?", mgrp_id).Scan(&task_key)
   if err != nil {
     log.Printf("[error] %v", err)
     return ""

@@ -18,6 +18,7 @@ import (
   "alertstrap/db"
   "alertstrap/config"
   "regexp"
+  "strconv"
   //"errors"
   //"github.com/jmoiron/sqlx"
   //_ "github.com/go-sql-driver/mysql"
@@ -60,7 +61,17 @@ func newRequest(cfg config.Config, method string, url string, jsonStr []byte, lo
 func newTemplate(cfg config.Config, name string, vals interface{}) []byte {
   if cfg.Jiramanager.Debug { log.Printf("[debug] -- create new template (%v)", name) }
 
-  tmpl, err := template.ParseFiles(cfg.Jiramanager.Tmpl_dir+"/"+name+".tmpl")
+  funcMap := template.FuncMap{
+    "int": func(i string) (int, error){
+      c, err := strconv.Atoi(i)
+      if err != nil {
+        return 0, err
+      }
+      return c, nil
+    },
+  }
+
+  tmpl, err := template.New("").Funcs(funcMap).ParseFiles(cfg.Jiramanager.Tmpl_dir+"/"+name+".tmpl")
   if err != nil {
     log.Printf("[error] %v", err)
     return []byte("")
@@ -92,7 +103,7 @@ func parseJson(jsn []byte) (map[string]interface{}, error) {
 func searchTask(cfg config.Config, tmpl string, alrt map[string]interface{}) bool {
   if cfg.Jiramanager.Debug { log.Printf("[debug] -- serching old task (%v)", tmpl) }
 
-  alrt["task_key"] = db.GetTaskKey(alrt["mgrp_id"].(string))
+  alrt["task_key"] = db.GetTaskKey(cfg, alrt["mgrp_id"].(string))
   if alrt["task_key"] == "" {
     if cfg.Jiramanager.Debug { log.Print("[debug] task_key is empty") }
     return false
@@ -164,7 +175,7 @@ func createTask(cfg config.Config, tmpl string, alrt map[string]interface{}) boo
   }
 
   if js["key"] != nil {
-    db.UpdateTask(alrt["mgrp_id"].(string), js["key"].(string))
+    db.UpdateTask(cfg, alrt["mgrp_id"].(string), js["key"].(string))
   }
 
   return true
@@ -200,31 +211,33 @@ func main() {
   for {
 
     //database connection
-    db.Conn = db.ConnectDb(cfg)
-
-    //
-    body, err := newRequest(cfg, "GET", cfg.Jiramanager.Get_alerts, []byte(""), "", "")
-    if err != nil {
-      log.Printf("[error] %v", err)
-    } else {
+    err := db.ConnectDb(cfg)
+    if err == nil {
 
       //
-      if cfg.Jiramanager.Debug { log.Print("[debug] parsing alerts") }
-      var dat []map[string]interface{}
-      if err := json.Unmarshal(body, &dat); err != nil {
-          log.Printf("[error] %v", err)
-      }
+      body, err := newRequest(cfg, "GET", cfg.Jiramanager.Get_alerts, []byte(""), "", "")
+      if err != nil {
+        log.Printf("[error] %v", err)
+      } else {
 
-      //
-      for _, alrt := range dat {
-        if reflect.TypeOf(alrt).Kind() == reflect.Map {
-          createTask(cfg, "default", alrt)
+        //
+        if cfg.Jiramanager.Debug { log.Print("[debug] parsing alerts") }
+        var dat []map[string]interface{}
+        if err := json.Unmarshal(body, &dat); err != nil {
+            log.Printf("[error] %v", err)
+        }
+
+        //
+        for _, alrt := range dat {
+          if reflect.TypeOf(alrt).Kind() == reflect.Map {
+            createTask(cfg, "default", alrt)
+          }
         }
       }
-    }
 
-    //
-    db.Conn.Close()
+      //
+      db.Conn.Close()
+    }
 
     time.Sleep(cfg.Jiramanager.Interval * time.Second)
   }

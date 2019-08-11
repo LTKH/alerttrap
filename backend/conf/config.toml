@@ -1,5 +1,5 @@
 [mysql]
-conn_string  = "root@/showcase"
+conn_string  = "root@(127.0.0.1:3333)/showcase"
 alerts_table = "messages.mon_alerts"
 alerts_view  = "messages.mon_v_alerts"
 hosts_table  = "showcase.mon_hosts"
