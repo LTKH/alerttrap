@@ -62,8 +62,8 @@ func newTemplate(cfg config.Config, name string, vals interface{}) []byte {
   if cfg.Jiramanager.Debug { log.Printf("[debug] -- create new template (%v)", name) }
 
   funcMap := template.FuncMap{
-    "int": func(i string) (int, error){
-      c, err := strconv.Atoi(i)
+    "int": func(s string) (int, error){
+      c, err := strconv.Atoi(s)
       if err != nil {
         return 0, err
       }
@@ -211,8 +211,7 @@ func main() {
   for {
 
     //database connection
-    err := db.ConnectDb(cfg)
-    if err == nil {
+    if err := db.ConnectDb(cfg); err == nil {
 
       //
       body, err := newRequest(cfg, "GET", cfg.Jiramanager.Get_alerts, []byte(""), "", "")
@@ -235,8 +234,6 @@ func main() {
         }
       }
 
-      //
-      db.Conn.Close()
     }
 
     time.Sleep(cfg.Jiramanager.Interval * time.Second)

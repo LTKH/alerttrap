@@ -9,7 +9,7 @@ import (
   "syscall"
   "runtime"
   "flag"
-  //"alertstrap/db"
+  "alertstrap/db"
   "alertstrap/api"
   "alertstrap/config"
 )
@@ -21,6 +21,7 @@ func main() {
 
   //command-line flag parsing
   cfFile := flag.String("config", "", "config file")
+  dBase  := flag.String("dbase", "", "sql file")
   flag.Parse()
 
   //loading configuration file
@@ -29,20 +30,31 @@ func main() {
     log.Fatalf("[error] %v", err)
   }
 
-  //cache initialization
-  //api.StoreInit()
+  //connection to data base
+  log.Print("[info] connection to data base")
+  if err := db.ConnectDb(cfg); err != nil {
+    log.Fatalf("[critical] %v", err)
+  }
 
-  //database connection
-  //db.Conn = db.ConnectDb(cfg)
-  //if db.Conn != nil {
-  //  db.CreateSchema()
-  //  api.LoadAlerts()
-  //}
+  //creating data base schema
+  if *dBase != "" {
+    log.Print("[info] creating data base schema")
+    if err := db.CreateSchema(*dBase); err != nil {
+      log.Fatalf("[critical] %v", err)
+    }
+  }
 
-  //opening port for requests
-  go http.ListenAndServe(cfg.Alertstrap.Listen_port, &(api.Api{ Cfg: cfg }))
+  //loading hosts table
+  log.Print("[info] loading hosts from database")
+  if err := api.LoadHosts(); err != nil {
+    log.Fatalf("[critical] %v", err)
+  }
 
-  log.Print("[info] alertstrap started ^_^")
+  //loading alerts
+  log.Print("[info] loading alerts from database")
+  if err := api.LoadAlerts(); err != nil {
+    log.Fatalf("[critical] %v", err)
+  }
 
   //program completion signal processing
   c := make(chan os.Signal, 2)
@@ -53,15 +65,29 @@ func main() {
     os.Exit(0)
   }()
 
+  //enabled listen port
+  //http.HandleFunc("/get/alerts",  api.GetAlerts)
+  //http.HandleFunc("/get/hosts",   api.GetHosts)
+  //http.HandleFunc("/get/history", api.GetHistory)
+  //http.HandleFunc("/add/alert",   api.AddAlert)
+  go http.ListenAndServe(cfg.Alertstrap.Listen_port, &(api.Api{}))
+  log.Printf("[info] listen port enabled - %s", cfg.Alertstrap.Listen_port)
+
+  log.Print("[info] alertstrap started ^_^")
+
   //daemon mode
   for {
-    time.Sleep(10 * time.Second)
 
-    //if db.Conn == nil {
-    //  db.Conn = db.ConnectDb(cfg)
-    //  if db.Conn != nil {
-    //    api.LoadAlerts()
-    //  }
-    //}
+    if err := db.ConnectDb(cfg); err != nil {
+      log.Printf("[error] %v", err)
+      db.ConnectDb(cfg)
+    } else {
+      if err := api.LoadHosts(); err != nil {
+        log.Printf("[error] %v", err)
+      }
+    }
+
+    time.Sleep(300 * time.Second)
+
   }
 }

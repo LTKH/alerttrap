@@ -1,14 +1,15 @@
 [mysql]
-conn_string  = "root@(127.0.0.1:3333)/showcase"
+conn_string  = "root@(127.0.0.1)/showcase?multiStatements=true"
 alerts_table = "messages.mon_alerts"
 alerts_view  = "messages.mon_v_alerts"
-hosts_table  = "showcase.mon_hosts"
+hosts_view   = "showcase.mon_v_hosts"
 tasks_table  = "showcase.mon_tasks"
 
 [alertstrap]
 listen_port  = ":8100"
 login        = ""
 passwd       = ""
+location     = "Asia/Shanghai"
 
 [jiramanager]
 get_alerts   = "http://localhost:8000/alerts.json"

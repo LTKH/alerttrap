@@ -11,13 +11,14 @@ type Config struct {
     Conn_string  string
     Alerts_table string
     Alerts_view  string
-    Hosts_table  string
+    Hosts_view   string
     Tasks_table  string
   }
   Alertstrap struct {
     Listen_port  string
     Login        string
     Passwd       string
+    Location     string
   }
   Jiramanager struct {
     Tmpl_dir     string

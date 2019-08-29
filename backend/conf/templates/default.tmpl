@@ -1,10 +1,12 @@
-{{ if eq .severity "critical" -}}
-  {{- if eq .param "diagCentralRemoteState" -}}
-    {{ template "create_task" . }}
-  {{- end -}}
-  {{- if eq .param "sysmonProcState" -}}
-    {{ template "create_task" . }}
-  {{- end -}}
+{{ if gt (int (.duplicate)) 100 -}}
+  {{ if eq .severity "critical" -}}
+    {{- if eq .param "diagCentralRemoteState" -}}
+      {{ template "create_task" . }}
+    {{- end -}}
+    {{- if eq .param "sysmonProcState" -}}
+      {{ template "create_task" . }}
+    {{- end -}}
+  {{ end -}}
 {{ end -}}
 {{ define "create_task" }}
 {
