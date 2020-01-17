@@ -2,6 +2,7 @@ package api
 
 import (
   "net/http"
+  "net/url"
   "log"
   //"crypto/sha1"
   //"encoding/base64"
@@ -105,6 +106,7 @@ func checkMatch(alrt cache.Item, prms map[string]*regexp.Regexp, unix int64) boo
     return false
   }
   for key, prm := range prms {
+    /*
     val := ""
     switch alrt.Value[key].(type) {
     	case int:
@@ -115,6 +117,10 @@ func checkMatch(alrt cache.Item, prms map[string]*regexp.Regexp, unix int64) boo
     		return false
   	}
     if !prm.Match([]byte(val)) {
+      return false
+    }
+    */
+    if !prm.Match([]byte(alrt.Value[key].(string))) {
       return false
     }
   }
@@ -147,8 +153,11 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
           unix = int64(i)
         }
       } else {
-        st := re.ReplaceAllString("("+strings.Join(value, "|")+")", `|`)
-        prms[key] = regexp.MustCompile(string(st))
+        dvalue, err := url.QueryUnescape(strings.Join(value, "|"))
+        if err == nil {
+          st := re.ReplaceAllString("("+dvalue+")", `|`)
+          prms[key] = regexp.MustCompile(string(st))
+        }
       }
     }
 
