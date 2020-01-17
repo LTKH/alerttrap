@@ -133,6 +133,8 @@ func encodeJson(data interface{}) []byte {
 
 func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
+  w.Header().Set("Content-Type", "application/json")
+
   if r.URL.Path == "/get/alerts" {
 
     unix := int64(0)
