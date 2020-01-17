@@ -129,42 +129,49 @@ func encodeJson(data interface{}) []byte {
   return jsn
 }
 
-func parseParams(query map[string][]string, url string) (map[string]*regexp.Regexp, int64) {
-  unix := int64(0)
-  prms := make(map[string]*regexp.Regexp)
-  re := regexp.MustCompile(",")
-  for key, value := range query {
-    if key == "timestamp" {
-      i, err := strconv.Atoi(value[0])
-      if err != nil {
-        log.Printf("[error] %v - %s", err, url)
-      } else {
-        unix = int64(i)
-      }
-    } else {
-      st := re.ReplaceAllString("("+strings.Join(value, "|")+")", `|`)
-      prms[key] = regexp.MustCompile(string(st))
-    }
-  }
-  return prms, unix
-}
-
 //HTTP Server
 
 func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
   if r.URL.Path == "/get/alerts" {
 
-    prms, unix := parseParams(r.URL.Query(), r.URL.Path)
-
-    var alts []map[string]interface{}
-    for _, alrt := range Alerts.Items() {
-      if checkMatch(alrt, prms, unix) {
-        alts = append(alts, alrt.Value)
+    unix := int64(0)
+    prms := make(map[string]*regexp.Regexp)
+    re := regexp.MustCompile(",")
+    for key, value := range r.URL.Query() {
+      if key == "timestamp" {
+        i, err := strconv.Atoi(value[0])
+        if err == nil {
+          unix = int64(i)
+        }
+      } else {
+        st := re.ReplaceAllString("("+strings.Join(value, "|")+")", `|`)
+        prms[key] = regexp.MustCompile(string(st))
       }
     }
 
-    w.Write(encodeJson(alts))
+    var alts []map[string]interface{}
+    for _, alrt := range Alerts.Items() {
+      host, ok := Hosts.Get(alrt.Value["host"].(string))
+      if ok {
+        for key, value := range host {
+          alrt.Value[key] = value
+        }
+      }
+      if checkMatch(alrt, prms, unix) {
+        alts = append(alts, alrt.Value)
+      }
+      if len(alts) >= 5000 {
+        break;
+      }
+    }
+
+    if len(alts) > 0 {
+      w.Write(encodeJson(alts))
+      return
+    }
+
+    w.Write([]byte("[]"))
     return
   }
 
