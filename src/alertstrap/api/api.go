@@ -96,6 +96,7 @@ func LoadAlerts(conf config.Config) error {
   for _, alert := range alerts {
     Alerts.Set(alert["mgrp_id"].(string), alert, 30 * time.Minute)
   }
+  log.Printf("[info] loaded alerts from dbase (%d)", len(alerts))
   return nil
 }
 
@@ -158,23 +159,12 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
     var alts []map[string]interface{}
     for _, alrt := range Alerts.Items() {
-      host, ok := Hosts.Get(alrt.Value["host"].(string))
-      if ok {
-        for key, value := range host {
-          alrt.Value[key] = value
-        }
-      }
       if checkMatch(alrt, prms, unix) {
         alts = append(alts, alrt.Value)
       }
     }
 
-    if len(alts) > 0 {
-      w.Write(encodeJson(alts))
-      return
-    }
-
-    w.Write([]byte("[]"))
+    w.Write(encodeJson(alts))
     return
   }
 

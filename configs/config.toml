@@ -1,7 +1,7 @@
 [mysql]
 conn_string  = "root@(127.0.0.1)/showcase?multiStatements=true"
 alerts_table = "messages.mon_alerts"
-alerts_view  = "messages.mon_v_alerts"
+alerts_view  = "messages.mon_alerts"
 hosts_view   = "showcase.mon_v_hosts"
 
 [alertstrap]
