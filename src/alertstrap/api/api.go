@@ -2,7 +2,7 @@ package api
 
 import (
   "net/http"
-  "net/url"
+  //"net/url"
   "log"
   //"crypto/sha1"
   //"encoding/base64"
@@ -101,28 +101,36 @@ func LoadAlerts(conf config.Config) error {
   return nil
 }
 
-func checkMatch(alrt cache.Item, prms map[string]*regexp.Regexp, unix int64) bool {
+func checkMatch(alrt cache.Item, prms map[string]string, unix int64) bool {
   if alrt.Value["ts_unix"].(int64) < unix {
     return false
   }
   for key, prm := range prms {
+
+    if alrt.Value[key] != nil {
+      mtch, err := regexp.MatchString(prm, alrt.Value[key].(string))
+      if err != nil {
+        log.Printf("[error] %v", err)
+      }
+      if mtch == false {
+        return false
+      }
+    }
+    
     /*
     val := ""
     switch alrt.Value[key].(type) {
-    	case int:
-    		val = strconv.Itoa(alrt.Value[key].(int))
-    	case string:
-    		val = alrt.Value[key].(string)
-    	default:
-    		return false
-  	}
+      case int:
+        val = strconv.Itoa(alrt.Value[key].(int))
+      case string:
+        val = alrt.Value[key].(string)
+      default:
+        return false
+    }
     if !prm.Match([]byte(val)) {
       return false
     }
     */
-    if !prm.Match([]byte(alrt.Value[key].(string))) {
-      return false
-    }
   }
   return true
 }
@@ -144,7 +152,7 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   if r.URL.Path == "/get/alerts" {
 
     unix := int64(0)
-    prms := make(map[string]*regexp.Regexp)
+    prms := make(map[string]string)
     re := regexp.MustCompile(",")
     for key, value := range r.URL.Query() {
       if key == "timestamp" {
@@ -153,22 +161,18 @@ func (a *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
           unix = int64(i)
         }
       } else {
-        dvalue, err := url.QueryUnescape(strings.Join(value, "|"))
-        if err == nil {
-          st := re.ReplaceAllString("("+dvalue+")", `|`)
-          prms[key] = regexp.MustCompile(string(st))
-        }
+        prms[key] = re.ReplaceAllString("^("+strings.Join(value, "|")+")$", `|`)
       }
     }
 
     var alts []map[string]interface{}
     for _, alrt := range Alerts.Items() {
-      host, ok := Hosts.Get(alrt.Value["host"].(string))
-      if ok {
-        for key, value := range host {
-          alrt.Value[key] = value
-        }
-      }
+      //host, ok := Hosts.Get(alrt.Value["host"].(string))
+      //if ok {
+      //  for key, value := range host {
+      //    alrt.Value[key] = value
+      //  }
+      //}
       if checkMatch(alrt, prms, unix) {
         alts = append(alts, alrt.Value)
       }
