@@ -9,10 +9,6 @@ import (
 type Config struct {
   Mysql struct {
     Conn_string  string
-    Alerts_table string
-    Alerts_view  string
-    Hosts_view   string
-    Tasks_table  string
   }
   Alertstrap struct {
     Listen_port  string

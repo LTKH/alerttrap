@@ -44,6 +44,12 @@ func main() {
   //  }
   //}
 
+  //loading alerts
+  log.Print("[info] loading alerts from database")
+  if err := api.LoadAlerts(); err != nil {
+    log.Fatalf("[critical] %v", err)
+  }
+
   //loading hosts table
   //log.Print("[info] loading hosts from database")
   //if err := api.LoadHosts(); err != nil {
@@ -60,11 +66,11 @@ func main() {
   }()
 
   //enabled listen port
-  //http.HandleFunc("/get/alerts",  api.GetAlerts)
+  http.HandleFunc("/get/alerts",  api.GetAlerts)
   //http.HandleFunc("/get/hosts",   api.GetHosts)
   //http.HandleFunc("/get/history", api.GetHistory)
-  //http.HandleFunc("/add/alert",   api.AddAlert)
-  go http.ListenAndServe(cfg.Alertstrap.Listen_port, &(api.Api{}))
+  http.HandleFunc("/add/alerts",   api.AddAlerts)
+  go http.ListenAndServe(cfg.Alertstrap.Listen_port, nil)
   log.Printf("[info] listen port enabled - %s", cfg.Alertstrap.Listen_port)
 
   log.Print("[info] alertstrap started ^_^")
@@ -76,11 +82,10 @@ func main() {
     if err := db.ConnectDb(cfg); err != nil {
       log.Fatalf("[critical] %v", err)
     }
-
     //loading alerts
-    if err := api.LoadAlerts(cfg); err != nil {
-      log.Fatalf("[critical] %v", err)
-    }
+    //if err := api.LoadAlerts(); err != nil {
+    //  log.Fatalf("[critical] %v", err)
+    //}
 
     //if err := db.ConnectDb(cfg); err != nil {
     //  log.Printf("[error] %v", err)

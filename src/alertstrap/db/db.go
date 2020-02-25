@@ -2,14 +2,17 @@ package db
 
 import (
   //"os"
-  "fmt"
-  //"log"
+  //"fmt"
+  "log"
+  //"time"
   //"strings"
   "strconv"
   //"io/ioutil"
+  "encoding/json"
   "database/sql"
   _ "github.com/go-sql-driver/mysql"
   "alertstrap/config"
+  "alertstrap/cache"
 )
 
 var (
@@ -27,6 +30,7 @@ func ConnectDb(conf config.Config) error {
   return nil
 }
 
+/*
 func getResult(sel string, exec []interface{}) ([]map[string]interface{}, error) {
   result := []map[string]interface{}{}
 
@@ -73,9 +77,139 @@ func getResult(sel string, exec []interface{}) ([]map[string]interface{}, error)
 
   return result, nil
 }
+*/
 
-func LoadAlerts(conf config.Config) ([]map[string]interface{}, error) {
-  return getResult(fmt.Sprintf("select * from %s", conf.Mysql.Alerts_view), nil)
+func LoadAlerts() ([]cache.Alert, error) {
+  result := []cache.Alert{}
+
+  rows, err := db.Query("select * from mon_v_alerts")
+  if err != nil {
+    return nil, err
+  }
+  defer rows.Close()
+
+  columns, err := rows.ColumnTypes()
+  if err != nil {
+    return nil, err
+  }
+
+  // Make a slice for the values
+  values := make([]sql.RawBytes, len(columns))
+
+  scanArgs := make([]interface{}, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+
+  for rows.Next() {
+    var a cache.Alert
+
+    if err := rows.Scan(scanArgs...); err != nil {
+      continue
+		}
+
+    for i, value := range values {
+      switch columns[i].Name() {
+        case "alert_id":
+          a.AlertId = string(value)
+        case "group_id":
+          a.GroupId = string(value)
+        case "status":
+          a.Status = string(value)
+        case "starts_at":
+          cl, err := strconv.Atoi(string(value))
+          if err == nil {
+            a.StartsAt = int64(cl)
+          }
+        case "ends_at":
+          cl, err := strconv.Atoi(string(value))
+          if err == nil {
+            a.EndsAt = int64(cl)
+          }
+        case "duplicate":
+          cl, err := strconv.Atoi(string(value))
+          if err == nil {
+            a.Duplicate = int(cl)
+          }
+        case "labels":
+          if err := json.Unmarshal(value, &a.Labels); err != nil {
+            log.Printf("[warning] %v (%s)", err, a.AlertId)
+          }
+        case "annotations":
+          if err := json.Unmarshal(value, &a.Annotations); err != nil {
+            log.Printf("[warning] %v (%s)", err, a.AlertId)
+          }
+      }
+    }
+
+    result = append(result, a) 
+  }
+
+  return result, nil
+}
+
+func AddAlert(alert cache.Alert) error {
+
+  stmt, err := db.Prepare("insert into mon_alerts values (?,?,?,?,?,?,?,?,?)")
+	if err != nil {
+    return err
+	}
+  defer stmt.Close()
+
+  labels, err := json.Marshal(alert.Labels)
+  if err != nil {
+    return err
+  }
+
+  annotations, err := json.Marshal(alert.Annotations)
+  if err != nil {
+    return err
+  }
+
+  _, err = stmt.Exec(
+    alert.AlertId,
+    alert.GroupId,
+    alert.Status,
+    alert.StartsAt,
+    alert.EndsAt,
+    alert.Duplicate,
+    labels,
+    annotations,
+    alert.GeneratorURL,
+  )
+  if err != nil {
+    return err
+	}
+
+  return nil
+}
+
+func UpdAlert(alert cache.Alert) error {
+
+  stmt, err := db.Prepare("update mon_alerts set status=?,ends_at=?,duplicate=?,annotations=?,generator_url=? where alert_id = ?")
+	if err != nil {
+    return err
+	}
+  defer stmt.Close()
+
+  annotations, err := json.Marshal(alert.Annotations)
+  if err != nil {
+    return err
+  }
+
+  _, err = stmt.Exec(
+    alert.Status,
+    alert.EndsAt,
+    alert.Duplicate,
+    annotations,
+    alert.GeneratorURL,
+    alert.AlertId,
+  )
+  if err != nil {
+    return err
+	}
+
+  return nil
 }
 
 /*
@@ -104,6 +238,10 @@ func AddAlert(alrt map[string]interface{}) error {
 
   return nil
 }
+
+*/
+
+/*
 
 func UpdAlert(alrt map[string]interface{}, mess_id string) error {
 
