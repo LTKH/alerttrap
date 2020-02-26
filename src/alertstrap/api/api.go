@@ -19,8 +19,8 @@ import (
 )
 
 var (
-  CacheAlerts *cache.Cache = cache.New(10 * time.Second)
-  CacheHosts  *cache.Cache = cache.New(1 * time.Minute)
+  CacheAlerts *cache.Cache = cache.New()
+  //ChanAlrets = make(chan *cache.Alert)
 )
 
 type Alerts struct {
@@ -126,7 +126,7 @@ func GetAlerts(w http.ResponseWriter, r *http.Request) {
 
       alerts.AlertsArray = append(alerts.AlertsArray, alert)
 
-      }
+    }
     
     if len(alerts.AlertsArray) >= 5000 {
       break;
@@ -168,67 +168,80 @@ func AddAlerts(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  for _, value := range data.AlertsArray {
+  go func(data *Alerts){
 
-    labels, err := json.Marshal(value.Labels)
-    if err != nil {
-      log.Printf("[error] %v - %s", err, r.URL.Path)
-      w.WriteHeader(400)
-      w.Write([]byte("{\"error\":\""+err.Error()+"\"}"))
-      return
-    }
-    
-    starts_at := value.StartsAt.UTC()
-    ends_at   := value.EndsAt.UTC()
-    if starts_at.Unix() < 0 {
-      starts_at  = time.Now().UTC()
-    } 
-    if ends_at.Unix() < 0 {
-      ends_at    = time.Now().UTC()
-    } 
+    for _, value := range data.AlertsArray {
 
-    group_id  := getHash(string(labels));
-    alert_id  := getHash(string(strconv.FormatInt(starts_at.UnixNano(), 16)+group_id))
-    
-
-    alert, found := CacheAlerts.Get(group_id)
-    if found {
-      alert.Status         = value.Status
-      alert.Annotations    = value.Annotations
-      alert.GeneratorURL   = value.GeneratorURL
-      alert.Duplicate      = alert.Duplicate + 1
-      alert.EndsAt         = ends_at.Unix()
-
-      if err := db.UpdAlert(alert); err != nil {
-        log.Printf("[error] %v - %s", err, r.URL.Path)
-        w.WriteHeader(500)
-        w.Write([]byte("{\"error\":\""+err.Error()+"\"}"))
+      labels, err := json.Marshal(value.Labels)
+      if err != nil {
+        log.Printf("[error] read alert %v", err)
         return
       }
-      CacheAlerts.Set(group_id, alert, alert.EndsAt + 1800)
-
-    } else {
-      var alert cache.Alert
-      alert.AlertId        = alert_id
-      alert.GroupId        = group_id
-      alert.Status         = value.Status
-      alert.StartsAt       = starts_at.Unix()
-      alert.EndsAt         = ends_at.Unix()
-      alert.Labels         = value.Labels
-      alert.Annotations    = value.Annotations
-      alert.GeneratorURL   = value.GeneratorURL
-      alert.Duplicate      = 1
-
-      if err := db.AddAlert(alert); err != nil {
-        log.Printf("[error] %v - %s", err, r.URL.Path)
-        w.WriteHeader(500)
-        w.Write([]byte("{\"error\":\""+err.Error()+"\"}"))
-        return
+  
+      starts_at := value.StartsAt.UTC()
+      ends_at   := value.EndsAt.UTC()
+      if starts_at.Unix() < 0 {
+        starts_at  = time.Now().UTC()
+      } 
+      if ends_at.Unix() < 0 {
+        ends_at    = time.Now().UTC()
+      } 
+  
+      group_id  := getHash(string(labels));
+      alert_id  := getHash(string(strconv.FormatInt(starts_at.UnixNano(), 16)+group_id))
+  
+      /*
+      select {
+        case ChanAlrets <- &cache.Alert{
+          AlertId:       alert_id,
+          GroupId:       group_id,
+          Status:        value.Status,
+          StartsAt:      starts_at.Unix(),
+          EndsAt:        ends_at.Unix(),
+          Labels:        value.Labels,
+          Annotations:   value.Annotations,
+          GeneratorURL:  value.GeneratorURL,
+        }:
+        default:
+          log.Print("[error] channel to alerts is not ready")
       }
-      CacheAlerts.Set(group_id, alert, alert.EndsAt + 1800)
-      
+      */
+  
+      alert, found := CacheAlerts.Get(group_id)
+      if found {
+        alert.Status         = value.Status
+        alert.Annotations    = value.Annotations
+        alert.GeneratorURL   = value.GeneratorURL
+        alert.Duplicate      = alert.Duplicate + 1
+        alert.EndsAt         = ends_at.Unix()
+  
+        if err := db.UpdAlert(alert); err != nil {
+          log.Printf("[error] update alert %v", err)
+          return
+        }
+        CacheAlerts.Set(group_id, alert, alert.EndsAt + 1800)
+  
+      } else {
+        var alert cache.Alert
+        alert.AlertId        = alert_id
+        alert.GroupId        = group_id
+        alert.Status         = value.Status
+        alert.StartsAt       = starts_at.Unix()
+        alert.EndsAt         = ends_at.Unix()
+        alert.Labels         = value.Labels
+        alert.Annotations    = value.Annotations
+        alert.GeneratorURL   = value.GeneratorURL
+        alert.Duplicate      = 1
+  
+        if err := db.AddAlert(alert); err != nil {
+          log.Printf("[error] add alert %v", err)
+          return
+        }
+        CacheAlerts.Set(group_id, alert, alert.EndsAt + 1800)
+      }
     }
-  }
+
+  }(&data)
 
   w.WriteHeader(204)
   return

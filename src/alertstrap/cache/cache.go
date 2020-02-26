@@ -1,14 +1,13 @@
 package cache
 
 import (
-	  "sync"
-      "time"
-      "log"
+	"sync"
+    "time"
+    "log"
 )
 
 type Cache struct {
     sync.RWMutex
-    cleanupInterval time.Duration
     items           map[string]Item
 }
 
@@ -29,20 +28,25 @@ type Alert struct {
     GeneratorURL    string                  `json:"generatorURL"`
 }
 
-func New(cleanupInterval time.Duration) *Cache {
-
-    // инициализируем карту(map) в паре ключ(string)/значение(Item)
-    items := make(map[string]Item)
+func New() *Cache {
 
     cache := Cache{
-        cleanupInterval: cleanupInterval,
-        items: items,
+        items: make(map[string]Item),
     }
 
-    // Если интервал очистки больше 0, запускаем GC (удаление устаревших элементов)
-    if cleanupInterval > 0 {
-        cache.StartGC() // данный метод рассматривается ниже
-    }
+    go func(c *Cache){
+
+        time.Sleep(10 * time.Second)
+
+        if c.items != nil {
+            // Ищем элементы с истекшим временем жизни и удаляем из хранилища
+            if keys := c.expiredKeys(); len(keys) != 0 {
+                c.clearItems(keys)
+
+            }
+        }
+
+    }(&cache)
 
     return &cache
 }
@@ -90,32 +94,6 @@ func (c *Cache) Delete(key string) {
 
 }
 
-func (c *Cache) StartGC()  {
-    go c.GC()
-}
-
-func (c *Cache) GC() {
-
-    for {
-
-        // ожидаем время установленное в cleanupInterval
-        //<-time.After(c.cleanupInterval)
-        time.Sleep(c.cleanupInterval)
-
-        if c.items != nil {
-            // Ищем элементы с истекшим временем жизни и удаляем из хранилища
-            for k, i := range c.items {
-                if i.Expiration > 0 && time.Now().UTC().Unix() > i.Expiration {
-                    delete(c.items, k)
-                    log.Printf("[info] deleted cache index (%s)", k)
-                }
-            }
-        }
-
-    }
-
-}
-
 // Copies all unexpired items in the cache into a new map and returns it.
 func (c *Cache) Items() map[string]Item {
 	c.RLock()
@@ -127,4 +105,31 @@ func (c *Cache) Items() map[string]Item {
     }
     
 	return items
+}
+
+// clearItems удаляет ключи из переданного списка, в нашем случае "просроченные"
+func (c *Cache) clearItems(keys []string) {
+
+    c.Lock()
+
+    defer c.Unlock()
+
+    for _, k := range keys {
+        delete(c.items, k)
+    }
+}
+
+func (c *Cache) expiredKeys() (keys []string) {
+
+    c.RLock()
+
+    defer c.RUnlock()
+
+    for k, i := range c.items {
+        if i.Expiration > 0 && time.Now().UTC().Unix() > i.Expiration {
+            keys = append(keys, k)
+        }
+    }
+
+    return
 }
