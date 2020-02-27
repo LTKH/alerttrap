@@ -5,6 +5,7 @@ import (
   "net/http"
   "net/url"
   "log"
+  "fmt"
   "crypto/sha1"
   "encoding/hex"
   //"encoding/base64"
@@ -19,12 +20,12 @@ import (
 )
 
 var (
-  CacheAlerts *cache.Cache = cache.New()
-  //ChanAlrets = make(chan *cache.Alert)
+  Cache *cache.Cache = cache.New()
 )
 
 type Alerts struct {
-  AlertsArray []Alert `json:"alerts"`
+  Error        string  `json:"error"`
+  AlertsArray  []Alert `json:"alerts"`
 }
 
 type Alert struct {
@@ -50,19 +51,24 @@ func getHash(text string) (string) {
 func checkMatch(labels map[string]interface{}, values url.Values) bool {
   
   for key, array := range values {
-    if key != "epoch" && labels[key] != nil {
-      match := false
-      for _, val := range array {
-        mtch, err := regexp.MatchString(val, labels[key].(string))
-        if err != nil {
-          log.Printf("[error] %v", err)
+    if key != "epoch" {
+      if labels[key] == nil {
+        return false
+      } else {
+        match := false
+        for _, val := range array {
+          mtch, err := regexp.MatchString(val, labels[key].(string))
+          if err != nil {
+            log.Printf("[error] %v", err)
+          }
+          if mtch {
+            match = true
+          }
         }
-        if mtch {
-          match = true
-          break
+        if !match {
+          return false
         }
       }
-      return match
     }
   }
 
@@ -89,7 +95,7 @@ func LoadAlerts() error {
     return err
   }
   for _, alert := range alerts {
-    CacheAlerts.Set(alert.GroupId, alert, alert.EndsAt + 1800)
+    Cache.Set(alert.GroupId, alert, alert.EndsAt + 1800)
   }
   log.Printf("[info] loaded alerts from dbase (%d)", len(alerts))
   return nil
@@ -107,7 +113,7 @@ func GetAlerts(w http.ResponseWriter, r *http.Request) {
   }
 
   var alerts Alerts
-  for _, a := range CacheAlerts.Items() {
+  for _, a := range Cache.Items() {
     
     if a.Value.EndsAt >= epoch && checkMatch(a.Value.Labels, r.URL.Query()) {
 
@@ -128,23 +134,24 @@ func GetAlerts(w http.ResponseWriter, r *http.Request) {
 
     }
     
-    if len(alerts.AlertsArray) >= 5000 {
+    if len(alerts.AlertsArray) >= 1000 {
+      alerts.Error = fmt.Sprint("More than a thousand alerts found")
       break;
     }
   }
 
   if len(alerts.AlertsArray) == 0 {
-    w.Write([]byte("{\"alerts\":[]}"))
+    w.Write([]byte("{\"error\":\"\",\"alerts\":[]}"))
     return
   }
 
   jsn, err := json.Marshal(alerts)
   if err != nil {
-    w.Write([]byte("{\"alerts\":[]}"))
+    w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\",\"alerts\":[]}", err.Error())))
     return 
   }
+
   w.Write(jsn)
-  return
 
 }
 
@@ -155,7 +162,7 @@ func AddAlerts(w http.ResponseWriter, r *http.Request) {
   if err != nil {
     log.Printf("[error] %v - %s", err, r.URL.Path)
     w.WriteHeader(400)
-    w.Write([]byte("{\"error\":\""+err.Error()+"\"}"))
+    w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", err.Error())))
     return
   }
 
@@ -164,7 +171,7 @@ func AddAlerts(w http.ResponseWriter, r *http.Request) {
   if err := json.Unmarshal(body, &data); err != nil {
     log.Printf("[error] %v - %s", err, r.URL.Path)
     w.WriteHeader(400)
-    w.Write([]byte("{\"error\":\""+err.Error()+"\"}"))
+    w.Write([]byte(fmt.Sprintf("{\"error\":\"%s\"}", err.Error())))
     return
   }
 
@@ -190,24 +197,7 @@ func AddAlerts(w http.ResponseWriter, r *http.Request) {
       group_id  := getHash(string(labels));
       alert_id  := getHash(string(strconv.FormatInt(starts_at.UnixNano(), 16)+group_id))
   
-      /*
-      select {
-        case ChanAlrets <- &cache.Alert{
-          AlertId:       alert_id,
-          GroupId:       group_id,
-          Status:        value.Status,
-          StartsAt:      starts_at.Unix(),
-          EndsAt:        ends_at.Unix(),
-          Labels:        value.Labels,
-          Annotations:   value.Annotations,
-          GeneratorURL:  value.GeneratorURL,
-        }:
-        default:
-          log.Print("[error] channel to alerts is not ready")
-      }
-      */
-  
-      alert, found := CacheAlerts.Get(group_id)
+      alert, found := Cache.Get(group_id)
       if found {
         alert.Status         = value.Status
         alert.Annotations    = value.Annotations
@@ -215,13 +205,10 @@ func AddAlerts(w http.ResponseWriter, r *http.Request) {
         alert.Duplicate      = alert.Duplicate + 1
         alert.EndsAt         = ends_at.Unix()
   
-        if err := db.UpdAlert(alert); err != nil {
-          log.Printf("[error] update alert %v", err)
-          return
-        }
-        CacheAlerts.Set(group_id, alert, alert.EndsAt + 1800)
+        Cache.Set(group_id, alert, alert.EndsAt + 1800)
   
       } else {
+        
         var alert cache.Alert
         alert.AlertId        = alert_id
         alert.GroupId        = group_id
@@ -233,12 +220,9 @@ func AddAlerts(w http.ResponseWriter, r *http.Request) {
         alert.GeneratorURL   = value.GeneratorURL
         alert.Duplicate      = 1
   
-        if err := db.AddAlert(alert); err != nil {
-          log.Printf("[error] add alert %v", err)
-          return
-        }
-        CacheAlerts.Set(group_id, alert, alert.EndsAt + 1800)
+        Cache.Set(group_id, alert, alert.EndsAt + 1800)
       }
+
     }
 
   }(&data)

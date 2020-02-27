@@ -34,27 +34,12 @@ func New() *Cache {
         items: make(map[string]Item),
     }
 
-    go func(c *Cache){
-
-        time.Sleep(10 * time.Second)
-
-        if c.items != nil {
-            // Ищем элементы с истекшим временем жизни и удаляем из хранилища
-            if keys := c.expiredKeys(); len(keys) != 0 {
-                c.clearItems(keys)
-
-            }
-        }
-
-    }(&cache)
-
     return &cache
 }
 
 func (c *Cache) Set(key string, value Alert, expiration int64) {
 
     c.Lock()
-
     defer c.Unlock()
 
     c.items[key] = Item{
@@ -67,7 +52,6 @@ func (c *Cache) Set(key string, value Alert, expiration int64) {
 func (c *Cache) Get(key string) (Alert, bool) {
 
     c.RLock()
-
     defer c.RUnlock()
 
     item, found := c.items[key]
@@ -82,7 +66,6 @@ func (c *Cache) Get(key string) (Alert, bool) {
 func (c *Cache) Delete(key string) {
 
     c.Lock()
-
     defer c.Unlock()
 
     if _, found := c.items[key]; !found {
@@ -96,6 +79,7 @@ func (c *Cache) Delete(key string) {
 
 // Copies all unexpired items in the cache into a new map and returns it.
 func (c *Cache) Items() map[string]Item {
+
 	c.RLock()
     defer c.RUnlock()
     
@@ -107,29 +91,29 @@ func (c *Cache) Items() map[string]Item {
 	return items
 }
 
-// clearItems удаляет ключи из переданного списка, в нашем случае "просроченные"
-func (c *Cache) clearItems(keys []string) {
+//cleaning cache items
+func (c *Cache) ClearItems(items map[string]Item) {
 
     c.Lock()
-
     defer c.Unlock()
 
-    for _, k := range keys {
+    for k, _ := range items {
         delete(c.items, k)
     }
 }
 
-func (c *Cache) expiredKeys() (keys []string) {
+func (c *Cache) ExpiredItems() map[string]Item {
 
     c.RLock()
-
     defer c.RUnlock()
 
-    for k, i := range c.items {
-        if i.Expiration > 0 && time.Now().UTC().Unix() > i.Expiration {
-            keys = append(keys, k)
+    items := make(map[string]Item)
+
+    for k, v := range c.items {
+        if v.Expiration > 0 && time.Now().UTC().Unix() > v.Expiration {
+            items[k] = v
         }
     }
 
-    return
+    return items
 }

@@ -61,15 +61,19 @@ func main() {
   signal.Notify(c, os.Interrupt, syscall.SIGTERM)
   go func() {
     <- c
+    //saving cache items
+    if items := api.Cache.Items(); len(items) != 0 {
+      db.SaveItems(items)
+    }
     log.Print("[info] alertstrap stopped")
     os.Exit(0)
   }()
 
   //enabled listen port
-  http.HandleFunc("/get/alerts",  api.GetAlerts)
-  //http.HandleFunc("/get/hosts",   api.GetHosts)
-  //http.HandleFunc("/get/history", api.GetHistory)
-  http.HandleFunc("/add/alerts",   api.AddAlerts)
+  http.HandleFunc("/api/v1/get/alerts", api.GetAlerts)
+  //http.HandleFunc("/api/v1/get/hosts", api.GetHosts)
+  //http.HandleFunc("/api/v1/get/history", api.GetHistory)
+  http.HandleFunc("/api/v1/add/alerts", api.AddAlerts)
   go http.ListenAndServe(cfg.Alertstrap.Listen_port, nil)
   log.Printf("[info] listen port enabled - %s", cfg.Alertstrap.Listen_port)
 
@@ -82,6 +86,13 @@ func main() {
     if err := db.ConnectDb(cfg); err != nil {
       log.Fatalf("[critical] %v", err)
     }
+
+    //cleaning cache items
+    if items := api.Cache.ExpiredItems(); len(items) != 0 {
+      db.SaveItems(items)
+      api.Cache.ClearItems(items)
+    }
+
     //loading alerts
     //if err := api.LoadAlerts(); err != nil {
     //  log.Fatalf("[critical] %v", err)

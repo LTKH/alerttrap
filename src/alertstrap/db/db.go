@@ -30,55 +30,6 @@ func ConnectDb(conf config.Config) error {
   return nil
 }
 
-/*
-func getResult(sel string, exec []interface{}) ([]map[string]interface{}, error) {
-  result := []map[string]interface{}{}
-
-  rows, err := db.Query(sel, exec...)
-  if err != nil {
-    return nil, err
-  }
-  defer rows.Close()
-
-  columns, err := rows.ColumnTypes()
-  if err != nil {
-    return nil, err
-  }
-
-  // Make a slice for the values
-	values := make([]sql.RawBytes, len(columns))
-
-	scanArgs := make([]interface{}, len(values))
-	for i := range values {
-		scanArgs[i] = &values[i]
-	}
-
-  for rows.Next() {
-
-    if err := rows.Scan(scanArgs...); err != nil {
-      continue
-		}
-
-    alert := make(map[string]interface{})
-    for i, value := range values {
-      switch columns[i].DatabaseTypeName() {
-        case "INT":
-          cl, _ := strconv.Atoi(string(value))
-          alert[columns[i].Name()] = int(cl)
-        case "BIGINT":
-          cl, _ := strconv.Atoi(string(value))
-          alert[columns[i].Name()] = int64(cl)
-      	default:
-      		alert[columns[i].Name()] = string(value)
-    	}
-    }
-    result = append(result, alert)
-  }
-
-  return result, nil
-}
-*/
-
 func LoadAlerts() ([]cache.Alert, error) {
   result := []cache.Alert{}
 
@@ -146,6 +97,50 @@ func LoadAlerts() ([]cache.Alert, error) {
   }
 
   return result, nil
+}
+
+func SaveItems(items map[string]cache.Item) {
+
+  stmt, err := db.Prepare("replace into mon_alerts values (?,?,?,?,?,?,?,?,?)")
+  if err != nil {
+    log.Printf("[error] %v", err)
+    return
+	}
+  defer stmt.Close()
+
+  for _, i := range items {
+
+    labels, err := json.Marshal(i.Value.Labels)
+    if err != nil {
+      log.Printf("[error] %v", err)
+      continue
+    }
+
+    annotations, err := json.Marshal(i.Value.Annotations)
+    if err != nil {
+      log.Printf("[error] %v", err)
+      continue
+    }
+
+    _, err = stmt.Exec(
+      i.Value.AlertId,
+      i.Value.GroupId,
+      i.Value.Status,
+      i.Value.StartsAt,
+      i.Value.EndsAt,
+      i.Value.Duplicate,
+      labels,
+      annotations,
+      i.Value.GeneratorURL,
+    )
+    if err != nil {
+      log.Printf("[error] %v", err)
+      continue
+    }
+
+    log.Printf("[info] alert recorded in database - %s", i.Value.AlertId)
+  }
+
 }
 
 func AddAlert(alert cache.Alert) error {
