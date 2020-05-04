@@ -28,7 +28,7 @@
       <img src="images/layer.png" width="25" height="25" alt="">
     </a>
 
-    <a class="navbar-brand mr-1" href="index.html">Showcase</a>
+    <a class="navbar-brand mr-1" href="index.html">Alertstrap</a>
 
     <button class="btn btn-link btn-sm text-white order-1 order-sm-0" id="sidebarToggle" href="#">
       <i class="fas fa-bars"></i>
@@ -272,62 +272,15 @@
                   <table class="table table-hover table-dark" id="alertsTable" width="100%" cellspacing="0">
                     <thead>
                       <tr>
-                        <th style="width:60px">Severity</th>
-                        <th style="width:60px">Count</th>
-                        <th style="width:200px">Parameter</th>
-                        <th style="width:100px">Host</th>
-                        <th style="width:100px">Start date</th>
-                        <th style="width:100px">End date</th>
-                        <th>Text</th>
+                        <th style="width:60px" data-field="status">Status</th>
+                        <th style="width:60px" data-field="duplicate">Count</th>
+                        <th style="width:200px" data-field="alertname">Alertname</th>
+                        <th style="width:100px" data-field="node">Node</th>
+                        <th style="width:100px" data-field="startsAt">Start date</th>
+                        <th style="width:100px" data-field="endsAt">End date</th>
+                        <th data-field="description">Description</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      <tr>
-                        <td><a href="#" class="badge badge-danger">error</a></td>
-                        <td>256</td>
-                        <td>diskUsed</td>
-                        <td>test-host1</td>
-                        <td>30.10.2019 15:25</td>
-                        <td>30.10.2019 15:25</td>
-                        <td>Test message message message message message message message message message message message message message message</td>
-                      </tr>
-                      <tr>
-                        <td><a href="#" class="badge badge-danger">error</a></td>
-                        <td>1</td>
-                        <td>diskUsed</td>
-                        <td>test-host1</td>
-                        <td>30.10.2019 15:25</td>
-                        <td>30.10.2019 15:25</td>
-                        <td>Test message</td>
-                      </tr>
-                      <tr>
-                        <td><a href="#" class="badge badge-danger">error</a></td>
-                        <td>1</td>
-                        <td>diskUsed</td>
-                        <td>test-host1</td>
-                        <td>30.10.2019 15:25</td>
-                        <td>30.10.2019 15:25</td>
-                        <td>Test message</td>
-                      </tr>
-                      <tr>
-                        <td><a href="#" class="badge badge-danger">error</a></td>
-                        <td>1</td>
-                        <td>diskUsed</td>
-                        <td>test-host1</td>
-                        <td>30.10.2019 15:25</td>
-                        <td>30.10.2019 15:25</td>
-                        <td>Test message</td>
-                      </tr>
-                      <tr>
-                        <td><a href="#" class="badge badge-warning">warning</a></td>
-                        <td>1</td>
-                        <td>diskUsed</td>
-                        <td>test-host1</td>
-                        <td>30.10.2019 15:25</td>
-                        <td>30.10.2019 15:25</td>
-                        <td>Test message</td>
-                      </tr>
-                    </tbody>
                   </table>
                 </div>
               </div>
@@ -479,9 +432,40 @@
   <script src="js/demo/datatables-demo.js"></script>
   <script src="js/demo/chart-area-demo.js"></script>
   -->
+  <script src="bootstrap/bootstrap-table/dist/bootstrap-table.min.js"></script>
 
   <script src="vendor/jstree/3.2.1/jstree.min.js"></script>
   <script>
+    (function worker() {
+      $.ajax({
+        url: '/api/v1/get/alerts', 
+        success: function(data) {
+          $('.result').html(data);
+        },
+        complete: function() {
+          // Schedule the next request when the current one's complete
+          setTimeout(worker, 10000);
+        }
+      });
+    })();
+
+    var mydata = [
+        {
+          "status": "warning",
+          "duplicate": 1,
+          "alertname": "diskUsed",
+          "node": "test-host1",
+          "startsAt": "30.10.2019 15:25",
+          "endsAt": "30.10.2019 15:25",
+          "description": "Test message"
+        }
+    ];
+    $(function () {
+        $('#alertsTable').bootstrapTable({
+            data: mydata
+        });
+    });
+
     $('#using_json').jstree({ 'core' : {
       'data' : [
         'Simple root node',

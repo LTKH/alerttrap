@@ -1,0 +1,10 @@
+[mysql]
+conn_string  = "root@(127.0.0.1)/alerts?parseTime=true"
+
+[server]
+listen       = ":8100"
+cert_file    = ""
+cert_key     = ""
+
+[monit]
+listen       = ":5000"
