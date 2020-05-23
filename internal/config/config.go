@@ -1,31 +1,47 @@
 package config
 
 import (
-  //"time"
-  "os"
-  "github.com/naoina/toml"
+	//"time"
+	"os"
+	"github.com/naoina/toml"
 )
 
 type Config struct {
-  Mysql struct {
-    Conn_string  string
-  }
-  Server struct {
-    Listen       string
-    Cert_file    string
-    Cert_key     string
-  }
-  Monit struct {
+	Db struct {
+		Client       string
+		Conn_string  string
+	}
+	Alerts           Alerts
+	Server struct {
 		Listen       string
+		Cert_file    string
+		Cert_key     string
+	}
+	Monit struct {
+		Listen       string
+	}
+	Menu []struct {
+		Name         string
+		Type         string
+		Section []struct {
+			Name     string
+			Url      string
+		}
 	}
 }
 
-func LoadConfigFile(filename string) (cfg Config, err error) {
-  f, err := os.Open(filename)
-  if err != nil {
-    return cfg, err
-  }
-  defer f.Close()
+type Alerts struct {
+	Limit           int
+	Resolve         int64
+	Delete          int64
+}
 
-  return cfg, toml.NewDecoder(f).Decode(&cfg)
+func New(filename string) (cfg Config, err error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return cfg, err
+	}
+	defer f.Close()
+
+	return cfg, toml.NewDecoder(f).Decode(&cfg)
 }

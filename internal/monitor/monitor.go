@@ -4,7 +4,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
-	"github.com/ltkh/alertstrap/internal/api"
+	"github.com/ltkh/alertstrap/internal/api/v1"
 	"time"
 )
 
@@ -27,7 +27,7 @@ func Start(Listen string) {
 
 	go func() {
 		for {
-			items := api.Cache.Items()
+			items := v1.CacheAlerts.Items()
             //lmap := map[string]string
 			
 			//for _, val := range items {

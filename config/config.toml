@@ -1,5 +1,11 @@
-[mysql]
+[db]
+client       = "mysql"
 conn_string  = "root@(127.0.0.1)/alerts?parseTime=true"
+
+[alerts]
+limit        = 5000
+resolve      = 300
+delete       = 600
 
 [server]
 listen       = ":8100"
@@ -8,3 +14,21 @@ cert_key     = ""
 
 [monit]
 listen       = ":5000"
+
+[[menu]]
+name = "Etcd"
+type = "etcd"
+
+  [[menu.section]]
+  url = "/etcd/prom"
+
+  [[menu.section]]
+  url = "/etcd/test"
+
+[[menu]]
+name = "Kubernetes"
+type = "prometheus"
+ 
+  [[menu.section]]
+   url = "/v1/get/alerts?job=prometheus"
+  
