@@ -7,19 +7,21 @@ import (
 	"encoding/json"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/ltkh/alertstrap/internal/config"
 	"github.com/ltkh/alertstrap/internal/cache"
 )
 
 type Client struct {
 	client *sql.DB
+    config *config.DB
 }
 
-func NewClient(conn_string string) (*Client, error) {
-	conn, err := sql.Open("mysql", conn_string)
+func NewClient(conf *config.DB) (*Client, error) {
+	conn, err := sql.Open("mysql", conf.Conn_string)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{conn}, nil
+	return &Client{ client: conn, config: conf }, nil
 }
 
 func (db *Client) Close() {
@@ -106,6 +108,8 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 	}
 	defer stmt.Close()
 
+	cnt := 0
+
 	for _, i := range alerts {
 
 		labels, err := json.Marshal(i.Labels)
@@ -136,7 +140,12 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 			continue
 		}
 
-		log.Printf("[info] alert recorded in database - %s", i.GroupId)
+		cnt++
+
+	}
+
+	if cnt > 0 {
+		log.Printf("[info] alerts recorded in database (%d)", cnt)
 	}
 
 	return nil
@@ -205,4 +214,23 @@ func (db *Client) UpdAlert(alert cache.Alert) error {
 	}
 
 	return nil
+}
+
+func (db *Client) DeleteOldAlerts() error {
+
+	stmt, err := db.client.Prepare("delete from mon_alerts where ends_at < UNIX_TIMESTAMP() - 86400 * ?")
+	if err != nil {
+		log.Printf("[error] %v", err)
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(db.config.History_days)
+	if err != nil {
+		log.Printf("[error] %v", err)
+		return err
+	}
+
+	return nil
+
 }

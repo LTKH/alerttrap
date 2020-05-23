@@ -150,19 +150,20 @@ func checkMatch(alert *cache.Alert, matchers [][]*Matcher) bool {
 }
 
 func New(config *config.Config) (*Api, error) {
-	client, err := db.NewClient(config); 
+	client, err := db.NewClient(&config.DB); 
 	defer client.Close()
 	if err != nil {
 		return nil, err
 	}
+	log.Print("[info] connected to dbase")
 	alerts, err := client.LoadAlerts()
 	if err != nil {
 		return nil, err
 	}
 	for _, alert := range alerts {
 		CacheAlerts.Set(alert.GroupId, alert)
-		log.Printf("[info] loaded alert from dbase - %s", alert.GroupId)
 	}
+	log.Printf("[info] loaded alerts from dbase (%d)", len(alerts))
 	
 	return &Api{ Alerts: config.Alerts }, nil
 }

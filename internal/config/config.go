@@ -7,16 +7,9 @@ import (
 )
 
 type Config struct {
-	Db struct {
-		Client       string
-		Conn_string  string
-	}
+	DB               DB
 	Alerts           Alerts
-	Server struct {
-		Listen       string
-		Cert_file    string
-		Cert_key     string
-	}
+	Server           Server
 	Monit struct {
 		Listen       string
 	}
@@ -28,6 +21,18 @@ type Config struct {
 			Url      string
 		}
 	}
+}
+
+type Server struct {
+	Listen       string
+	Cert_file    string
+	Cert_key     string
+}
+
+type DB struct {
+	Client       string
+	Conn_string  string
+	History_days int
 }
 
 type Alerts struct {

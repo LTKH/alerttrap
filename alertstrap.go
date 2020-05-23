@@ -37,7 +37,7 @@ func main() {
 	go func() {
 		<- c
 		//connection to data base
-		client, err := db.NewClient(&cfg); 
+		client, err := db.NewClient(&cfg.DB); 
 		if err != nil {
 			log.Fatalf("[error] %v", err)
 		}
@@ -57,23 +57,43 @@ func main() {
 	http.HandleFunc("/api/v1/menu", apiV1.ApiMenu)
 	http.HandleFunc("/api/v1/alerts", apiV1.ApiAlerts)
 
-	go func(cfg *config.Config){
-		if cfg.Server.Cert_file != "" && cfg.Server.Cert_key != "" {
-			if err := http.ListenAndServeTLS(cfg.Server.Listen, cfg.Server.Cert_file, cfg.Server.Cert_key, nil); err != nil {
+	go func(cfg *config.Server){
+		if cfg.Cert_file != "" && cfg.Cert_key != "" {
+			if err := http.ListenAndServeTLS(cfg.Listen, cfg.Cert_file, cfg.Cert_key, nil); err != nil {
 				log.Fatalf("[error] %v", err)
 			}
 		} else {
-			if err := http.ListenAndServe(cfg.Server.Listen, nil); err != nil {
+			if err := http.ListenAndServe(cfg.Listen, nil); err != nil {
 				log.Fatalf("[error] %v", err)
 			}
 		}
-		log.Printf("[info] listen port enabled - %s", cfg.Server.Listen)
-	}(&cfg)
+		log.Printf("[info] listen port enabled - %s", cfg.Listen)
+	}(&cfg.Server)
 
 	//opening monitoring port
 	monitor.Start(cfg.Monit.Listen)
 
 	log.Print("[info] alertstrap started -_^")
+
+	//delete old alerts
+	go func(cfg *config.DB){
+		for {
+			//connection to data base
+			client, err := db.NewClient(cfg); 
+			defer client.Close()
+			if err != nil {
+				log.Printf("[error] %v", err)
+			} else {
+				//cleaning old alerts
+				if err := client.DeleteOldAlerts(); err != nil {
+					log.Printf("[error] %v", err)
+				} else {
+					log.Print("[info] old alerts removed")
+				}
+			}
+			time.Sleep(24 * time.Hour)
+		}
+	}(&cfg.DB)
 
 	//daemon mode
 	for {
@@ -84,11 +104,10 @@ func main() {
 		}
 
 		//connection to data base
-		client, err := db.NewClient(&cfg); 
+		client, err := db.NewClient(&cfg.DB); 
 		defer client.Close()
 		if err != nil {
-			log.Fatalf("[error] %v", err)
-			continue
+			log.Printf("[error] %v", err)
 		} else {
 			//cleaning cache items
 			if items := v1.CacheAlerts.ExpiredItems(); len(items) != 0 {

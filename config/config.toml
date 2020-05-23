@@ -1,6 +1,7 @@
 [db]
 client       = "mysql"
 conn_string  = "root@(127.0.0.1)/alerts?parseTime=true"
+history_days = 7
 
 [alerts]
 limit        = 5000
