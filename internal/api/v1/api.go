@@ -211,28 +211,47 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		//status settings
+		var re_status *regexp.Regexp
+		if r.URL.Query()["status"] != nil {
+			re, err := regexp.Compile("^(?:" + r.URL.Query()["status"][0] + ")$")
+			if err != nil {
+				log.Printf("[error] %v - %s", err, r.URL.Path)
+				w.WriteHeader(400)
+				w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:alerts}))
+				return 
+			}
+			re_status = re
+		}
+
 		for _, a := range CacheAlerts.Items() {
-            if stamp == 0 || a.StampsAt >= stamp {
-				if len(matcherSets) == 0 || checkMatch(&a, matcherSets) {
 
-					var alert Alert
+            if stamp != 0 && a.StampsAt < stamp {
+                continue
+			}
+			if re_status != nil && !re_status.MatchString(a.Status) {
+                continue
+			}
+			if len(matcherSets) != 0 && !checkMatch(&a, matcherSets) {
+                continue
+			}
 
-					alert.AlertId      = a.AlertId
-					alert.GroupId      = a.GroupId
-					alert.Status       = a.Status
-					alert.StartsAt     = time.Unix(a.StartsAt, 0)
-					alert.EndsAt       = time.Unix(a.EndsAt, 0)
-					alert.Duplicate    = a.Duplicate
-					alert.Labels       = a.Labels
-					alert.Annotations  = a.Annotations
-					alert.GeneratorURL = a.GeneratorURL
+			var alert Alert
 
-					alerts.AlertsArray = append(alerts.AlertsArray, alert)
+			alert.AlertId      = a.AlertId
+			alert.GroupId      = a.GroupId
+			alert.Status       = a.Status
+			alert.StartsAt     = time.Unix(a.StartsAt, 0)
+			alert.EndsAt       = time.Unix(a.EndsAt, 0)
+			alert.Duplicate    = a.Duplicate
+			alert.Labels       = a.Labels
+			alert.Annotations  = a.Annotations
+			alert.GeneratorURL = a.GeneratorURL
 
-					if a.StampsAt > alerts.Stamp {
-						alerts.Stamp  = a.StampsAt
-					}
-				}
+			alerts.AlertsArray = append(alerts.AlertsArray, alert)
+
+			if a.StampsAt > alerts.Stamp {
+				alerts.Stamp  = a.StampsAt
 			}
 			
 			if len(alerts.AlertsArray) >= limit {

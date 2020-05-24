@@ -32,7 +32,7 @@ func main() {
 	}
 
 	//connection to data base
-	client, err = db.NewClient(&cfg.DB); 
+	client, err := db.NewClient(&cfg.DB); 
 	if err != nil {
 		log.Fatalf("[error] %v", err)
 	}
