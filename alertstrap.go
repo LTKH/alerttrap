@@ -31,19 +31,22 @@ func main() {
 		log.Fatalf("[error] %v", err)
 	}
 
+	//connection to data base
+	client, err = db.NewClient(&cfg.DB); 
+	if err != nil {
+		log.Fatalf("[error] %v", err)
+	}
+
 	//program completion signal processing
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<- c
-		//connection to data base
-		client, err := db.NewClient(&cfg.DB); 
-		if err != nil {
-			log.Fatalf("[error] %v", err)
-		}
 		//saving cache items
 		if items := v1.CacheAlerts.Items(); len(items) != 0 {
-			client.SaveAlerts(items)
+			if err := client.SaveAlerts(items); err != nil {
+                log.Printf("[error] %v", err)
+			}
 		}
 		log.Print("[info] alertstrap stopped")
 		os.Exit(0)
@@ -78,19 +81,13 @@ func main() {
 	//delete old alerts
 	go func(cfg *config.DB){
 		for {
-			//connection to data base
-			client, err := db.NewClient(cfg); 
-			defer client.Close()
-			if err != nil {
+			//cleaning old alerts
+			if err := client.DeleteOldAlerts(); err != nil {
 				log.Printf("[error] %v", err)
 			} else {
-				//cleaning old alerts
-				if err := client.DeleteOldAlerts(); err != nil {
-					log.Printf("[error] %v", err)
-				} else {
-					log.Print("[info] old alerts removed")
-				}
+				log.Print("[info] old alerts removed")
 			}
+
 			time.Sleep(24 * time.Hour)
 		}
 	}(&cfg.DB)
@@ -103,18 +100,14 @@ func main() {
             log.Printf("[info] mark alerts as resolved (%d)", len(keys))
 		}
 
-		//connection to data base
-		client, err := db.NewClient(&cfg.DB); 
-		defer client.Close()
-		if err != nil {
-			log.Printf("[error] %v", err)
-		} else {
-			//cleaning cache items
-			if items := v1.CacheAlerts.ExpiredItems(); len(items) != 0 {
-				client.SaveAlerts(items)
+		//cleaning cache items
+		if items := v1.CacheAlerts.ExpiredItems(); len(items) != 0 {
+			if err := client.SaveAlerts(items); err != nil {
+				log.Printf("[error] %v", err)
+			} else {
 				v1.CacheAlerts.ClearItems(items)
 			}
-	    }
+		}
 
 		time.Sleep(10 * time.Second)
 
