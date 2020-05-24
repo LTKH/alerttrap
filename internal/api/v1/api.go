@@ -132,10 +132,11 @@ func checkMatch(alert *cache.Alert, matchers [][]*Matcher) bool {
         match := true
 
 		for _, m := range mtch {
-			if alert.Labels[m.Name] == nil {
-                alert.Labels[m.Name] = ""
+			val := alert.Labels[m.Name]
+			if val == nil {
+                val = ""
 			}
-			if !m.matches(alert.Labels[m.Name].(string)) {
+			if !m.matches(val.(string)) {
 				match = false
 			    break
 			}
