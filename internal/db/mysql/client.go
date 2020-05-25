@@ -32,7 +32,10 @@ func (db *Client) Close() {
 func (db *Client) LoadUsers() ([]cache.User, error) {
 	result := []cache.User{}
 
-	rows, err := db.client.Query(fmt.Sprintf("select login,password,token from %s", db.config.Users_table))
+	rows, err := db.client.Query(fmt.Sprintf(
+		"select login,password,token from %s", 
+		db.config.Users_table,
+	))
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +57,11 @@ func (db *Client) LoadUsers() ([]cache.User, error) {
 func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 	result := []cache.Alert{}
 
-	rows, err := db.client.Query(fmt.Sprintf("select * from %s a where a.ends_at = (select max(ends_at) from %s where group_id = a.group_id)", db.config.Alerts_table, db.config.Alerts_table))
+	rows, err := db.client.Query(fmt.Sprintf(
+		"select * from %s a where a.ends_at > UNIX_TIMESTAMP() - 600 and a.ends_at = (select max(ends_at) from %s where group_id = a.group_id)", 
+		db.config.Alerts_table, 
+		db.config.Alerts_table,
+	))
 	if err != nil {
 		return nil, err
 	}
@@ -124,9 +131,11 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 
 func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 
-	stmt, err := db.client.Prepare(fmt.Sprintf("replace into %s values (?,?,?,?,?,?,?,?,?)", db.config.Alerts_table))
+	stmt, err := db.client.Prepare(fmt.Sprintf(
+		"replace into %s values (?,?,?,?,?,?,?,?,?)", 
+		db.config.Alerts_table,
+	))
 	if err != nil {
-		log.Printf("[error] %v", err)
 		return err
 	}
 	defer stmt.Close()
@@ -177,7 +186,10 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 
 func (db *Client) AddAlert(alert cache.Alert) error {
 
-	stmt, err := db.client.Prepare(fmt.Sprintf("insert into %s values (?,?,?,?,?,?,?,?,?)", db.config.Alerts_table))
+	stmt, err := db.client.Prepare(fmt.Sprintf(
+		"insert into %s values (?,?,?,?,?,?,?,?,?)", 
+		db.config.Alerts_table,
+	))
 	if err != nil {
 		return err
 	}
@@ -213,7 +225,10 @@ func (db *Client) AddAlert(alert cache.Alert) error {
 
 func (db *Client) UpdAlert(alert cache.Alert) error {
 
-	stmt, err := db.client.Prepare(fmt.Sprintf("update %s set status=?,ends_at=?,duplicate=?,annotations=?,generator_url=? where alert_id = ?", db.config.Alerts_table))
+	stmt, err := db.client.Prepare(fmt.Sprintf(
+		"update %s set status=?,ends_at=?,duplicate=?,annotations=?,generator_url=? where alert_id = ?", 
+		db.config.Alerts_table,
+	))
 	if err != nil {
 		return err
 	}
@@ -239,21 +254,27 @@ func (db *Client) UpdAlert(alert cache.Alert) error {
 	return nil
 }
 
-func (db *Client) DeleteOldAlerts() error {
+func (db *Client) DeleteOldAlerts() (int64, error) {
 
-	stmt, err := db.client.Prepare(fmt.Sprintf("delete from %s where ends_at < UNIX_TIMESTAMP() - 86400 * ?", db.config.Alerts_table))
+	stmt, err := db.client.Prepare(fmt.Sprintf(
+		"delete from %s where ends_at < UNIX_TIMESTAMP() - 86400 * ?", 
+		db.config.Alerts_table,
+	))
 	if err != nil {
-		log.Printf("[error] %v", err)
-		return err
+		return 0, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(db.config.History_days)
+	res, err := stmt.Exec(db.config.History_days)
 	if err != nil {
-		log.Printf("[error] %v", err)
-		return err
+		return 0, err
 	}
 
-	return nil
+	cnt, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	return cnt, nil
 
 }

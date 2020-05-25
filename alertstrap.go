@@ -85,10 +85,13 @@ func main() {
 	go func(cfg *config.DB){
 		for {
 			//cleaning old alerts
-			if err := client.DeleteOldAlerts(); err != nil {
+			cnt, err := client.DeleteOldAlerts()
+			if err != nil {
 				log.Printf("[error] %v", err)
 			} else {
-				log.Print("[info] old alerts removed")
+				if cnt > 0 {
+					log.Print("[info] old alerts removed (%d)", cnt)
+				}
 			}
 
 			time.Sleep(24 * time.Hour)

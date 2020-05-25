@@ -13,7 +13,7 @@ type DbClient interface {
 	SaveAlerts(alerts map[string]cache.Alert) error
 	AddAlert(alert cache.Alert) error
 	UpdAlert(alert cache.Alert) error
-	DeleteOldAlerts() error
+	DeleteOldAlerts() (int64, error)
 }
 
 func NewClient(config *config.DB) (DbClient, error) {
