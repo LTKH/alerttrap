@@ -8,12 +8,12 @@ import (
 )
 
 type DbClient interface {
+	LoadUsers() ([]cache.User, error)
 	LoadAlerts() ([]cache.Alert, error)
 	SaveAlerts(alerts map[string]cache.Alert) error
 	AddAlert(alert cache.Alert) error
 	UpdAlert(alert cache.Alert) error
 	DeleteOldAlerts() error
-	Close()
 }
 
 func NewClient(config *config.DB) (DbClient, error) {

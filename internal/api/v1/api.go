@@ -9,26 +9,25 @@ import (
     "encoding/hex"
     "regexp"
     "time"
-    "strconv"
+	"strconv"
+	"errors"
     "io/ioutil"
 	"encoding/json"
 	"github.com/ltkh/alertstrap/internal/db"
 	"github.com/ltkh/alertstrap/internal/cache"
 	"github.com/ltkh/alertstrap/internal/config"
-	//"github.com/prometheus/prometheus/pkg/labels"
 
 )
 
 var (
 	CacheAlerts *cache.Alerts = cache.NewCacheAlerts()
-	//CacheUsers *cache.Users = cache.NewCacheUsers()
-	//re_alert = regexp.MustCompile(`^(\w*)(?:{(.*)})?$`)
-	//re_label = regexp.MustCompile(`,?([\w]+)(=|!=|=~|!~)"([^"]*)"`)
+	CacheUsers *cache.Users = cache.NewCacheUsers()
 	re_labels = regexp.MustCompile(`(?:([\w]+)([=!~]{1,2})"([^"]*)")`)
 )
 
 type Api struct {
 	Alerts       config.Alerts
+	Menu         config.Menu
 }
 
 type Resp struct {
@@ -60,7 +59,6 @@ type Matcher struct {
 	Type  string
 	Name  string
 	Value string
-
 	re *regexp.Regexp
 }
 
@@ -150,13 +148,40 @@ func checkMatch(alert *cache.Alert, matchers [][]*Matcher) bool {
 	return false
 }
 
+func authentication(r *http.Request) error {
+
+	login, token, ok := r.BasicAuth()
+	if ok {
+		user, ok := CacheUsers.Get(login)
+		if !ok || user.Token != token {
+			return errors.New("Forbidden")
+		}
+	} else {
+		lg, err := r.Cookie("login")
+		if err != nil {
+			return errors.New("Unauthorized")
+		}
+		tk, err := r.Cookie("token")
+		if err != nil {
+			return errors.New("Unauthorized")
+		}
+		user, ok := CacheUsers.Get(lg.Value)
+		if !ok || user.Token != tk.Value {
+			return errors.New("Forbidden")
+		} 
+	}
+
+	return nil
+}
+
 func New(config *config.Config) (*Api, error) {
-	client, err := db.NewClient(&config.DB); 
-	defer client.Close()
+	//connection to data base
+	client, err := db.NewClient(&config.DB)
 	if err != nil {
 		return nil, err
 	}
 	log.Print("[info] connected to dbase")
+	//loading alerts
 	alerts, err := client.LoadAlerts()
 	if err != nil {
 		return nil, err
@@ -165,13 +190,41 @@ func New(config *config.Config) (*Api, error) {
 		CacheAlerts.Set(alert.GroupId, alert)
 	}
 	log.Printf("[info] loaded alerts from dbase (%d)", len(alerts))
+	//loading users
+	users, err := client.LoadUsers()
+	if err != nil {
+		return nil, err
+	}
+	for _, user := range users {
+		CacheUsers.Set(user.Login, user)
+	}
+	log.Printf("[info] loaded users from dbase (%d)", len(users))
 	
-	return &Api{ Alerts: config.Alerts }, nil
+	return &Api{ Alerts: config.Alerts, Menu: config.Menu }, nil
 }
 
 func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(encodeResp(&Resp{Status:"success"}))
+
+	/*
+	jsn, err := json.Marshal(api.Menu)
+	if err != nil {
+		log.Printf("[error] %v - %s", err, r.URL.Path)
+		w.WriteHeader(400)
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
+		return
+	}
+	*/
+
+	//log.Printf("[error] %q", api.Menu)
+	
+	//var nodes Nodes;
+	//for _, m := range api.Menu {
+	//	for _, v := range m.Section {
+	//		log.Printf("%v - %v", m.Name, v.Name)
+	//	}
+	//}
+	w.Write(encodeResp(&Resp{Status:"success", Data:api.Menu}))
 }
 
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
@@ -180,6 +233,16 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 
 		var alerts Alerts
+
+		if err := authentication(r); err != nil {
+			if err.Error() == "Forbidden" {
+				w.WriteHeader(403)
+			} else {
+				w.WriteHeader(401)
+			}
+			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:alerts}))
+			return
+		}
 
 		//limit setting
 		limit := api.Alerts.Limit

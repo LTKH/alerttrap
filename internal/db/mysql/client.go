@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"log"
+	"fmt"
 	"time"
 	"strconv"
 	"encoding/json"
@@ -28,10 +29,32 @@ func (db *Client) Close() {
 	db.client.Close()
 }
 
+func (db *Client) LoadUsers() ([]cache.User, error) {
+	result := []cache.User{}
+
+	rows, err := db.client.Query(fmt.Sprintf("select login,password,token from %s", db.config.Users_table))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var usr cache.User
+		usr.EndsAt = time.Now().UTC().Unix()
+        err := rows.Scan(&usr.Login, &usr.Password, &usr.Token)
+        if err != nil {
+            return nil, err
+		}
+		result = append(result, usr) 
+    }
+
+  	return result, nil
+}
+
 func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 	result := []cache.Alert{}
 
-	rows, err := db.client.Query("select * from mon_alerts a where a.ends_at = (select max(ends_at) from mon_alerts where group_id = a.group_id)")
+	rows, err := db.client.Query(fmt.Sprintf("select * from %s a where a.ends_at = (select max(ends_at) from %s where group_id = a.group_id)", db.config.Alerts_table, db.config.Alerts_table))
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +124,7 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 
 func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 
-	stmt, err := db.client.Prepare("replace into mon_alerts values (?,?,?,?,?,?,?,?,?)")
+	stmt, err := db.client.Prepare(fmt.Sprintf("replace into %s values (?,?,?,?,?,?,?,?,?)", db.config.Alerts_table))
 	if err != nil {
 		log.Printf("[error] %v", err)
 		return err
@@ -154,7 +177,7 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 
 func (db *Client) AddAlert(alert cache.Alert) error {
 
-	stmt, err := db.client.Prepare("insert into mon_alerts values (?,?,?,?,?,?,?,?,?)")
+	stmt, err := db.client.Prepare(fmt.Sprintf("insert into %s values (?,?,?,?,?,?,?,?,?)", db.config.Alerts_table))
 	if err != nil {
 		return err
 	}
@@ -190,7 +213,7 @@ func (db *Client) AddAlert(alert cache.Alert) error {
 
 func (db *Client) UpdAlert(alert cache.Alert) error {
 
-	stmt, err := db.client.Prepare("update mon_alerts set status=?,ends_at=?,duplicate=?,annotations=?,generator_url=? where alert_id = ?")
+	stmt, err := db.client.Prepare(fmt.Sprintf("update %s set status=?,ends_at=?,duplicate=?,annotations=?,generator_url=? where alert_id = ?", db.config.Alerts_table))
 	if err != nil {
 		return err
 	}
@@ -218,7 +241,7 @@ func (db *Client) UpdAlert(alert cache.Alert) error {
 
 func (db *Client) DeleteOldAlerts() error {
 
-	stmt, err := db.client.Prepare("delete from mon_alerts where ends_at < UNIX_TIMESTAMP() - 86400 * ?")
+	stmt, err := db.client.Prepare(fmt.Sprintf("delete from %s where ends_at < UNIX_TIMESTAMP() - 86400 * ?", db.config.Alerts_table))
 	if err != nil {
 		log.Printf("[error] %v", err)
 		return err

@@ -12,15 +12,12 @@ type Users struct {
 }
 
 type User struct {
-    AlertId         string                  `json:"alertId"`
-    GroupId         string                  `json:"groupId"`
-    Status          string                  `json:"status"`
-    StartsAt        int64                   `json:"startsAt"`
-	EndsAt          int64                   `json:"endsAt"`
-    Duplicate       int                     `json:"duplicate"`
-    Labels          map[string]interface{}  `json:"labels"`
-    Annotations     map[string]interface{}  `json:"annotations"`
-    GeneratorURL    string                  `json:"generatorURL"`
+    Login           string                  `json:"login"`
+    Email           string                  `json:"email"`
+    Name            string                  `json:"name"`
+    Password        string                  `json:"-"`
+    Token           string                  `json:"token"`
+    EndsAt          int64                   `json:"-"`
 }
 
 func NewCacheUsers() *Users {
@@ -32,21 +29,21 @@ func NewCacheUsers() *Users {
     return &cache
 }
 
-func (c *Users) Set(key string, value User) {
+func (u *Users) Set(key string, value User) {
 
-    c.Lock()
-    defer c.Unlock()
+    u.Lock()
+    defer u.Unlock()
 
-    c.items[key] = value
+    u.items[key] = value
 
 }
 
-func (c *Users) Get(key string) (User, bool) {
+func (u *Users) Get(key string) (User, bool) {
 
-    c.RLock()
-    defer c.RUnlock()
+    u.RLock()
+    defer u.RUnlock()
 
-    item, found := c.items[key]
+    item, found := u.items[key]
 
     if !found {
         return User{}, false
@@ -55,54 +52,40 @@ func (c *Users) Get(key string) (User, bool) {
     return item, true
 }
 
-func (c *Users) Delete(key string) {
+func (u *Users) Delete(key string) {
 
-    c.Lock()
-    defer c.Unlock()
+    u.Lock()
+    defer u.Unlock()
 
-    if _, found := c.items[key]; !found {
+    if _, found := u.items[key]; !found {
         log.Printf("[error] key not found in cache (%s)", key)
         return
     }
 
-    delete(c.items, key)
+    delete(u.items, key)
 
-}
-
-// Copies all unexpired items in the cache into a new map and returns it.
-func (c *Users) Items() map[string]User {
-
-	c.RLock()
-    defer c.RUnlock()
-    
-	items := make(map[string]User, len(c.items))
-	for k, v := range c.items {
-		items[k] = v
-    }
-    
-	return items
 }
 
 //cleaning cache items
-func (c *Users) ClearItems(items map[string]User) {
+func (u *Users) ClearItems(items map[string]User) {
 
-    c.Lock()
-    defer c.Unlock()
+    u.Lock()
+    defer u.Unlock()
 
     for k, _ := range items {
-        delete(c.items, k)
+        delete(u.items, k)
     }
 }
 
-func (c *Users) ExpiredItems() map[string]User {
+func (u *Users) ExpiredItems() map[string]User {
 
-    c.RLock()
-    defer c.RUnlock()
+    u.RLock()
+    defer u.RUnlock()
 
     items := make(map[string]User)
 
-    for k, v := range c.items {
-        if time.Now().UTC().Unix() > v.EndsAt + 1800 {
+    for k, v := range u.items {
+        if time.Now().UTC().Unix() > v.EndsAt + 3600 {
             items[k] = v
         }
     }

@@ -10,17 +10,23 @@ type Config struct {
 	DB               DB
 	Alerts           Alerts
 	Server           Server
+	Menu             Menu
 	Monit struct {
 		Listen       string
 	}
-	Menu []struct {
-		Name         string
-		Type         string
-		Section []struct {
-			Name     string
-			Url      string
-		}
-	}
+}
+
+type Menu []struct {
+	Text         string      `json:"text"`
+	Type         string      `json:"-"`
+	Href         string      `json:"href"`
+	Nodes        []Node      `json:"nodes,omitempty"`
+}
+
+type Node struct {         
+	Text         string      `json:"text"`
+	Href         string      `json:"href"`
+	Nodes        []Node      `json:"nodes,omitempty"`
 }
 
 type Server struct {
@@ -33,6 +39,8 @@ type DB struct {
 	Client       string
 	Conn_string  string
 	History_days int
+	Alerts_table string
+	Users_table  string
 }
 
 type Alerts struct {

@@ -1,7 +1,9 @@
 [db]
 client       = "mysql"
-conn_string  = "root@(127.0.0.1)/alerts?parseTime=true"
+conn_string  = "root:password@(127.0.0.1)/alertstrap?parseTime=true"
 history_days = 7
+alerts_table = "mon_alerts"
+users_table  = "mon_users"
 
 [alerts]
 limit        = 5000
@@ -17,19 +19,23 @@ cert_key     = ""
 listen       = ":5000"
 
 [[menu]]
-name = "Etcd"
+text = "Etcd"
 type = "etcd"
 
-  [[menu.section]]
-  url = "/etcd/prom"
+  [[menu.nodes]]
+  text = "prom"
+  href = "/etcd/prom"
 
-  [[menu.section]]
-  url = "/etcd/test"
+  [[menu.nodes]]
+  text = "test"
+  href = "/etcd/test"
 
 [[menu]]
-name = "Kubernetes"
+text = "Kubernetes"
 type = "prometheus"
  
-  [[menu.section]]
-   url = "/v1/get/alerts?job=prometheus"
+  [[menu.nodes]]
+  text = "test 2"
+  href = "/api/v1/alerts?match[]={job=\"prometheus\"}"
+
   

@@ -53,7 +53,10 @@ func main() {
 	}()
 
 	//creating api
-	apiV1, _ := v1.New(&cfg)
+	apiV1, err := v1.New(&cfg)
+	if err != nil {
+		log.Fatalf("[error] %v", err)
+	}
 
 	//enabled listen port
 	http.HandleFunc("/api/v1/login", apiV1.ApiLogin)
@@ -100,7 +103,7 @@ func main() {
             log.Printf("[info] mark alerts as resolved (%d)", len(keys))
 		}
 
-		//cleaning cache items
+		//cleaning cache alerts
 		if items := v1.CacheAlerts.ExpiredItems(); len(items) != 0 {
 			if err := client.SaveAlerts(items); err != nil {
 				log.Printf("[error] %v", err)
