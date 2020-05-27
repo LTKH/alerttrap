@@ -37,7 +37,7 @@ type Resp struct {
 }
 
 type Alerts struct {
-	Stamp        int64                   `json:"stamp"`
+	Position     int64                   `json:"position"`
   	AlertsArray  []Alert                 `json:"alerts"`
 }
 
@@ -277,12 +277,12 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 			matcherSets = append(matcherSets, matchers)
 		}
 
-        //stamp settings
-        stamp := int64(0)
-		if r.URL.Query()["stamp"] != nil {
-			i, err := strconv.Atoi(r.URL.Query()["stamp"][0])
+        //position settings
+        position := int64(0)
+		if r.URL.Query()["position"] != nil {
+			i, err := strconv.Atoi(r.URL.Query()["position"][0])
 			if err == nil {
-				stamp = int64(i) 
+				position = int64(i) 
 			}
 		}
 
@@ -301,7 +301,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 		for _, a := range CacheAlerts.Items() {
 
-            if stamp != 0 && a.ActiveAt < stamp {
+            if position != 0 && a.ActiveAt < position {
                 continue
 			}
 			if re_status != nil && !re_status.MatchString(a.Status) {
@@ -325,8 +325,8 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 			alerts.AlertsArray = append(alerts.AlertsArray, alert)
 
-			if a.ActiveAt > alerts.Stamp {
-				alerts.Stamp  = a.ActiveAt
+			if a.ActiveAt > alerts.Position {
+				alerts.Position  = a.ActiveAt
 			}
 			
 			if len(alerts.AlertsArray) >= limit {
