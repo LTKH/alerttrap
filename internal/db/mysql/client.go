@@ -25,10 +25,6 @@ func NewClient(conf *config.DB) (*Client, error) {
 	return &Client{ client: conn, config: conf }, nil
 }
 
-func (db *Client) Close() {
-	db.client.Close()
-}
-
 func (db *Client) LoadUser(login string) (cache.User, error) {
     var usr cache.User
 
@@ -49,7 +45,7 @@ func (db *Client) LoadUser(login string) (cache.User, error) {
   	return usr, nil
 }
 
-func (db *Client) error {
+func (db *Client) SaveUser(user cache.User) error {
 	stmt, err := db.client.Prepare(fmt.Sprintf(
 		"replace into %s (login,password,token) values (?,?,?)", 
 		db.config.Users_table,
