@@ -490,17 +490,9 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ld, err := ldap.New(&api.Conf.Ldap)
+	usr, err := ldap.Search(&api.Conf.Ldap, username, password)
 	if err != nil {
 		log.Printf("[error] %v", err)
-		w.WriteHeader(500)
-		w.Write(encodeResp(&Resp{Status:"error", Error:"Ldap error"}))
-		return
-	}
-
-	usr, err := ld.Search(username, password)
-	if err != nil {
-		log.Printf("[error] %v - %s", err, r.URL.Path)
 		w.WriteHeader(403)
 		w.Write(encodeResp(&Resp{Status:"error", Error:"Forbidden"}))
 		return

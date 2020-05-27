@@ -6,38 +6,31 @@ import (
     "gopkg.in/ldap.v3"
 )
 
-type Ldap struct {
-	Conn   *ldap.Conn
-	Conf   *config.Ldap
-}
+func Search(conf *config.Ldap, username string, password string) (string, error) {
 
-func New(conf *config.Ldap) (*Ldap, error) {
 	conn, err := ldap.DialURL(conf.Dial_url)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return &Ldap{ Conn: conn, Conf: conf }, nil
-}
+	defer conn.Close()
 
-func (ld *Ldap) Search(username string, password string) (string, error) {
-
-	if ld.Conf.Bind_user == "" && ld.Conf.Bind_pass == "" {
-		ld.Conf.Bind_user = username
-		ld.Conf.Bind_pass = password
+	if conf.Bind_user == "" && conf.Bind_pass == "" {
+		conf.Bind_user = username
+		conf.Bind_pass = password
 	}
 
-	err := ld.Conn.Bind(ld.Conf.Bind_user, ld.Conf.Bind_pass)
+	err = conn.Bind(fmt.Sprintf(conf.Bind_dn, conf.Bind_user), conf.Bind_pass)
 	if err != nil {
 		return "", err
 	}
 	searchRequest := ldap.NewSearchRequest(
-		ld.Conf.Group_dn,
+		conf.Group_dn,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf(ld.Conf.Filter_dn, username),
+		fmt.Sprintf(conf.Filter_dn, username),
 		[]string{"dn"},
 		nil,
 	)
-	sr, err := ld.Conn.Search(searchRequest)
+	sr, err := conn.Search(searchRequest)
 	if err != nil {
 		return "", err
 	}
