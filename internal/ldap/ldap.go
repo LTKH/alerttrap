@@ -16,8 +16,6 @@ func New(conf *config.Ldap) (*Ldap, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
-
 	return &Ldap{ Conn: conn, Conf: conf }, nil
 }
 

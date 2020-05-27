@@ -1,6 +1,6 @@
 create database alertstrap;
 
-create table if not exists alertstrap.mon_alerts (
+create table if not exists mon_alerts (
   alert_id      varchar(50) not null,
   group_id      varchar(50) not null,
   status        varchar(10) not null,
@@ -16,7 +16,7 @@ create table if not exists alertstrap.mon_alerts (
   key IDX_mon_alerts_group_id_ends_at (group_id,ends_at)
 ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci;
 
-create table if not exists alertstrap.mon_users (
+create table if not exists mon_users (
   login         varchar(100) not null,
   email         varchar(100),
   name          varchar(150),
