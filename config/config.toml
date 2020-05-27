@@ -1,22 +1,30 @@
 [db]
-client       = "mysql"
-conn_string  = "root:password@(127.0.0.1)/alertstrap?parseTime=true"
-history_days = 7
-alerts_table = "mon_alerts"
-users_table  = "mon_users"
+client        = "mysql"
+conn_string   = "root:password@(127.0.0.1)/alertstrap?parseTime=true"
+history_days  = 7
+alerts_table  = "mon_alerts"
+users_table   = "mon_users"
+
+[ldap]
+dial_url      = "ldap://ldap.example.com:389"
+bind_user     = ""
+bind_pass     = ""
+bind_dn       = "%s"
+group_dn      = "dc=example,dc=com"
+filter_dn     = "(&(objectClass=organizationalPerson)(uid=%s))"
 
 [alerts]
-limit        = 5000
-resolve      = 300
-delete       = 600
+limit         = 5000
+resolve       = 300
+delete        = 600
 
 [server]
-listen       = ":8100"
-cert_file    = ""
-cert_key     = ""
+listen        = ":8100"
+cert_file     = ""
+cert_key      = ""
 
 [monit]
-listen       = ":5000"
+listen        = ":5000"
 
 [[menu]]
 text = "Etcd"

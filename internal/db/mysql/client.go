@@ -29,6 +29,45 @@ func (db *Client) Close() {
 	db.client.Close()
 }
 
+func (db *Client) LoadUser(login string) (cache.User, error) {
+    var usr cache.User
+
+    stmt, err := db.client.Prepare(fmt.Sprintf(
+		"select login,password,token from %s where login = ?", 
+		db.config.Users_table,
+	))
+	if err != nil {
+		return usr, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(login).Scan(&usr.Login, &usr.Password, &usr.Token)
+	if err != nil {
+		return usr, err
+	}
+
+  	return usr, nil
+}
+
+func (db *Client) error {
+	stmt, err := db.client.Prepare(fmt.Sprintf(
+		"replace into %s (login,password,token) values (?,?,?)", 
+		db.config.Users_table,
+	))
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(user.Login, user.Password, user.Token)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 func (db *Client) LoadUsers() ([]cache.User, error) {
 	result := []cache.User{}
 
@@ -83,8 +122,6 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 	for rows.Next() {
 		var a cache.Alert
 
-		a.StampsAt = time.Now().UTC().Unix()
-
 		if err := rows.Scan(scanArgs...); err != nil {
 			continue
 		}
@@ -97,6 +134,11 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 					a.GroupId = string(value)
 				case "status":
 					a.Status = string(value)
+				case "active_at":
+					cl, err := strconv.Atoi(string(value))
+					if err == nil {
+						a.ActiveAt = int64(cl)
+					}
 				case "starts_at":
 					cl, err := strconv.Atoi(string(value))
 					if err == nil {
@@ -132,7 +174,7 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 
 	stmt, err := db.client.Prepare(fmt.Sprintf(
-		"replace into %s values (?,?,?,?,?,?,?,?,?)", 
+		"replace into %s values (?,?,?,?,?,?,?,?,?,?)", 
 		db.config.Alerts_table,
 	))
 	if err != nil {
@@ -160,6 +202,7 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 			i.AlertId,
 			i.GroupId,
 			i.Status,
+			i.ActiveAt,
 			i.StartsAt,
 			i.EndsAt,
 			i.Duplicate,

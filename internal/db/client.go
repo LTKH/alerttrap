@@ -8,6 +8,8 @@ import (
 )
 
 type DbClient interface {
+	LoadUser(login string) (cache.User, error)
+	SaveUser(user cache.User) error
 	LoadUsers() ([]cache.User, error)
 	LoadAlerts() ([]cache.Alert, error)
 	SaveAlerts(alerts map[string]cache.Alert) error

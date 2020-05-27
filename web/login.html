@@ -25,17 +25,17 @@
     <div class="card card-login mx-auto mt-5">
       <div class="card-header">Login</div>
       <div class="card-body">
-        <form>
+        <form action="/api/v1/login" method="POST" role="form">
           <div class="form-group">
             <div class="form-label-group">
-              <input type="text" id="inputLogin" class="form-control" placeholder="Login" required="required" autofocus="autofocus">
-              <label for="inputLogin">Login</label>
+              <input type="text" id="login" name="login" class="form-control" placeholder="Login" required="required" autofocus="autofocus">
+              <label for="login">Login</label>
             </div>
           </div>
           <div class="form-group">
             <div class="form-label-group">
-              <input type="password" id="inputPassword" class="form-control" placeholder="Password" required="required">
-              <label for="inputPassword">Password</label>
+              <input type="password" id="password" name="password" class="form-control" placeholder="Password" required="required">
+              <label for="password">Password</label>
             </div>
           </div>
           <div class="form-group">
@@ -46,7 +46,8 @@
               </label>
             </div>
           </div>
-          <a class="btn btn-primary btn-block" href="/v1/login">Login</a>
+          <!--a class="btn btn-primary btn-block">Login</a-->
+          <button type="submit" class="btn btn-primary btn-block">Login</button>
         </form>
       </div>
     </div>

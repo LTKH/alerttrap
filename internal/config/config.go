@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	DB               DB
+	Ldap             Ldap
 	Alerts           Alerts
 	Server           Server
 	Menu             Menu
@@ -16,31 +17,40 @@ type Config struct {
 	}
 }
 
+type DB struct {
+	Client           string
+	Conn_string      string
+	History_days     int
+	Alerts_table     string
+	Users_table      string
+}
+
+type Ldap struct {
+	Dial_url         string
+	Bind_user        string
+	Bind_pass        string
+	Bind_dn          string
+	Group_dn         string
+	Filter_dn        string
+}
+
 type Menu []struct {
-	Text         string      `json:"text"`
-	Type         string      `json:"-"`
-	Href         string      `json:"href"`
-	Nodes        []Node      `json:"nodes,omitempty"`
+	Text             string      `json:"text"`
+	Type             string      `json:"-"`
+	Href             string      `json:"href"`
+	Nodes            []Node      `json:"nodes,omitempty"`
 }
 
 type Node struct {         
-	Text         string      `json:"text"`
-	Href         string      `json:"href"`
-	Nodes        []Node      `json:"nodes,omitempty"`
+	Text             string      `json:"text"`
+	Href             string      `json:"href"`
+	Nodes            []Node      `json:"nodes,omitempty"`
 }
 
 type Server struct {
-	Listen       string
-	Cert_file    string
-	Cert_key     string
-}
-
-type DB struct {
-	Client       string
-	Conn_string  string
-	History_days int
-	Alerts_table string
-	Users_table  string
+	Listen           string
+	Cert_file        string
+	Cert_key         string
 }
 
 type Alerts struct {

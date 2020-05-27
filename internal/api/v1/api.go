@@ -2,9 +2,9 @@ package v1
 
 import (
     "io"
-    "net/http"
+	"net/http"
     "log"
-    "fmt"
+	"fmt"
     "crypto/sha1"
     "encoding/hex"
     "regexp"
@@ -16,7 +16,7 @@ import (
 	"github.com/ltkh/alertstrap/internal/db"
 	"github.com/ltkh/alertstrap/internal/cache"
 	"github.com/ltkh/alertstrap/internal/config"
-
+	"github.com/ltkh/alertstrap/internal/ldap"
 )
 
 var (
@@ -26,8 +26,7 @@ var (
 )
 
 type Api struct {
-	Alerts       config.Alerts
-	Menu         config.Menu
+	Conf         *config.Config
 }
 
 type Resp struct {
@@ -102,7 +101,7 @@ func encodeResp(resp *Resp) []byte {
 	return jsn
 }
 
-func getHash(text string) (string) {
+func getHash(text string) string {
 	h := sha1.New()
 	io.WriteString(h, text)
 	return hex.EncodeToString(h.Sum(nil))
@@ -148,35 +147,50 @@ func checkMatch(alert *cache.Alert, matchers [][]*Matcher) bool {
 	return false
 }
 
-func authentication(r *http.Request) error {
+func authentication(cfg config.DB, r *http.Request) (int, error) {
+	var login, token string
 
 	login, token, ok := r.BasicAuth()
-	if ok {
-		user, ok := CacheUsers.Get(login)
-		if !ok || user.Token != token {
-			return errors.New("Forbidden")
-		}
-	} else {
+    if !ok {
 		lg, err := r.Cookie("login")
 		if err != nil {
-			return errors.New("Unauthorized")
+			return 401, errors.New("Unauthorized")
 		}
+		login = lg.Value
 		tk, err := r.Cookie("token")
 		if err != nil {
-			return errors.New("Unauthorized")
+			return 401, errors.New("Unauthorized")
 		}
-		user, ok := CacheUsers.Get(lg.Value)
-		if !ok || user.Token != tk.Value {
-			return errors.New("Forbidden")
-		} 
+		token = tk.Value
 	}
 
-	return nil
+	if login == "" || token == "" {
+		return 401, errors.New("Unauthorized")
+	}
+
+	user, ok := CacheUsers.Get(login)
+	if !ok { 
+		cln, err := db.NewClient(&cfg)
+		if err != nil {
+			return 500, err
+		}
+		usr, err := cln.LoadUser(login)
+		if err != nil {
+			return 403, err
+		}
+		CacheUsers.Set(login, usr)
+	} else {
+		if user.Token != token {
+			return 403, errors.New("Forbidden")
+		}
+	}
+
+	return 204, nil
 }
 
-func New(config *config.Config) (*Api, error) {
+func New(conf *config.Config) (*Api, error) {
 	//connection to data base
-	client, err := db.NewClient(&config.DB)
+	client, err := db.NewClient(&conf.DB)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +214,7 @@ func New(config *config.Config) (*Api, error) {
 	}
 	log.Printf("[info] loaded users from dbase (%d)", len(users))
 	
-	return &Api{ Alerts: config.Alerts, Menu: config.Menu }, nil
+	return &Api{ Conf: conf }, nil
 }
 
 func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
@@ -224,7 +238,7 @@ func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
 	//		log.Printf("%v - %v", m.Name, v.Name)
 	//	}
 	//}
-	w.Write(encodeResp(&Resp{Status:"success", Data:api.Menu}))
+	w.Write(encodeResp(&Resp{Status:"success", Data:api.Conf.Menu}))
 }
 
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
@@ -234,18 +248,15 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 		var alerts Alerts
 
-		if err := authentication(r); err != nil {
-			if err.Error() == "Forbidden" {
-				w.WriteHeader(403)
-			} else {
-				w.WriteHeader(401)
-			}
+		code, err := authentication(api.Conf.DB, r)
+		if err != nil {
+			w.WriteHeader(code)
 			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:alerts}))
 			return
 		}
 
 		//limit setting
-		limit := api.Alerts.Limit
+		limit := api.Conf.Alerts.Limit
 		if r.URL.Query()["limit"] !=nil {
 			l, err := strconv.Atoi(r.URL.Query()["limit"][0])
 			if err == nil && l < limit {
@@ -290,7 +301,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 		for _, a := range CacheAlerts.Items() {
 
-            if stamp != 0 && a.StampsAt < stamp {
+            if stamp != 0 && a.ActiveAt < stamp {
                 continue
 			}
 			if re_status != nil && !re_status.MatchString(a.Status) {
@@ -314,13 +325,13 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 			alerts.AlertsArray = append(alerts.AlertsArray, alert)
 
-			if a.StampsAt > alerts.Stamp {
-				alerts.Stamp  = a.StampsAt
+			if a.ActiveAt > alerts.Stamp {
+				alerts.Stamp  = a.ActiveAt
 			}
 			
 			if len(alerts.AlertsArray) >= limit {
 				var warnings []string
-				if limit == api.Alerts.Limit {
+				if limit == api.Conf.Alerts.Limit {
 					warnings = append(warnings, fmt.Sprintf("display limit exceeded - %d", limit))
 				}
 				w.Write(encodeResp(&Resp{Status:"success", Warnings:warnings, Data:alerts}))
@@ -371,7 +382,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 					starts_at  = time.Now().UTC().Unix()
 				} 
 				if ends_at < 0 {
-					ends_at    = time.Now().UTC().Unix() + api.Alerts.Resolve
+					ends_at    = time.Now().UTC().Unix() + api.Conf.Alerts.Resolve
 				} 
 			
 				group_id := getHash(string(labels))
@@ -381,14 +392,14 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 					if !(alert.Status == "resolved" && value.Status == "resolved") {
 						alert.Status         = value.Status
+						alert.ActiveAt       = time.Now().UTC().Unix()
 						alert.StartsAt       = starts_at
-						alert.StampsAt       = time.Now().UTC().Unix()
 						alert.Annotations    = value.Annotations
 						alert.GeneratorURL   = value.GeneratorURL
 						alert.Duplicate      = alert.Duplicate + 1
 					}
 
-					alert.EndsAt         = ends_at
+					alert.EndsAt = ends_at
 			
 					CacheAlerts.Set(group_id, alert)
 			
@@ -401,9 +412,9 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 					alert.AlertId        = alert_id
 					alert.GroupId        = group_id
 					alert.Status         = value.Status
+					alert.ActiveAt       = time.Now().UTC().Unix()
 					alert.StartsAt       = starts_at
 					alert.EndsAt         = ends_at
-					alert.StampsAt       = time.Now().UTC().Unix()
 					alert.Labels         = value.Labels
 					alert.Annotations    = value.Annotations
 					alert.GeneratorURL   = value.GeneratorURL
@@ -425,16 +436,91 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 	w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed"}))
 }
 
+func (api *Api) ApiUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == "GET" {
+
+		var users []cache.User
+
+		code, err := authentication(api.Conf.DB, r)
+		if err != nil {
+			w.WriteHeader(code)
+			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:users}))
+			return
+		}
+
+		for _, a := range CacheUsers.Items() {
+
+			var user cache.User
+
+			user.Login = a.Login
+			user.Email = a.Email
+			user.Name  = a.Name
+			user.Token = "*****"
+			
+			users = append(users, user)
+
+		}
+		
+		w.Write(encodeResp(&Resp{Status:"success", Data:users}))
+		return
+	}
+
+	w.WriteHeader(405)
+	w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed"}))
+}
+
 func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	_, err := ioutil.ReadAll(r.Body)
+	err := r.ParseForm()
 	if err != nil {
-		log.Printf("[error] %v - %s", err, r.URL.Path)
 		w.WriteHeader(400)
-		w.Write([]byte(fmt.Sprintf("{\"status\":\"error\",\"error\":\"%s\",\"data\":{}}", err.Error())))
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
 		return
 	}
+	r.ParseForm()
+	username := r.Form.Get("login")
+	password := r.Form.Get("password")
+
+	if username == "" || password == "" {
+		w.WriteHeader(403)
+		w.Write(encodeResp(&Resp{Status:"error", Error:"Forbidden"}))
+		return
+	}
+
+	ld, err := ldap.New(&api.Conf.Ldap)
+	if err != nil {
+		log.Printf("[error] %v", err)
+		w.WriteHeader(500)
+		w.Write(encodeResp(&Resp{Status:"error", Error:"Ldap error"}))
+		return
+	}
+
+	usr, err := ld.Search(username, password)
+	if err != nil {
+		log.Printf("[error] %v - %s", err, r.URL.Path)
+		w.WriteHeader(403)
+		w.Write(encodeResp(&Resp{Status:"error", Error:"Forbidden"}))
+		return
+	}
+	log.Printf("[debug] %v - %s", usr, r.URL.Path)
+
+	var user cache.User
+	user.Login = username
+	user.Password = getHash(password)
+	user.Token = getHash(string(time.Now().UTC().Unix()))
+	
+	CacheUsers.Set(username, user)
+
+	cln, err := db.NewClient(&api.Conf.DB)
+	if err == nil {
+		cln.SaveUser(user)
+	}
+   
+	http.SetCookie(w, &http.Cookie{ Name:"login", Value:user.Login })
+	http.SetCookie(w, &http.Cookie{ Name:"token", Value:user.Token })
 
 	w.WriteHeader(204)
 	return

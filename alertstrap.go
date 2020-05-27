@@ -61,6 +61,7 @@ func main() {
 	//enabled listen port
 	http.HandleFunc("/api/v1/login", apiV1.ApiLogin)
 	http.HandleFunc("/api/v1/menu", apiV1.ApiMenu)
+	http.HandleFunc("/api/v1/users", apiV1.ApiUsers)
 	http.HandleFunc("/api/v1/alerts", apiV1.ApiAlerts)
 
 	go func(cfg *config.Server){
@@ -90,7 +91,7 @@ func main() {
 				log.Printf("[error] %v", err)
 			} else {
 				if cnt > 0 {
-					log.Print("[info] old alerts removed (%d)", cnt)
+					log.Print("[info] old alerts moved to database (%d)", cnt)
 				}
 			}
 
@@ -103,7 +104,7 @@ func main() {
 
 		//mark alerts as resolved
 		if keys := v1.CacheAlerts.ResolvedItems(); len(keys) != 0 {
-            log.Printf("[info] mark alerts as resolved (%d)", len(keys))
+            log.Printf("[info] alerts are marked as allowed (%d)", len(keys))
 		}
 
 		//cleaning cache alerts

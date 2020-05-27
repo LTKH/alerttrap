@@ -3,7 +3,6 @@ package cache
 import (
 	"sync"
     "time"
-    "log"
 )
 
 type Users struct {
@@ -52,21 +51,19 @@ func (u *Users) Get(key string) (User, bool) {
     return item, true
 }
 
-func (u *Users) Delete(key string) {
+func (u *Users) Items() map[string]User {
 
-    u.Lock()
-    defer u.Unlock()
-
-    if _, found := u.items[key]; !found {
-        log.Printf("[error] key not found in cache (%s)", key)
-        return
+	u.RLock()
+    defer u.RUnlock()
+    
+	items := make(map[string]User, len(u.items))
+	for k, v := range u.items {
+		items[k] = v
     }
-
-    delete(u.items, key)
-
+    
+	return items
 }
 
-//cleaning cache items
 func (u *Users) ClearItems(items map[string]User) {
 
     u.Lock()
