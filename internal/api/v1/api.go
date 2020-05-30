@@ -456,6 +456,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
 		return
 	}
+
 	r.ParseForm()
 	username := r.Form.Get("login")
 	password := r.Form.Get("password")
@@ -466,13 +467,14 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = ldap.Search(&api.Conf.Ldap, username, password)
+	sr, err := ldap.Search(&api.Conf.Ldap, username, password)
 	if err != nil {
 		log.Printf("[error] %v", err)
 		w.WriteHeader(403)
 		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
 		return
 	}
+	log.Printf("[debug] %v", sr)
 
 	var user cache.User
 	user.Login = username
@@ -487,9 +489,6 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Printf("[error] %v", err)
 	}
-   
-	//http.SetCookie(w, &http.Cookie{ Name:"login", Value:user.Login })
-	//http.SetCookie(w, &http.Cookie{ Name:"token", Value:user.Token })
 
 	w.Write(encodeResp(&Resp{Status:"success", Data:user}))
 	return

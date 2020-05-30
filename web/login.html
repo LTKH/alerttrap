@@ -85,6 +85,7 @@
     <!--script src="vendors/@coreui/icons/js/svgxuse.min.js"></script-->
     <!--<![endif]-->
     <script src="vendors/jquery/js/jquery.min.js"></script>
+    <script src="vendors/jquery/js/jquery.cookie.js"></script>
     <script src="vendors/bootstrap/js/bootstrap.min.js"></script>
     
     <script>
@@ -94,7 +95,7 @@
           type: "post",
           data: { 
             "login": $("#login").val(), 
-            "password": $("#login").val() 
+            "password": $("#password").val() 
           }
         }).done(function(jsn){
           $.cookie("login", jsn.data.login, { expires : 10 });
