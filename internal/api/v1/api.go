@@ -217,6 +217,17 @@ func New(conf *config.Config) (*Api, error) {
 	return &Api{ Conf: conf }, nil
 }
 
+func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
+    code, err := authentication(api.Conf.DB, r)
+	if err != nil {
+		w.WriteHeader(code)
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
+		return
+	}
+	w.WriteHeader(code)
+	w.Write(encodeResp(&Resp{Status:"success"}))
+}
+
 func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -436,41 +447,6 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 	w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed"}))
 }
 
-func (api *Api) ApiUsers(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method == "GET" {
-
-		var users []cache.User
-
-		code, err := authentication(api.Conf.DB, r)
-		if err != nil {
-			w.WriteHeader(code)
-			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:users}))
-			return
-		}
-
-		for _, a := range CacheUsers.Items() {
-
-			var user cache.User
-
-			user.Login = a.Login
-			user.Email = a.Email
-			user.Name  = a.Name
-			user.Token = "*****"
-			
-			users = append(users, user)
-
-		}
-		
-		w.Write(encodeResp(&Resp{Status:"success", Data:users}))
-		return
-	}
-
-	w.WriteHeader(405)
-	w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed"}))
-}
-
 func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -486,18 +462,17 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 
 	if username == "" || password == "" {
 		w.WriteHeader(403)
-		w.Write(encodeResp(&Resp{Status:"error", Error:"Forbidden"}))
+		w.Write(encodeResp(&Resp{Status:"error", Error:"Login or password is empty"}))
 		return
 	}
 
-	usr, err := ldap.Search(&api.Conf.Ldap, username, password)
+	_, err = ldap.Search(&api.Conf.Ldap, username, password)
 	if err != nil {
 		log.Printf("[error] %v", err)
 		w.WriteHeader(403)
-		w.Write(encodeResp(&Resp{Status:"error", Error:"Forbidden"}))
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
 		return
 	}
-	log.Printf("[debug] %v - %s", usr, r.URL.Path)
 
 	var user cache.User
 	user.Login = username
@@ -509,12 +484,14 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 	cln, err := db.NewClient(&api.Conf.DB)
 	if err == nil {
 		cln.SaveUser(user)
+	} else {
+		log.Printf("[error] %v", err)
 	}
    
-	http.SetCookie(w, &http.Cookie{ Name:"login", Value:user.Login })
-	http.SetCookie(w, &http.Cookie{ Name:"token", Value:user.Token })
+	//http.SetCookie(w, &http.Cookie{ Name:"login", Value:user.Login })
+	//http.SetCookie(w, &http.Cookie{ Name:"token", Value:user.Token })
 
-	w.WriteHeader(204)
+	w.Write(encodeResp(&Resp{Status:"success", Data:user}))
 	return
 
 }

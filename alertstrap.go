@@ -59,9 +59,9 @@ func main() {
 	}
 
 	//enabled listen port
-	http.HandleFunc("/api/v1/login", apiV1.ApiLogin)
+	http.HandleFunc("/api/v1/auth", apiV1.ApiAuth)
 	http.HandleFunc("/api/v1/menu", apiV1.ApiMenu)
-	http.HandleFunc("/api/v1/users", apiV1.ApiUsers)
+	http.HandleFunc("/api/v1/login", apiV1.ApiLogin)
 	http.HandleFunc("/api/v1/alerts", apiV1.ApiAlerts)
 
 	go func(cfg *config.Server){
