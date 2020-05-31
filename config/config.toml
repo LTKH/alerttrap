@@ -6,12 +6,15 @@ alerts_table  = "mon_alerts"
 users_table   = "mon_users"
 
 [ldap]
-dial_url      = "ldap://ldap.example.com:389"
+base          = "dc=example,dc=com"
+host          = "ldap.example.com"
+port          = 389
+use_ssl       = false
+bind_dn       = "%s"
 bind_user     = ""
 bind_pass     = ""
-bind_dn       = "%s"
-group_dn      = "dc=example,dc=com"
-filter_dn     = "(&(objectClass=organizationalPerson)(uid=%s))"
+user_filter   = "(&(objectClass=organizationalPerson)(uid=%s))"
+group_filter  = "(memberUid=%s)"
 attributes    = { name="givenName", username="sAMAccountName", email="mail" }
 
 [alerts]

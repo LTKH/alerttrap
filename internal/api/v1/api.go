@@ -467,17 +467,46 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sr, err := ldap.Search(&api.Conf.Ldap, username, password)
+	if api.Conf.Ldap.Bind_user == "" && api.Conf.Ldap.Bind_pass == "" {
+		api.Conf.Ldap.Bind_user = username
+		api.Conf.Ldap.Bind_pass = password
+	}
+
+	var attributes []string
+	for _, val := range api.Conf.Ldap.Attributes {
+		attributes = append(attributes, val)
+	}
+
+	clnt := &ldap.LDAPClient{
+		Base:         api.Conf.Ldap.Base,
+		Host:         api.Conf.Ldap.Host,
+		Port:         api.Conf.Ldap.Port,
+		UseSSL:       api.Conf.Ldap.Use_ssl,
+		BindDN:       fmt.Sprintf(api.Conf.Ldap.Bind_dn, api.Conf.Ldap.Bind_user),
+		BindPassword: api.Conf.Ldap.Bind_pass,
+		UserFilter:   api.Conf.Ldap.User_filter,
+		GroupFilter:  api.Conf.Ldap.Group_filter,
+		Attributes:   attributes,
+	}
+	defer clnt.Close()
+
+	ok, usr, err := clnt.Authenticate("username", "password")
 	if err != nil {
-		log.Printf("[error] %v", err)
+		log.Printf("[error] authenticating user %s: %+v", username, err)
 		w.WriteHeader(403)
 		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
 		return
 	}
-	log.Printf("[debug] %q", sr)
+	if !ok {
+		log.Printf("[error] authenticating user %s: %+v", username, err)
+		w.WriteHeader(403)
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
+		return
+	}
 
 	var user cache.User
 	user.Login = username
+	user.Name = usr["username"]
 	user.Password = getHash(password)
 	user.Token = getHash(string(time.Now().UTC().Unix()))
 	

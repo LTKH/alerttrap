@@ -2,66 +2,156 @@ package ldap
 
 import (
 	"fmt"
-	"github.com/ltkh/alertstrap/internal/config"
+	"errors"
+	"crypto/tls"
     "gopkg.in/ldap.v3"
 )
 
-func Search(conf *config.Ldap, username, password string) (*ldap.SearchResult, error) {
+type LDAPClient struct {
+	Attributes         []string
+	Base               string
+	BindDN             string
+	BindPassword       string
+	GroupFilter        string // e.g. "(memberUid=%s)"
+	Host               string
+	ServerName         string
+	UserFilter         string // e.g. "(uid=%s)"
+	Conn               *ldap.Conn
+	Port               int
+	InsecureSkipVerify bool
+	UseSSL             bool
+	SkipTLS            bool
+	ClientCertificates []tls.Certificate // Adding client certificates
+}
 
-	var sr *ldap.SearchResult
-	var attributes []string
+// Connect connects to the ldap backend.
+func (lc *LDAPClient) Connect() error {
+	if lc.Conn == nil {
+		var l *ldap.Conn
+		var err error
+		address := fmt.Sprintf("%s:%d", lc.Host, lc.Port)
+		if !lc.UseSSL {
+			l, err = ldap.Dial("tcp", address)
+			if err != nil {
+				return err
+			}
 
-	conn, err := ldap.DialURL(conf.Dial_url)
+			// Reconnect with TLS
+			if !lc.SkipTLS {
+				err = l.StartTLS(&tls.Config{InsecureSkipVerify: true})
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			config := &tls.Config{
+				InsecureSkipVerify: lc.InsecureSkipVerify,
+				ServerName:         lc.ServerName,
+			}
+			if lc.ClientCertificates != nil && len(lc.ClientCertificates) > 0 {
+				config.Certificates = lc.ClientCertificates
+			}
+			l, err = ldap.DialTLS("tcp", address, config)
+			if err != nil {
+				return err
+			}
+		}
+
+		lc.Conn = l
+	}
+	return nil
+}
+
+// Close closes the ldap backend connection.
+func (lc *LDAPClient) Close() {
+	if lc.Conn != nil {
+		lc.Conn.Close()
+		lc.Conn = nil
+	}
+}
+
+// Authenticate authenticates the user against the ldap backend.
+func (lc *LDAPClient) Authenticate(username, password string) (bool, map[string]string, error) {
+	err := lc.Connect()
 	if err != nil {
-		return sr, err
-	}
-	defer conn.Close()
-
-	if conf.Bind_user == "" && conf.Bind_pass == "" {
-		conf.Bind_user = username
-		conf.Bind_pass = password
+		return false, nil, err
 	}
 
-	bindRequest := ldap.NewSimpleBindRequest(fmt.Sprintf(conf.Bind_dn, conf.Bind_user), conf.Bind_pass, nil)
-    _, err = conn.SimpleBind(bindRequest)
-	if err != nil {
-		return sr, err
+	// First bind with a read only user
+	if lc.BindDN != "" && lc.BindPassword != "" {
+		err := lc.Conn.Bind(lc.BindDN, lc.BindPassword)
+		if err != nil {
+			return false, nil, err
+		}
 	}
 
-	/*
-	err = conn.Bind(fmt.Sprintf(conf.Bind_dn, conf.Bind_user), conf.Bind_pass)
-	if err != nil {
-		return sr, err
-	}
-	*/
-
-	for _, val := range conf.Attributes {
-		attributes = append(attributes, val)
-	}
-
+	attributes := append(lc.Attributes, "dn")
+	// Search for the given username
 	searchRequest := ldap.NewSearchRequest(
-		conf.Group_dn,
-		ldap.ScopeWholeSubtree, 
-		ldap.NeverDerefAliases, 
-		0, 
-		0, 
-		false,
-		fmt.Sprintf(conf.Filter_dn, username),
+		lc.Base,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf(lc.UserFilter, username),
 		attributes,
 		nil,
 	)
 
-	sr, err = conn.Search(searchRequest)
+	sr, err := lc.Conn.Search(searchRequest)
 	if err != nil {
-		return sr, err
+		return false, nil, err
 	}
 
-	if len(sr.Entries) != 1 {
-		return sr, fmt.Errorf("User not find or too many. count=%d", len(sr.Entries))
+	if len(sr.Entries) < 1 {
+		return false, nil, errors.New("User does not exist")
 	}
 
-	//userdn := sr.Entries[0].DN
+	if len(sr.Entries) > 1 {
+		return false, nil, errors.New("Too many entries returned")
+	}
 
-	return sr, nil
+	userDN := sr.Entries[0].DN
+	user := map[string]string{}
+	for _, attr := range lc.Attributes {
+		user[attr] = sr.Entries[0].GetAttributeValue(attr)
+	}
 
+	// Bind as the user to verify their password
+	err = lc.Conn.Bind(userDN, password)
+	if err != nil {
+		return false, user, err
+	}
+
+	// Rebind as the read only user for any further queries
+	if lc.BindDN != "" && lc.BindPassword != "" {
+		err = lc.Conn.Bind(lc.BindDN, lc.BindPassword)
+		if err != nil {
+			return true, user, err
+		}
+	}
+
+	return true, user, nil
+}
+
+// GetGroupsOfUser returns the group for a user.
+func (lc *LDAPClient) GetGroupsOfUser(username string) ([]string, error) {
+	err := lc.Connect()
+	if err != nil {
+		return nil, err
+	}
+
+	searchRequest := ldap.NewSearchRequest(
+		lc.Base,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf(lc.GroupFilter, username),
+		[]string{"cn"}, // can it be something else than "cn"?
+		nil,
+	)
+	sr, err := lc.Conn.Search(searchRequest)
+	if err != nil {
+		return nil, err
+	}
+	groups := []string{}
+	for _, entry := range sr.Entries {
+		groups = append(groups, entry.GetAttributeValue("cn"))
+	}
+	return groups, nil
 }

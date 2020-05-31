@@ -26,12 +26,15 @@ type DB struct {
 }
 
 type Ldap struct {
-	Dial_url         string
+	Base             string
+	Host             string
+	Port             int
+	Use_ssl          bool
+	Bind_dn          string
 	Bind_user        string
 	Bind_pass        string
-	Bind_dn          string
-	Group_dn         string
-	Filter_dn        string
+	User_filter      string
+	Group_filter     string
 	Attributes       map[string]string
 }
 

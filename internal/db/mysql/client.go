@@ -29,7 +29,7 @@ func (db *Client) LoadUser(login string) (cache.User, error) {
     var usr cache.User
 
     stmt, err := db.client.Prepare(fmt.Sprintf(
-		"select login,password,token from %s where login = ?", 
+		"select login,name,password,token from %s where login = ?", 
 		db.config.Users_table,
 	))
 	if err != nil {
@@ -37,7 +37,7 @@ func (db *Client) LoadUser(login string) (cache.User, error) {
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRow(login).Scan(&usr.Login, &usr.Password, &usr.Token)
+	err = stmt.QueryRow(login).Scan(&usr.Login, &usr.Name, &usr.Password, &usr.Token)
 	if err != nil {
 		return usr, err
 	}
@@ -47,7 +47,7 @@ func (db *Client) LoadUser(login string) (cache.User, error) {
 
 func (db *Client) SaveUser(user cache.User) error {
 	stmt, err := db.client.Prepare(fmt.Sprintf(
-		"replace into %s (login,password,token) values (?,?,?)", 
+		"replace into %s (login,name,password,token) values (?,?,?,?)", 
 		db.config.Users_table,
 	))
 	if err != nil {
@@ -55,7 +55,7 @@ func (db *Client) SaveUser(user cache.User) error {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(user.Login, user.Password, user.Token)
+	_, err = stmt.Exec(user.Login, user.Name, user.Password, user.Token)
 	if err != nil {
 		return err
 	}
