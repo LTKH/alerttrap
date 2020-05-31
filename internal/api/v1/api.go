@@ -506,7 +506,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 
 	var user cache.User
 	user.Login = username
-	user.Name = usr["username"]
+	user.Name = usr["name"]
 	user.Password = getHash(password)
 	user.Token = getHash(string(time.Now().UTC().Unix()))
 	
@@ -519,6 +519,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[error] %v", err)
 	}
 
+	w.WriteHeader(200)
 	w.Write(encodeResp(&Resp{Status:"success", Data:user}))
 	return
 

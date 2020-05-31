@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"errors"
 	"crypto/tls"
-    "gopkg.in/ldap.v3"
+    "gopkg.in/ldap.v2"
 )
 
 type LDAPClient struct {

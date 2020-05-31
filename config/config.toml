@@ -13,8 +13,7 @@ use_ssl       = false
 bind_dn       = "%s"
 bind_user     = ""
 bind_pass     = ""
-user_filter   = "(&(objectClass=organizationalPerson)(uid=%s))"
-group_filter  = "(memberUid=%s)"
+user_filter   = "(uid=%s)"
 attributes    = { name="givenName", username="sAMAccountName", email="mail" }
 
 [alerts]
