@@ -32,6 +32,7 @@ type Ldap struct {
 	Bind_dn          string
 	Group_dn         string
 	Filter_dn        string
+	Attributes       map[string]string
 }
 
 type Menu []struct {

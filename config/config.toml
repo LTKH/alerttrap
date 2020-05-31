@@ -12,6 +12,7 @@ bind_pass     = ""
 bind_dn       = "%s"
 group_dn      = "dc=example,dc=com"
 filter_dn     = "(&(objectClass=organizationalPerson)(uid=%s))"
+attributes    = { name="givenName", username="sAMAccountName", email="mail" }
 
 [alerts]
 limit         = 5000

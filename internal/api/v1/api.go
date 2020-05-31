@@ -474,7 +474,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
 		return
 	}
-	log.Printf("[debug] %v", sr)
+	log.Printf("[debug] %q", sr)
 
 	var user cache.User
 	user.Login = username

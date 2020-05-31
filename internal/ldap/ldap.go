@@ -9,6 +9,7 @@ import (
 func Search(conf *config.Ldap, username, password string) (*ldap.SearchResult, error) {
 
 	var sr *ldap.SearchResult
+	var attributes []string
 
 	conn, err := ldap.DialURL(conf.Dial_url)
 	if err != nil {
@@ -21,9 +22,21 @@ func Search(conf *config.Ldap, username, password string) (*ldap.SearchResult, e
 		conf.Bind_pass = password
 	}
 
+	bindRequest := ldap.NewSimpleBindRequest(fmt.Sprintf(conf.Bind_dn, conf.Bind_user), conf.Bind_pass, nil)
+    _, err = conn.SimpleBind(bindRequest)
+	if err != nil {
+		return sr, err
+	}
+
+	/*
 	err = conn.Bind(fmt.Sprintf(conf.Bind_dn, conf.Bind_user), conf.Bind_pass)
 	if err != nil {
 		return sr, err
+	}
+	*/
+
+	for _, val := range conf.Attributes {
+		attributes = append(attributes, val)
 	}
 
 	searchRequest := ldap.NewSearchRequest(
@@ -34,7 +47,7 @@ func Search(conf *config.Ldap, username, password string) (*ldap.SearchResult, e
 		0, 
 		false,
 		fmt.Sprintf(conf.Filter_dn, username),
-		[]string{"givenName", "sn", "mail", "uid"},
+		attributes,
 		nil,
 	)
 
