@@ -467,10 +467,12 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	/*
 	if api.Conf.Ldap.Bind_user == "" && api.Conf.Ldap.Bind_pass == "" {
 		api.Conf.Ldap.Bind_user = username
 		api.Conf.Ldap.Bind_pass = password
 	}
+	*/
 
 	var attributes []string
 	for _, val := range api.Conf.Ldap.Attributes {
@@ -482,7 +484,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 		Host:         api.Conf.Ldap.Host,
 		Port:         api.Conf.Ldap.Port,
 		UseSSL:       api.Conf.Ldap.Use_ssl,
-		BindDN:       fmt.Sprintf(api.Conf.Ldap.Bind_dn, api.Conf.Ldap.Bind_user),
+		BindDN:       api.Conf.Ldap.Bind_dn,
 		BindPassword: api.Conf.Ldap.Bind_pass,
 		UserFilter:   api.Conf.Ldap.User_filter,
 		GroupFilter:  api.Conf.Ldap.Group_filter,
