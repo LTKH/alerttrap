@@ -3,8 +3,8 @@ package ldap
 import (
 	"fmt"
 	"errors"
+	"gopkg.in/ldap.v3"
 	"crypto/tls"
-    "gopkg.in/ldap.v2"
 )
 
 type LDAPClient struct {

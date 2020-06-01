@@ -26,7 +26,7 @@ type DB struct {
 }
 
 type Ldap struct {
-	Base             string
+	Search_base      string
 	Host             string
 	Port             int
 	Use_ssl          bool
@@ -34,7 +34,6 @@ type Ldap struct {
 	Bind_user        string
 	Bind_pass        string
 	User_filter      string
-	Group_filter     string
 	Attributes       map[string]string
 }
 

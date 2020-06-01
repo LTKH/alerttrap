@@ -6,7 +6,7 @@ alerts_table  = "mon_alerts"
 users_table   = "mon_users"
 
 [ldap]
-base          = "dc=example,dc=com"
+search_base   = "dc=example,dc=com"
 host          = "ldap.example.com"
 port          = 389
 use_ssl       = false
