@@ -482,7 +482,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 		Host:         api.Conf.Ldap.Host,
 		Port:         api.Conf.Ldap.Port,
 		UseSSL:       api.Conf.Ldap.Use_ssl,
-		BindDN:       api.Conf.Ldap.Bind_dn,
+		BindDN:       fmt.Sprintf(api.Conf.Ldap.Bind_dn, api.Conf.Ldap.Bind_user),
 		BindPassword: api.Conf.Ldap.Bind_pass,
 		UserFilter:   api.Conf.Ldap.User_filter,
 		Attributes:   attributes,
