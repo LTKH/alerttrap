@@ -26,6 +26,7 @@ var (
 )
 
 type Api struct {
+	Client       db.DbClient
 	Conf         *config.Config
 }
 
@@ -51,6 +52,10 @@ type Alert struct {
   	Labels       map[string]interface{}  `json:"labels"`
   	Annotations  map[string]interface{}  `json:"annotations"`
   	GeneratorURL string                  `json:"generatorURL"`
+}
+
+type Healthy struct {
+    DataBase     string                  `json:"dataBase"`
 }
 
 // Matcher models the matching of a label.
@@ -96,7 +101,7 @@ func (m *Matcher) matches(s string) bool {
 func encodeResp(resp *Resp) []byte {
     jsn, err := json.Marshal(resp)
 	if err != nil {
-		return encodeResp(&Resp{Status:"error", Error:err.Error()})
+		return encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)})
 	}
 	return jsn
 }
@@ -147,45 +152,46 @@ func checkMatch(alert *cache.Alert, matchers [][]*Matcher) bool {
 	return false
 }
 
-func authentication(cfg config.DB, r *http.Request) (int, error) {
+func authentication(cln db.DbClient, cfg config.DB, r *http.Request) (bool, int, error) {
 	var login, token string
 
 	login, token, ok := r.BasicAuth()
     if !ok {
 		lg, err := r.Cookie("login")
-		if err != nil {
-			return 401, errors.New("Unauthorized")
+		if err == nil {
+			login = lg.Value
 		}
-		login = lg.Value
 		tk, err := r.Cookie("token")
-		if err != nil {
-			return 401, errors.New("Unauthorized")
-		}
-		token = tk.Value
-	}
-
-	if login == "" || token == "" {
-		return 401, errors.New("Unauthorized")
-	}
-
-	user, ok := CacheUsers.Get(login)
-	if !ok { 
-		cln, err := db.NewClient(&cfg)
-		if err != nil {
-			return 500, err
-		}
-		usr, err := cln.LoadUser(login)
-		if err != nil {
-			return 403, err
-		}
-		CacheUsers.Set(login, usr)
-	} else {
-		if user.Token != token {
-			return 403, errors.New("Forbidden")
+		if err == nil {
+			token = tk.Value
 		}
 	}
 
-	return 204, nil
+	if login != "" && token != "" {
+		user, ok := CacheUsers.Get(login)
+		if !ok { 
+			//cln, err := db.NewClient(&cfg)
+			//if err != nil {
+			//	return false, 500, err
+			//}
+			usr, err := cln.LoadUser(login)
+			if err != nil {
+				return false, 403, errors.New("Forbidden")
+			}
+			CacheUsers.Set(login, usr)
+			if usr.Token == token {
+				return true, 204, nil
+			}
+			return false, 403, errors.New("Forbidden")
+		} else {
+			if user.Token == token {
+				return true, 204, nil
+			}
+			return false, 403, errors.New("Forbidden")
+		}
+	}
+
+	return false, 401, errors.New("Unauthorized")
 }
 
 func New(conf *config.Config) (*Api, error) {
@@ -214,18 +220,41 @@ func New(conf *config.Config) (*Api, error) {
 	}
 	log.Printf("[info] loaded users from dbase (%d)", len(users))
 	
-	return &Api{ Conf: conf }, nil
+	return &Api{ Client: client, Conf: conf }, nil
+}
+
+func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
+	//var healthy Healthy
+	var alerts []string
+
+	if err := api.Client.Healthy(); err != nil {
+        alerts = append(alerts, err.Error())
+
+		//healthy.DataBase = "FAIL"
+		//w.WriteHeader(500)
+		//w.Write(encodeResp(&Resp{Status:"success", Error:err.Error(), Data:healthy}))
+		//return
+	}
+
+	if len(alerts) > 0 {
+		w.WriteHeader(200)
+		w.Write(encodeResp(&Resp{Status:"success", Warnings:alerts, Data:make(map[string]string, 0)}))
+		return
+	}
+
+    w.WriteHeader(200)
+	w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
 }
 
 func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
-    code, err := authentication(api.Conf.DB, r)
-	if err != nil {
+    ok, code, err := authentication(api.Client, api.Conf.DB, r)
+	if !ok {
 		w.WriteHeader(code)
-		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
 		return
 	}
 	w.WriteHeader(code)
-	w.Write(encodeResp(&Resp{Status:"success"}))
+	w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
 }
 
 func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
@@ -259,10 +288,10 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 		var alerts Alerts
 
-		code, err := authentication(api.Conf.DB, r)
-		if err != nil {
+		ok, code, err := authentication(api.Client, api.Conf.DB, r)
+		if !ok {
 			w.WriteHeader(code)
-			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:alerts}))
+			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
 			return
 		}
 
@@ -282,7 +311,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Printf("[error] %v - %s", err, r.URL.Path)
 				w.WriteHeader(400)
-				w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:alerts}))
+				w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
 				return
 			}
 			matcherSets = append(matcherSets, matchers)
@@ -304,7 +333,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Printf("[error] %v - %s", err, r.URL.Path)
 				w.WriteHeader(400)
-				w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:alerts}))
+				w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
 				return 
 			}
 			re_status = re
@@ -349,6 +378,10 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+
+		if len(alerts.AlertsArray) == 0 {
+			alerts.AlertsArray = make([]Alert, 0)
+		}
 		
 		w.Write(encodeResp(&Resp{Status:"success", Data:alerts}))
 		return
@@ -362,14 +395,14 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("[error] %v - %s", err, r.URL.Path)
 			w.WriteHeader(400)
-			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
+			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
 			return
 		}
 
 		if err := json.Unmarshal(body, &alerts); err != nil {
 			log.Printf("[error] %v - %s", err, r.URL.Path)
 			w.WriteHeader(400)
-			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:alerts}))
+			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
 			return
 		}
 
@@ -401,16 +434,13 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 				alert, found := CacheAlerts.Get(group_id)
 				if found {
 
-					if !(alert.Status == "resolved" && value.Status == "resolved") {
-						alert.Status         = value.Status
-						alert.ActiveAt       = time.Now().UTC().Unix()
-						alert.StartsAt       = starts_at
-						alert.Annotations    = value.Annotations
-						alert.GeneratorURL   = value.GeneratorURL
-						alert.Duplicate      = alert.Duplicate + 1
-					}
-
-					alert.EndsAt = ends_at
+					alert.Status         = value.Status
+					alert.ActiveAt       = time.Now().UTC().Unix()
+					alert.StartsAt       = starts_at
+					alert.EndsAt         = ends_at
+					alert.Annotations    = value.Annotations
+					alert.GeneratorURL   = value.GeneratorURL
+					alert.Duplicate      = alert.Duplicate + 1
 			
 					CacheAlerts.Set(group_id, alert)
 			
@@ -444,7 +474,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(405)
-	w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed"}))
+	w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed", Data:make(map[string]string, 0)}))
 }
 
 func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
@@ -453,7 +483,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		w.WriteHeader(400)
-		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
 		return
 	}
 
@@ -463,7 +493,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 
 	if username == "" || password == "" {
 		w.WriteHeader(403)
-		w.Write(encodeResp(&Resp{Status:"error", Error:"Login or password is empty"}))
+		w.Write(encodeResp(&Resp{Status:"error", Error:"Login or password is empty", Data:make(map[string]string, 0)}))
 		return
 	}
 
@@ -490,16 +520,10 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 	defer clnt.Close()
 
 	ok, usr, err := clnt.Authenticate(username, password)
-	if err != nil {
-		log.Printf("[error] authenticating user %s: %+v", username, err)
-		w.WriteHeader(403)
-		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
-		return
-	}
 	if !ok {
-		log.Printf("[error] authenticating user %s: %+v", username, err)
+		log.Printf("[error] user authenticating %s: %+v", username, err)
 		w.WriteHeader(403)
-		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
 		return
 	}
 
@@ -516,11 +540,10 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 	
 	CacheUsers.Set(username, user)
 
-	cln, err := db.NewClient(&api.Conf.DB)
-	if err == nil {
-		cln.SaveUser(user)
-	} else {
-		log.Printf("[error] %v", err)
+	if err := api.Client.SaveUser(user); err != nil {
+		log.Printf("[error] saving user %s: %+v", username, err)
+		w.WriteHeader(500)
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
 	}
 
 	w.WriteHeader(200)

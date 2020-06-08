@@ -59,6 +59,7 @@ func main() {
 	}
 
 	//enabled listen port
+	http.HandleFunc("/-/healthy", apiV1.ApiHealthy)
 	http.HandleFunc("/api/v1/auth", apiV1.ApiAuth)
 	http.HandleFunc("/api/v1/menu", apiV1.ApiMenu)
 	http.HandleFunc("/api/v1/login", apiV1.ApiLogin)
@@ -112,6 +113,7 @@ func main() {
 			if err := client.SaveAlerts(items); err != nil {
 				log.Printf("[error] %v", err)
 			} else {
+				log.Printf("[info] alerts recorded in database (%d)", len(items))
 				v1.CacheAlerts.ClearItems(items)
 			}
 		}

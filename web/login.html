@@ -77,7 +77,7 @@
     <script src="vendors/bootstrap/js/bootstrap.min.js"></script>
     
     <script>
-      $("#btn_lg").click(function(){
+      function login(){
         $.ajax({
           url: "/api/v1/login",
           type: "post",
@@ -100,6 +100,14 @@
           );
           setTimeout(function(){ $("#alert").remove(); }, 5000);
         });
+      }
+      $("#btn_lg").click(function(){
+        login();
+      });
+      $("#password").keyup(function(e){
+        if(e.keyCode == 13){
+          login();
+        }
       });
     </script>
   </body>

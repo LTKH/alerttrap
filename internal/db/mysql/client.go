@@ -25,6 +25,19 @@ func NewClient(conf *config.DB) (*Client, error) {
 	return &Client{ client: conn, config: conf }, nil
 }
 
+func (db *Client) Healthy() error {
+	stmt, err := db.client.Prepare(fmt.Sprintf(
+		"select alert_id from %s a where a.ends_at > UNIX_TIMESTAMP() limit 1", 
+		db.config.Alerts_table,
+	))
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	return nil
+}
+
 func (db *Client) LoadUser(login string) (cache.User, error) {
     var usr cache.User
 
@@ -178,20 +191,16 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 	}
 	defer stmt.Close()
 
-	cnt := 0
-
 	for _, i := range alerts {
 
 		labels, err := json.Marshal(i.Labels)
 		if err != nil {
-			log.Printf("[error] %v", err)
-			continue
+			return err
 		}
 
 		annotations, err := json.Marshal(i.Annotations)
 		if err != nil {
-			log.Printf("[error] %v", err)
-			continue
+			return err
 		}
 
 		_, err = stmt.Exec(
@@ -207,16 +216,9 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 			i.GeneratorURL,
 		)
 		if err != nil {
-			log.Printf("[error] %v", err)
-			continue
+			return err
 		}
 
-		cnt++
-
-	}
-
-	if cnt > 0 {
-		log.Printf("[info] alerts recorded in database (%d)", cnt)
 	}
 
 	return nil

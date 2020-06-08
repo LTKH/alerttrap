@@ -6,7 +6,16 @@ import (
 	"net/http"
 	"github.com/ltkh/alertstrap/internal/api/v1"
 	"time"
+	//"log"
+	"strings"
 )
+
+type cAlerts struct {
+	status       string 
+	alertname    string
+	node         string
+	cnt          int
+}
 
 var (
 	cntAlerts = prometheus.NewGaugeVec(
@@ -15,7 +24,7 @@ var (
 			Name:      "cnt_alerts",
 			Help:      "",
 		},
-		[]string{/*"status","alertname","node"*/},
+		[]string{"status","alertname","node"},
 	)
 )
 
@@ -27,32 +36,28 @@ func Start(Listen string) {
 
 	go func() {
 		for {
-			items := v1.CacheAlerts.Items()
-            //lmap := map[string]string
 			
-			//for _, val := range items {
-			//	val.Value.Labels
-				
-			//}
-            cntAlerts.With(prometheus.Labels{}).Set(float64(len(items)))
+            lmap := map[string]int{}
+			
+			for _, a := range v1.CacheAlerts.Items() { 
+				alertname := ""
+				node      := ""
+				for key, val := range a.Labels {
+                    if key == "alertname" {
+						alertname = val.(string)
+					}
+					if key == "node" {
+						node = val.(string)
+					}
+				}
+				lmap[a.Status+"|"+alertname+"|"+node] ++
+			}
 
-			//labels := []string{}
+			for key, val := range lmap {
+				spl := strings.Split(key, "|")
+				cntAlerts.With(prometheus.Labels{ "status": spl[0], "alertname": spl[1], "node": spl[2] }).Set(float64(val))
+			}
 
-			/*
-			for key, _ := range api.Cache.Items() {
-				addAlerts.With(prometheus.Labels{"location": key}).Set(float64(1))
-			}
-			for key, _ := range streams.Job_chan {
-				jobGauge.With(prometheus.Labels{"location": key}).Set(float64(len(streams.Job_chan[key])))
-			}
-			for key, limit := range streams.Stt_stat {
-				limit.Stat.Range(func(k, v interface{}) bool {
-					sttGauge.With(prometheus.Labels{"limit": key, "key": k.(string)}).Set(float64(v.(int)))
-					streams.Stt_stat[key].Stat.Store(k, 0)
-					return true
-				})
-			}
-			*/
 			time.Sleep(60 * time.Second)
 		}
 	}()

@@ -12,26 +12,14 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Alertstrap</title>
-    <link rel="apple-touch-icon" sizes="57x57" href="assets/favicon/apple-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="assets/favicon/apple-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="assets/favicon/apple-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="assets/favicon/apple-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="assets/favicon/apple-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="assets/favicon/apple-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="assets/favicon/apple-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="assets/favicon/apple-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-icon-180x180.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-192x192.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="assets/favicon/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png">
     <link rel="manifest" href="assets/favicon/manifest.json">
     <meta name="msapplication-TileColor" content="#ffffff">
     <meta name="msapplication-TileImage" content="assets/favicon/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
     <!-- Main styles for this application-->
     <link href="css/style.css" rel="stylesheet">
-    <link href="vendors/@coreui/chartjs/css/coreui-chartjs.css" rel="stylesheet">
+    <!--link href="vendors/@coreui/chartjs/css/coreui-chartjs.css" rel="stylesheet"-->
   </head>
   <body class="c-app c-dark-theme">
     <div class="c-sidebar c-sidebar-dark c-sidebar-fixed c-sidebar-lg-show" id="sidebar">
@@ -145,20 +133,12 @@
                 </svg> Error 500</a></li>
           </ul>
         </li>
-        <li class="c-sidebar-nav-item mt-auto"><a class="c-sidebar-nav-link c-sidebar-nav-link-success" href="https://coreui.io" target="_top">
-            <svg class="c-sidebar-nav-icon">
-              <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-cloud-download"></use>
-            </svg> Download CoreUI</a></li>
-        <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link c-sidebar-nav-link-danger" href="https://coreui.io/pro/" target="_top">
-            <svg class="c-sidebar-nav-icon">
-              <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-layers"></use>
-            </svg> Try CoreUI<strong>PRO</strong></a></li>
       </ul>
       <button class="c-sidebar-minimizer c-class-toggler" type="button" data-target="_parent" data-class="c-sidebar-minimized"></button>
     </div>
     <div class="c-wrapper c-fixed-components">
       <header class="c-header c-header-light c-header-fixed c-header-with-subheader">
-        <!--button class="c-header-toggler c-class-toggler d-lg-none mfe-auto" type="button" data-target="#sidebar" data-class="c-sidebar-show">
+        <button class="c-header-toggler c-class-toggler d-lg-none mfe-auto" type="button" data-target="#sidebar" data-class="c-sidebar-show">
           <svg class="c-icon c-icon-lg">
             <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-menu"></use>
           </svg>
@@ -228,7 +208,7 @@
                 </svg> Logout</a>
             </div>
           </li>
-        </ul-->
+        </ul>
         <div class="c-subheader px-3">
           <!-- Breadcrumb-->
           <ol class="breadcrumb border-0 m-0">
@@ -399,73 +379,38 @@
                   </div>
                 </div>
               </div>
-              <!-- /.card-->
-              <div class="row">
-                <div class="col-sm-6 col-lg-4">
-                  <div class="card">
-                    <div class="card-header bg-facebook content-center">
-                      <svg class="c-icon c-icon-3xl text-white my-4">
-                        <use xlink:href="vendors/@coreui/icons/svg/brand.svg#cib-facebook-f"></use>
-                      </svg>
-                    </div>
-                    <div class="card-body row text-center">
-                      <div class="col">
-                        <div class="text-value-xl">89k</div>
-                        <div class="text-uppercase text-muted small">friends</div>
-                      </div>
-                      <div class="c-vr"></div>
-                      <div class="col">
-                        <div class="text-value-xl">459</div>
-                        <div class="text-uppercase text-muted small">feeds</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <!-- /.col-->
-                <div class="col-sm-6 col-lg-4">
-                  <div class="card">
-                    <div class="card-header bg-twitter content-center">
-                      <svg class="c-icon c-icon-3xl text-white my-4">
-                        <use xlink:href="vendors/@coreui/icons/svg/brand.svg#cib-twitter"></use>
-                      </svg>
-                    </div>
-                    <div class="card-body row text-center">
-                      <div class="col">
-                        <div class="text-value-xl">973k</div>
-                        <div class="text-uppercase text-muted small">followers</div>
-                      </div>
-                      <div class="c-vr"></div>
-                      <div class="col">
-                        <div class="text-value-xl">1.792</div>
-                        <div class="text-uppercase text-muted small">tweets</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <!-- /.col-->
-                <div class="col-sm-6 col-lg-4">
-                  <div class="card">
-                    <div class="card-header bg-linkedin content-center">
-                      <svg class="c-icon c-icon-3xl text-white my-4">
-                        <use xlink:href="vendors/@coreui/icons/svg/brand.svg#cib-linkedin"></use>
-                      </svg>
-                    </div>
-                    <div class="card-body row text-center">
-                      <div class="col">
-                        <div class="text-value-xl">500+</div>
-                        <div class="text-uppercase text-muted small">contacts</div>
-                      </div>
-                      <div class="c-vr"></div>
-                      <div class="col">
-                        <div class="text-value-xl">292</div>
-                        <div class="text-uppercase text-muted small">feeds</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <!-- /.col-->
-              </div>
               <!-- /.row-->
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="card">
+                    <div class="card-header"><i class="fa fa-align-justify"></i> Simple Table</div>
+                    <div class="card-body">
+                      <table id="alertsTable" class="table table-responsive-sm">
+                        <thead>
+                          <tr>
+                              <th>Name</th>
+                              <th>Position</th>
+                              <th>Office</th>
+                              <th>Extn.</th>
+                              <th>Start date</th>
+                              <th>Salary</th>
+                          </tr>
+                        </thead>
+                        <tfoot>
+                            <tr>
+                                <th>Name</th>
+                                <th>Position</th>
+                                <th>Office</th>
+                                <th>Extn.</th>
+                                <th>Start date</th>
+                                <th>Salary</th>
+                            </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+
+                </div>
+              </div>
               <div class="row">
                 <div class="col-md-12">
                   <div class="card">
@@ -905,6 +850,61 @@
     <script src="vendors/@coreui/chartjs/js/coreui-chartjs.bundle.js"></script>
     <script src="vendors/@coreui/utils/js/coreui-utils.js"></script>
     <script src="js/main.js"></script>
+
+    <script src="vendors/jquery/js/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script>
+      var messages = {};
+
+      function upd_table(){
+        var array = [];
+
+        $.each(messages, function(key, value){
+          var line = {};
+          line['status'] = (value['status']) ? value['status']: 'unknown';
+          line['node'] = (value['node']) ? value['node']: 'unknown';
+          //line.push(value['node']);
+          //line.push(value['node']);
+          //line.push(value['node']);
+          array.push(line);
+        });
+
+        $('#alertsTable').DataTable({
+          retrieve: true,
+          "columns": [
+            { "data": "status" },
+            { "data": "node" },
+            { "data": "status" },
+            { "data": "status" },
+            { "data": "status" },
+            { "data": "status" }
+          ],
+          data: array
+        });
+
+        delete(array);
+      }
+
+      (function alerts() {
+        $.ajax({
+          url: '/api/v1/alerts', 
+          success: function(jsn) {
+            //$('#alertsTable').bootstrapTable({
+            //  data: jsn.data.alerts
+            //});
+            $.each(jsn.data.alerts, function(key, value){
+              messages[value['groupId']] = value;
+            });
+
+            upd_table();
+          },
+          complete: function() {
+            // Schedule the next request when the current one's complete
+            setTimeout(alerts, 10000);
+          }
+        });
+      })();
+    </script>
 
   </body>
 </html>
