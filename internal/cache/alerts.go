@@ -14,11 +14,12 @@ type Alerts struct {
 type Alert struct {
     AlertId         string                  
     GroupId         string                  
-    Status          string  
+    Status          string 
     ActiveAt        int64                
     StartsAt        int64                   
 	EndsAt          int64                                     
-    Duplicate       int                     
+    Repeat          int
+	ChangeSt        int                     
     Labels          map[string]interface{}  
     Annotations     map[string]interface{}  
     GeneratorURL    string                  

@@ -158,10 +158,15 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 					if err == nil {
 						a.EndsAt = int64(cl)
 					}
-				case "duplicate":
+				case "repeat":
 					cl, err := strconv.Atoi(string(value))
 					if err == nil {
-						a.Duplicate = int(cl)
+						a.Repeat = int(cl)
+					}
+				case "change_st":
+					cl, err := strconv.Atoi(string(value))
+					if err == nil {
+						a.ChangeSt = int(cl)
 					}
 				case "labels":
 					if err := json.Unmarshal(value, &a.Labels); err != nil {
@@ -171,6 +176,8 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 					if err := json.Unmarshal(value, &a.Annotations); err != nil {
 						log.Printf("[warning] %v (%s)", err, a.AlertId)
 					}
+				case "generator_url":
+					a.GeneratorURL = string(value)
 			}
 		}
 
@@ -183,7 +190,7 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 
 	stmt, err := db.client.Prepare(fmt.Sprintf(
-		"replace into %s values (?,?,?,?,?,?,?,?,?,?)", 
+		"replace into %s values (?,?,?,?,?,?,?,?,?,?,?)", 
 		db.config.Alerts_table,
 	))
 	if err != nil {
@@ -210,7 +217,8 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 			i.ActiveAt,
 			i.StartsAt,
 			i.EndsAt,
-			i.Duplicate,
+			i.Repeat,
+			i.ChangeSt,
 			labels,
 			annotations,
 			i.GeneratorURL,
@@ -228,7 +236,7 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 func (db *Client) AddAlert(alert cache.Alert) error {
 
 	stmt, err := db.client.Prepare(fmt.Sprintf(
-		"insert into %s values (?,?,?,?,?,?,?,?,?)", 
+		"insert into %s values (?,?,?,?,?,?,?,?,?,?)", 
 		db.config.Alerts_table,
 	))
 	if err != nil {
@@ -252,7 +260,8 @@ func (db *Client) AddAlert(alert cache.Alert) error {
 		alert.Status,
 		alert.StartsAt,
 		alert.EndsAt,
-		alert.Duplicate,
+		alert.Repeat,
+		alert.ChangeSt,
 		labels,
 		annotations,
 		alert.GeneratorURL,
@@ -267,7 +276,7 @@ func (db *Client) AddAlert(alert cache.Alert) error {
 func (db *Client) UpdAlert(alert cache.Alert) error {
 
 	stmt, err := db.client.Prepare(fmt.Sprintf(
-		"update %s set status=?,ends_at=?,duplicate=?,annotations=?,generator_url=? where alert_id = ?", 
+		"update %s set status=?,ends_at=?,repeat=?,change_st=?,annotations=?,generator_url=? where alert_id = ?", 
 		db.config.Alerts_table,
 	))
 	if err != nil {
@@ -283,7 +292,8 @@ func (db *Client) UpdAlert(alert cache.Alert) error {
 	_, err = stmt.Exec(
 		alert.Status,
 		alert.EndsAt,
-		alert.Duplicate,
+		alert.Repeat,
+		alert.ChangeSt,
 		annotations,
 		alert.GeneratorURL,
 		alert.AlertId,

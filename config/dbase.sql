@@ -1,16 +1,17 @@
 create database alertstrap;
 
 create table if not exists mon_alerts (
-  alert_id      varchar(50) not null,
-  group_id      varchar(50) not null,
-  status        varchar(10) not null,
-  active_at     bigint(20) default 0,
-  starts_at     bigint(20) default 0,
-  ends_at       bigint(20) default 0,
-  duplicate     int default 1,
-  labels        json,
-  annotations   json,
-  generator_url varchar(1500),
+  `alert_id`      varchar(50) not null,
+  `group_id`      varchar(50) not null,
+  `status`        varchar(10) not null,
+  `active_at`     bigint(20) default 0,
+  `starts_at`     bigint(20) default 0,
+  `ends_at`       bigint(20) default 0,
+  `repeat`        int default 1,
+  `change_st`     int default 0,
+  `labels`        json,
+  `annotations`   json,
+  `generator_url` varchar(1500),
   unique key IDX_mon_alerts_alert_id (alert_id),
   key IDX_mon_alerts_ends_at (ends_at),
   key IDX_mon_alerts_group_id_ends_at (group_id,ends_at)

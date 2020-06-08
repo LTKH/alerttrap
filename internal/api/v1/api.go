@@ -48,14 +48,11 @@ type Alert struct {
 	Status       string                  `json:"status"`
   	StartsAt     time.Time               `json:"startsAt"`
   	EndsAt       time.Time               `json:"endsAt"`
-  	Duplicate    int                     `json:"duplicate"`
+	Repeat       int                     `json:"repeat"`
+	ChangeSt     int                     `json:"changeSt"`
   	Labels       map[string]interface{}  `json:"labels"`
   	Annotations  map[string]interface{}  `json:"annotations"`
   	GeneratorURL string                  `json:"generatorURL"`
-}
-
-type Healthy struct {
-    DataBase     string                  `json:"dataBase"`
 }
 
 // Matcher models the matching of a label.
@@ -170,10 +167,6 @@ func authentication(cln db.DbClient, cfg config.DB, r *http.Request) (bool, int,
 	if login != "" && token != "" {
 		user, ok := CacheUsers.Get(login)
 		if !ok { 
-			//cln, err := db.NewClient(&cfg)
-			//if err != nil {
-			//	return false, 500, err
-			//}
 			usr, err := cln.LoadUser(login)
 			if err != nil {
 				return false, 403, errors.New("Forbidden")
@@ -224,16 +217,10 @@ func New(conf *config.Config) (*Api, error) {
 }
 
 func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
-	//var healthy Healthy
 	var alerts []string
 
 	if err := api.Client.Healthy(); err != nil {
         alerts = append(alerts, err.Error())
-
-		//healthy.DataBase = "FAIL"
-		//w.WriteHeader(500)
-		//w.Write(encodeResp(&Resp{Status:"success", Error:err.Error(), Data:healthy}))
-		//return
 	}
 
 	if len(alerts) > 0 {
@@ -358,7 +345,8 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 			alert.Status       = a.Status
 			alert.StartsAt     = time.Unix(a.StartsAt, 0)
 			alert.EndsAt       = time.Unix(a.EndsAt, 0)
-			alert.Duplicate    = a.Duplicate
+			alert.Repeat       = a.Repeat
+			alert.ChangeSt     = a.ChangeSt
 			alert.Labels       = a.Labels
 			alert.Annotations  = a.Annotations
 			alert.GeneratorURL = a.GeneratorURL
@@ -434,13 +422,17 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 				alert, found := CacheAlerts.Get(group_id)
 				if found {
 
+					if alert.Status != value.Status {
+						alert.ChangeSt ++ 
+					}
+
 					alert.Status         = value.Status
 					alert.ActiveAt       = time.Now().UTC().Unix()
 					alert.StartsAt       = starts_at
 					alert.EndsAt         = ends_at
 					alert.Annotations    = value.Annotations
 					alert.GeneratorURL   = value.GeneratorURL
-					alert.Duplicate      = alert.Duplicate + 1
+					alert.Repeat         = alert.Repeat + 1
 			
 					CacheAlerts.Set(group_id, alert)
 			
@@ -459,7 +451,8 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 					alert.Labels         = value.Labels
 					alert.Annotations    = value.Annotations
 					alert.GeneratorURL   = value.GeneratorURL
-					alert.Duplicate      = 1
+					alert.Repeat         = 1
+					alert.ChangeSt       = 0
 			
 					CacheAlerts.Set(group_id, alert)
 

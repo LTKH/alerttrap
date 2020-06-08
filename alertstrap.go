@@ -92,7 +92,7 @@ func main() {
 				log.Printf("[error] %v", err)
 			} else {
 				if cnt > 0 {
-					log.Print("[info] old alerts moved to database (%d)", cnt)
+					log.Printf("[info] old alerts moved to database (%d)", cnt)
 				}
 			}
 
