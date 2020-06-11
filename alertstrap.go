@@ -1,18 +1,18 @@
 package main
 
 import (
-  "net/http"
-  "time"
-  "log"
-  "os"
-  "os/signal"
-  "syscall"
-  "runtime"
-  "flag"
-  "github.com/ltkh/alertstrap/internal/db"
-  "github.com/ltkh/alertstrap/internal/api/v1"
-  "github.com/ltkh/alertstrap/internal/config"
-  "github.com/ltkh/alertstrap/internal/monitor"
+	"net/http"
+	"time"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"runtime"
+	"flag"
+	"github.com/ltkh/alertstrap/internal/db"
+	"github.com/ltkh/alertstrap/internal/api/v1"
+	"github.com/ltkh/alertstrap/internal/config"
+	"github.com/ltkh/alertstrap/internal/monitor"
 )
 
 func main() {

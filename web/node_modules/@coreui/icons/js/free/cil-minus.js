@@ -1,1 +1,0 @@
-export const cilMinus = ["24 24","<path d='M3.375 11.25h17.25v1.5h-17.25v-1.5z'></path>"]
