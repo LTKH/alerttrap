@@ -121,6 +121,7 @@ func (a *Alerts) ResolvedItems() []string {
 	for k, v := range a.items {
 		if v.Status != "resolved" && time.Now().UTC().Unix() > v.EndsAt {
 			v.Status = "resolved"
+			v.ChangeSt = v.ChangeSt + 1
 			a.items[k] = v
 			keys = append(keys, k)
         }

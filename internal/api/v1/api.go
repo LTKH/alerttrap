@@ -466,6 +466,35 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == "DELETE" {
+        ok, code, err := authentication(api.Client, api.Conf.DB, r)
+		if !ok {
+			w.WriteHeader(code)
+			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+			return
+		}
+
+		if r.URL.Query()["groupId"] != nil {
+			
+			_, found := CacheAlerts.Get(r.URL.Query()["groupId"][0])
+			if found {
+				CacheAlerts.Delete(r.URL.Query()["groupId"][0])
+                w.WriteHeader(200)
+				w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
+				return
+			}
+
+			w.WriteHeader(400)
+			w.Write(encodeResp(&Resp{Status:"error", Error:"Alert Not Found", Data:make(map[string]string, 0)}))
+			return
+
+		}
+
+		w.WriteHeader(400)
+		w.Write(encodeResp(&Resp{Status:"error", Error:"GroupId required", Data:make(map[string]string, 0)}))
+		return
+	}
+
 	w.WriteHeader(405)
 	w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed", Data:make(map[string]string, 0)}))
 }
