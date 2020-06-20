@@ -1,7 +1,6 @@
 package config
 
 import (
-	//"time"
 	"os"
 	"github.com/naoina/toml"
 )
@@ -9,7 +8,6 @@ import (
 type Config struct {
 	DB               DB
 	Ldap             Ldap
-	Alerts           Alerts
 	Server           Server
 	Menu             Menu
 	Monit struct {
@@ -54,12 +52,13 @@ type Server struct {
 	Listen           string
 	Cert_file        string
 	Cert_key         string
-}
-
-type Alerts struct {
-	Limit           int
-	Resolve         int64
-	Delete          int64
+	Alerts_limit     int
+	Alerts_resolve   int64
+	Alerts_delete    int64
+	Log_max_size     int
+	Log_max_backups  int
+	Log_max_age      int
+	Log_compress     bool
 }
 
 func New(filename string) (cfg Config, err error) {

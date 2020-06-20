@@ -1,33 +1,35 @@
 [db]
-client        = "mysql"
-conn_string   = "root:password@(127.0.0.1)/alertstrap?parseTime=true"
-history_days  = 7
-alerts_table  = "mon_alerts"
-users_table   = "mon_users"
+client          = "mysql"
+conn_string     = "root:password@(127.0.0.1)/alertstrap?parseTime=true"
+history_days    = 7
+alerts_table    = "mon_alerts"
+users_table     = "mon_users"
 
 [ldap]
-search_base   = "dc=example,dc=com"
-host          = "ldap.example.com"
-port          = 389
-use_ssl       = false
-bind_dn       = "%s"
-bind_user     = ""
-bind_pass     = ""
-user_filter   = "(uid=%s)"
-attributes    = { name="givenName", username="sAMAccountName", email="mail" }
-
-[alerts]
-limit         = 5000
-resolve       = 300
-delete        = 600
+search_base     = "dc=example,dc=com"
+host            = "ldap.example.com"
+port            = 389
+use_ssl         = false
+bind_dn         = "%s"
+bind_user       = ""
+bind_pass       = ""
+user_filter     = "(uid=%s)"
+attributes      = { name="givenName", username="sAMAccountName", email="mail" }
 
 [server]
-listen        = ":8100"
-cert_file     = ""
-cert_key      = ""
+listen          = ":8100"
+cert_file       = ""
+cert_key        = ""
+alerts_limit    = 5000
+alerts_resolve  = 300
+alerts_delete   = 600
+log_max_size    = 1
+log_max_backups = 3
+log_max_age     = 28
+log_compress    = true
 
 [monit]
-listen        = ":5000"
+listen          = ":5000"
 
 [[menu]]
 text = "Etcd"

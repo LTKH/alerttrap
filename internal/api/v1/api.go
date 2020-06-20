@@ -283,7 +283,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//limit setting
-		limit := api.Conf.Alerts.Limit
+		limit := api.Conf.Server.Alerts_limit
 		if r.URL.Query()["limit"] !=nil {
 			l, err := strconv.Atoi(r.URL.Query()["limit"][0])
 			if err == nil && l < limit {
@@ -359,7 +359,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 			
 			if len(alerts.AlertsArray) >= limit {
 				var warnings []string
-				if limit == api.Conf.Alerts.Limit {
+				if limit == api.Conf.Server.Alerts_limit {
 					warnings = append(warnings, fmt.Sprintf("display limit exceeded - %d", limit))
 				}
 				w.Write(encodeResp(&Resp{Status:"success", Warnings:warnings, Data:alerts}))
@@ -414,7 +414,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 					starts_at  = time.Now().UTC().Unix()
 				} 
 				if ends_at < 0 {
-					ends_at    = time.Now().UTC().Unix() + api.Conf.Alerts.Resolve
+					ends_at    = time.Now().UTC().Unix() + api.Conf.Server.Alerts_resolve
 				} 
 			
 				group_id := getHash(string(labels))

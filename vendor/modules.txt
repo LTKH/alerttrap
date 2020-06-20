@@ -74,3 +74,6 @@ gopkg.in/asn1-ber.v1
 # gopkg.in/ldap.v3 v3.1.0
 ## explicit
 gopkg.in/ldap.v3
+# gopkg.in/natefinch/lumberjack.v2 v2.0.0
+## explicit
+gopkg.in/natefinch/lumberjack.v2
