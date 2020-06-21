@@ -9,9 +9,6 @@ import (
 	"syscall"
 	"runtime"
 	"flag"
-
-	//"fmt"
-	//"bytes"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"github.com/ltkh/alertstrap/internal/db"
 	"github.com/ltkh/alertstrap/internal/api/v1"
