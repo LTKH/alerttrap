@@ -11,6 +11,7 @@ import (
     "time"
 	"strconv"
 	"errors"
+	"strings"
     "io/ioutil"
 	"encoding/json"
 	"github.com/ltkh/alertstrap/internal/db"
@@ -22,7 +23,7 @@ import (
 var (
 	CacheAlerts *cache.Alerts = cache.NewCacheAlerts()
 	CacheUsers *cache.Users = cache.NewCacheUsers()
-	re_labels = regexp.MustCompile(`(?:([\w]+)([=!~]{1,2})"([^"]*)")`)
+	re_labels = regexp.MustCompile(`(?:([\w]+)([=!~><]{1,2})"([^"]*)")`)
 )
 
 type Api struct {
@@ -65,11 +66,17 @@ type Matcher struct {
 
 // NewMatcher returns a matcher object.
 func newMatcher(t, n, v string) (*Matcher, error) {
+
+	if t != "=" && t != "!=" && t != "=~" && t != "!~" {
+		return nil, errors.New(fmt.Sprintf("executing query: invalid comparison operator: %s", t))
+	}
+
 	m := &Matcher{
 		Type:  t,
 		Name:  n,
 		Value: v,
 	}
+	
 	if t == "=~" || t == "!~" {
 		re, err := regexp.Compile("^(?:" + v + ")$")
 		if err != nil {
@@ -77,20 +84,21 @@ func newMatcher(t, n, v string) (*Matcher, error) {
 		}
 		m.re = re
 	}
+
 	return m, nil
 }
 
 // Matches returns whether the matcher matches the given string value.
 func (m *Matcher) matches(s string) bool {
 	switch m.Type {
-	case "=":
-		return s == m.Value
-	case "!=":
-		return s != m.Value
-	case "=~":
-		return m.re.MatchString(s)
-	case "!~":
-		return !m.re.MatchString(s)
+		case "=":
+			return s == m.Value
+		case "!=":
+			return s != m.Value
+		case "=~":
+			return m.re.MatchString(s)
+		case "!~":
+			return !m.re.MatchString(s)
 	}
 	return false
 }
@@ -126,7 +134,7 @@ func parseMetricSelector(input string) (m []*Matcher, err error) {
 	return matchers, nil
 }
 
-func checkMatch(alert *cache.Alert, matchers [][]*Matcher) bool {
+func checkMatches(alert *cache.Alert, matchers [][]*Matcher) bool {
 	for _, mtch := range matchers {
         match := true
 
@@ -271,70 +279,91 @@ func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	ok, code, err := authentication(api.Client, api.Conf.DB, r)
+	if !ok {
+		w.WriteHeader(code)
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+		return
+	}
+
 	if r.Method == "GET" {
 
 		var alerts Alerts
 
-		ok, code, err := authentication(api.Client, api.Conf.DB, r)
-		if !ok {
-			w.WriteHeader(code)
-			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-			return
-		}
+		//query
+		limit       := api.Conf.Server.Alerts_limit
+		status      := make(map[string]int)
+		strArgs     := make(map[string]string)
+		intArgs     := make(map[string]int64)
+		var labels  [][]*Matcher
 
-		//limit setting
-		limit := api.Conf.Server.Alerts_limit
-		if r.URL.Query()["limit"] !=nil {
-			l, err := strconv.Atoi(r.URL.Query()["limit"][0])
-			if err == nil && l < limit {
-                limit = l
+		for k, v := range r.URL.Query() {
+            switch k {
+				case "alert_id","group_id":
+					strArgs[k] = v[0]
+				case "status":
+					for _, st := range strings.Split(v[0], "|") {
+					    status[st] = 1
+					}
+				case "position","repeat_min","repeat_max":
+					i, err := strconv.Atoi(v[0])
+					if err != nil {
+						w.WriteHeader(400)
+						w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+						return 
+					}
+					intArgs[k] = int64(i)
+				case "limit":
+					l, err := strconv.Atoi(v[0])
+					if err != nil {
+						w.WriteHeader(400)
+						w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+						return 
+					}
+					if l < limit {
+						limit = l
+					}
+				case "match[]":
+                    for _, s := range v {
+						matchers, err := parseMetricSelector(s)
+						if err != nil {
+							w.WriteHeader(400)
+							w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+							return
+						}
+						labels = append(labels, matchers)
+					}
+				default:
+					w.WriteHeader(400)
+					w.Write(encodeResp(&Resp{Status:"error", Error:fmt.Sprintf("executing query: invalid parameter '%v'", k), Data:make(map[string]string, 0)}))
+					return
 			}
-		}
-
-		//match setting
-		var matcherSets [][]*Matcher
-		for _, s := range r.URL.Query()["match[]"] {
-			matchers, err := parseMetricSelector(s)
-			if err != nil {
-				log.Printf("[error] %v - %s", err, r.URL.Path)
-				w.WriteHeader(400)
-				w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-				return
-			}
-			matcherSets = append(matcherSets, matchers)
-		}
-
-        //position settings
-        position := int64(0)
-		if r.URL.Query()["position"] != nil {
-			i, err := strconv.Atoi(r.URL.Query()["position"][0])
-			if err == nil {
-				position = int64(i) 
-			}
-		}
-
-		//status settings
-		var re_status *regexp.Regexp
-		if r.URL.Query()["status"] != nil {
-			re, err := regexp.Compile("^(?:" + r.URL.Query()["status"][0] + ")$")
-			if err != nil {
-				log.Printf("[error] %v - %s", err, r.URL.Path)
-				w.WriteHeader(400)
-				w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-				return 
-			}
-			re_status = re
 		}
 
 		for _, a := range CacheAlerts.Items() {
 
-            if position != 0 && a.ActiveAt < position {
+            if intArgs["position"] != 0 && intArgs["position"] > a.ActiveAt {
                 continue
 			}
-			if re_status != nil && !re_status.MatchString(a.Status) {
+			if intArgs["repeat_min"] != 0 && intArgs["repeat_min"] > int64(a.Repeat) {
                 continue
 			}
-			if len(matcherSets) != 0 && !checkMatch(&a, matcherSets) {
+			if intArgs["repeat_max"] != 0 && intArgs["repeat_max"] < int64(a.Repeat) {
+                continue
+			}
+			if intArgs["position"] != 0 && intArgs["position"] > a.ActiveAt {
+                continue
+			}
+			if strArgs["alert_id"] != "" && strArgs["alert_id"] != a.AlertId {
+                continue
+			}
+			if strArgs["group_id"] != "" && strArgs["group_id"] != a.GroupId {
+                continue
+			}
+			if len(status) != 0 && status[a.Status] == 0 {
+                continue
+			}
+			if len(labels) != 0 && !checkMatches(&a, labels) {
                 continue
 			}
 
