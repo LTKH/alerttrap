@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Alertstrap</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
+    <!-- Main styles for this application-->
+    <link href="css/style.css" rel="stylesheet">
+    <link href="vendors/bootstrap/css/bootstrap-treeview.css" rel="stylesheet">
+    <!--link href="vendors/bootstrap/css/bootstrap.min.css" rel="stylesheet"-->
+    <!--link href="vendors/@coreui/chartjs/css/coreui-chartjs.css" rel="stylesheet"-->
+</head>
+
+<body class="c-app c-dark-theme">
+    <header class="c-header c-header-fixed c-header-with-subheader">
+        <!--nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">Navbar</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Link</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Dropdown
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="#">Action</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
+                    </li>
+                </ul>
+                <form class="form-inline my-2 my-lg-0">
+                    <input class="form-control form-control-sm mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                    <button class="btn btn-sm btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                </form>
+            </div>
+        </nav-->
+
+        <ol class="breadcrumb border-0 m-0">
+            <li class="breadcrumb-item">Home</li>
+            <li class="breadcrumb-item"><a href="#">Admin</a></li>
+            <li class="breadcrumb-item active">Dashboard</li>
+        </ol>
+        <form class="form-inline my-2 my-lg-0">
+            <input class="form-control form-control-sm mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-sm btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+        </form>
+    </header>
+    <div class="row" style="padding-top: 60px;">
+        <div class="col-sm-3">
+            <div data-scrollbar="true" data-height="100%">
+
+                <ul class="nav">
+
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-align-left"></i>
+                            <span>Menu Level</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li class="has-sub">
+                                <a href="javascript:;">
+                                    <b class="caret"></b> Menu 1.1
+                                </a>
+                                <ul class="sub-menu">
+                                    <li class="has-sub">
+                                        <a href="javascript:;">
+                                            <b class="caret"></b> Menu 2.1
+                                        </a>
+                                        <ul class="sub-menu">
+                                            <li><a href="javascript:;">Menu 3.1</a></li>
+                                            <li><a href="javascript:;">Menu 3.2</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="javascript:;">Menu 2.2</a></li>
+                                    <li><a href="javascript:;">Menu 2.3</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="javascript:;">Menu 1.2</a></li>
+                            <li><a href="javascript:;">Menu 1.3</a></li>
+                        </ul>
+                    </li>
+
+                    <li><a href="javascript:;" class="sidebar-minify-btn" data-click="sidebar-minify"><i class="fa fa-angle-double-left"></i></a></li>
+
+                </ul>
+
+            </div>
+
+        </div>
+        <div id="main" class="col-sm-9">
+        </div>
+    </div>
+
+
+
+    <!--
+
+  <div class="c-sidebar c-sidebar-dark c-sidebar-fixed c-sidebar-lg-show" id="sidebar">
+
+    <div id="tree">123</div>
+    <ul class="c-sidebar-nav">
+      <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="index.html">
+          <svg class="c-sidebar-nav-icon">
+            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-speedometer"></use>
+          </svg> Dashboard<span class="badge badge-info">NEW</span></a></li>
+      <li class="c-sidebar-nav-title">Theme</li>
+      <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="colors.html">
+          <svg class="c-sidebar-nav-icon">
+            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-drop1"></use>
+          </svg> Colors</a></li>
+      <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="typography.html">
+          <svg class="c-sidebar-nav-icon">
+            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-pencil"></use>
+          </svg> Typography</a></li>
+      <li class="c-sidebar-nav-title">Components</li>
+      <li class="c-sidebar-nav-item c-sidebar-nav-dropdown"><a class="c-sidebar-nav-link c-sidebar-nav-dropdown-toggle"
+          href="#">
+          <svg class="c-sidebar-nav-icon">
+            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-puzzle"></use>
+          </svg> Base</a>
+        <ul class="c-sidebar-nav-dropdown-items">
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/breadcrumb.html"><span
+                class="c-sidebar-nav-icon"></span> Breadcrumb</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/cards.html"><span
+                class="c-sidebar-nav-icon"></span> Cards</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/carousel.html"><span
+                class="c-sidebar-nav-icon"></span> Carousel</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/collapse.html"><span
+                class="c-sidebar-nav-icon"></span> Collapse</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/forms.html"><span
+                class="c-sidebar-nav-icon"></span> Forms</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/jumbotron.html"><span
+                class="c-sidebar-nav-icon"></span> Jumbotron</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/list-group.html"><span
+                class="c-sidebar-nav-icon"></span> List group</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/navs.html"><span
+                class="c-sidebar-nav-icon"></span> Navs</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/pagination.html"><span
+                class="c-sidebar-nav-icon"></span> Pagination</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/popovers.html"><span
+                class="c-sidebar-nav-icon"></span> Popovers</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/progress.html"><span
+                class="c-sidebar-nav-icon"></span> Progress</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/scrollspy.html"><span
+                class="c-sidebar-nav-icon"></span> Scrollspy</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/switches.html"><span
+                class="c-sidebar-nav-icon"></span> Switches</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/tables.html"><span
+                class="c-sidebar-nav-icon"></span> Tables</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/tabs.html"><span
+                class="c-sidebar-nav-icon"></span> Tabs</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/tooltips.html"><span
+                class="c-sidebar-nav-icon"></span> Tooltips</a></li>
+        </ul>
+      </li>
+      <li class="c-sidebar-nav-item c-sidebar-nav-dropdown"><a class="c-sidebar-nav-link c-sidebar-nav-dropdown-toggle"
+          href="#">
+          <svg class="c-sidebar-nav-icon">
+            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-cursor"></use>
+          </svg> Buttons</a>
+        <ul class="c-sidebar-nav-dropdown-items">
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="buttons/buttons.html"><span
+                class="c-sidebar-nav-icon"></span> Buttons</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="buttons/button-group.html"><span
+                class="c-sidebar-nav-icon"></span> Buttons Group</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="buttons/dropdowns.html"><span
+                class="c-sidebar-nav-icon"></span> Dropdowns</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="buttons/brand-buttons.html"><span
+                class="c-sidebar-nav-icon"></span> Brand Buttons</a></li>
+        </ul>
+      </li>
+      <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="charts.html">
+          <svg class="c-sidebar-nav-icon">
+            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-chart-pie"></use>
+          </svg> Charts</a></li>
+      <li class="c-sidebar-nav-dropdown"><a class="c-sidebar-nav-dropdown-toggle" href="#">
+          <svg class="c-sidebar-nav-icon">
+            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-star"></use>
+          </svg> Icons</a>
+        <ul class="c-sidebar-nav-dropdown-items">
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="icons/coreui-icons-free.html"> CoreUI
+              Icons<span class="badge badge-success">Free</span></a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="icons/coreui-icons-brand.html"> CoreUI
+              Icons - Brand</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="icons/coreui-icons-flag.html"> CoreUI Icons
+              - Flag</a></li>
+        </ul>
+      </li>
+      <li class="c-sidebar-nav-item c-sidebar-nav-dropdown"><a class="c-sidebar-nav-link c-sidebar-nav-dropdown-toggle"
+          href="#">
+          <svg class="c-sidebar-nav-icon">
+            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-bell"></use>
+          </svg> Notifications</a>
+        <ul class="c-sidebar-nav-dropdown-items">
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="notifications/alerts.html"><span
+                class="c-sidebar-nav-icon"></span> Alerts</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="notifications/badge.html"><span
+                class="c-sidebar-nav-icon"></span> Badge</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="notifications/modals.html"><span
+                class="c-sidebar-nav-icon"></span> Modals</a></li>
+        </ul>
+      </li>
+      <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="widgets.html">
+          <svg class="c-sidebar-nav-icon">
+            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-calculator"></use>
+          </svg> Widgets<span class="badge badge-info">NEW</span></a></li>
+      <li class="c-sidebar-nav-divider"></li>
+      <li class="c-sidebar-nav-title">Extras</li>
+      <li class="c-sidebar-nav-item c-sidebar-nav-dropdown"><a class="c-sidebar-nav-link c-sidebar-nav-dropdown-toggle"
+          href="#">
+          <svg class="c-sidebar-nav-icon">
+            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-star"></use>
+          </svg> Pages</a>
+        <ul class="c-sidebar-nav-dropdown-items">
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="login.html" target="_top">
+              <svg class="c-sidebar-nav-icon">
+                <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-account-logout"></use>
+              </svg> Login</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="register.html" target="_top">
+              <svg class="c-sidebar-nav-icon">
+                <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-account-logout"></use>
+              </svg> Register</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="404.html" target="_top">
+              <svg class="c-sidebar-nav-icon">
+                <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-bug"></use>
+              </svg> Error 404</a></li>
+          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="500.html" target="_top">
+              <svg class="c-sidebar-nav-icon">
+                <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-bug"></use>
+              </svg> Error 500</a></li>
+        </ul>
+      </li>
+    </ul>
+    <button class="c-sidebar-minimizer c-class-toggler" type="button" data-target="_parent"
+      data-class="c-sidebar-minimized"></button>
+  </div>
+  <div class="c-wrapper c-fixed-components">
+    
+  
+    <div class="c-body">
+      <main class="c-main">
+        <div class="container-fluid">
+          <div id="main" class="fade-in"></div>
+        </div>
+      </main>
+ 
+    </div>
+  </div>
+-->
+    <script src="vendors/jquery/js/jquery.min.js"></script>
+    <!--script src="vendors/bootstrap/js/bootstrap.min.js"></script-->
+    <script src="vendors/bootstrap/js/bootstrap.treeview.js"></script>
+    <script src="templates/templates.js"></script>
+    <!--script src="assets/js/app.min.js" type="bc777d705d6d8da1ad503124-text/javascript"></script-->
+    <!--script src="assets/js/theme/default.min.js" type="bc777d705d6d8da1ad503124-text/javascript"></script-->
+    <script>
+        var messages = {};
+
+        function upd_table() {
+            var array = [];
+
+            $.each(messages, function(key, value) {
+                var line = {};
+                line['status'] = (value['status']) ? value['status'] : 'unknown';
+                line['node'] = (value['node']) ? value['node'] : 'unknown';
+                //line.push(value['node']);
+                //line.push(value['node']);
+                //line.push(value['node']);
+                array.push(line);
+            });
+
+            $('#alertsTable').DataTable({
+                retrieve: true,
+                "columns": [{
+                    "data": "status"
+                }, {
+                    "data": "node"
+                }, {
+                    "data": "status"
+                }, {
+                    "data": "status"
+                }, {
+                    "data": "status"
+                }, {
+                    "data": "status"
+                }],
+                data: array
+            });
+
+            delete(array);
+        }
+
+        (function alerts() {
+            $.ajax({
+                url: '/api/v1/alerts',
+                success: function(jsn) {
+                    //$('#alertsTable').bootstrapTable({
+                    //  data: jsn.data.alerts
+                    //});
+                    $.each(jsn.data.alerts, function(key, value) {
+                        messages[value['groupId']] = value;
+                    });
+
+                    //upd_table();
+                },
+                complete: function() {
+                    // Schedule the next request when the current one's complete
+                    setTimeout(alerts, 10000);
+                }
+            });
+        })();
+
+        $.ajax({
+            url: '/api/v1/menu',
+            success: function(jsn) {
+                $('#tree').treeview({
+                    data: jsn.data, // data is not optional
+                    levels: 5,
+                    backColor: 'green'
+                });
+            }
+        });
+
+
+
+        function load(url) {
+            $.each(templates, function(key, value) {
+                var re = new RegExp(value['url']);
+                if (re.test(url)) {
+                    $.ajax({
+                        url: value['tmpl'],
+                        success: function(html) {
+                            $("#main").append(html);
+                        }
+                    });
+                    return false;
+                }
+            });
+
+        }
+
+        load('/');
+    </script>
+
+</body>
+
+</html>
+<tbody>
+    <tr>
+        <td><span class="badge badge-success">resolved</span></td>
+        <td>Carwyn Fachtna</td>
+        <td>2012/01/01</td>
+        <td>Member</td>
+    </tr>
+    <tr>
+        <td><span class="badge badge-danger">firing</span></td>
+        <td>Nehemiah Tatius</td>
+        <td>2012/02/01</td>
+        <td>Staff</td>
+    </tr>
+    <tr>
+        <td><span class="badge badge-secondary">Inactive</span></td>
+        <td>Ebbe Gemariah</td>
+        <td>2012/02/01</td>
+        <td>Admin</td>
+    </tr>
+    <tr>
+        <td><span class="badge badge-warning">Pending</span></td>
+        <td>Eustorgios Amulius</td>
+        <td>2012/03/01</td>
+        <td>Member</td>
+    </tr>
+    <tr>
+        <td><span class="badge badge-success">Active</span></td>
+        <td>Leopold Gáspár</td>
+        <td>2012/01/21</td>
+        <td>Staff</td>
+    </tr>
+</tbody>

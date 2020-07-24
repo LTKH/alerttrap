@@ -1,322 +1,442 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Alertstrap</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
-    <!-- Main styles for this application-->
-    <link href="css/style.css" rel="stylesheet">
-    <link href="vendors/bootstrap/css/bootstrap-treeview.css" rel="stylesheet">
-    <!--link href="vendors/bootstrap/css/bootstrap.min.css" rel="stylesheet"-->
-    <!--link href="vendors/@coreui/chartjs/css/coreui-chartjs.css" rel="stylesheet"-->
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+    <meta content="" name="description" />
+    <meta content="" name="author" />
+
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
+
+    <link href="assets/plugins/bootstrap-table/dist/bootstrap-table.min.css" rel="stylesheet" />
+
+    <link href="assets/plugins/jvectormap-next/jquery-jvectormap.css" rel="stylesheet" />
+    <link href="assets/plugins/nvd3/build/nv.d3.css" rel="stylesheet" />
+    <link href="assets/plugins/bootstrap-daterangepicker/daterangepicker.css" rel="stylesheet" />
+
+    <link href="assets/css/default/app.min.css" rel="stylesheet" />
+    <link href="assets/css/default/theme/black.min.css" rel="stylesheet" id="theme-css-link">
+
 </head>
 
-<body class="c-app c-dark-theme">
-    <header class="c-header c-header-fixed c-header-with-subheader">
-        <!--nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="#">Navbar</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+<body style="background-color: #1a2229;">
 
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item active">
-                        <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Link</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Dropdown
-                        </a>
-                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <a class="dropdown-item" href="#">Action</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#">Something else here</a>
-                        </div>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-                    </li>
-                </ul>
-                <form class="form-inline my-2 my-lg-0">
-                    <input class="form-control form-control-sm mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-                    <button class="btn btn-sm btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-                </form>
+    <div id="page-loader" class="fade show">
+        <span class="spinner"></span>
+    </div>
+
+
+    <div id="page-container" class="fade page-sidebar-fixed page-header-fixed">
+
+        <div id="header" class="header navbar-dark">
+
+            <div class="navbar-header">
+                <a href="index.html" class="navbar-brand"><i class="fa fa-th"></i>&nbsp;Alertstrap</a>
+                <button type="button" class="navbar-toggle" data-click="sidebar-toggled">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
             </div>
-        </nav-->
 
-        <ol class="breadcrumb border-0 m-0">
-            <li class="breadcrumb-item">Home</li>
-            <li class="breadcrumb-item"><a href="#">Admin</a></li>
-            <li class="breadcrumb-item active">Dashboard</li>
-        </ol>
-        <form class="form-inline my-2 my-lg-0">
-            <input class="form-control form-control-sm mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-            <button class="btn btn-sm btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-        </form>
-    </header>
-    <div class="row">
-        <div class="col-sm-3">
-            <div id="tree"></div>
+            <ul class="navbar-nav navbar-right">
+                <li class="navbar-form">
+                    <form action="" method="POST" name="search">
+                        <div class="form-group">
+                            <input type="text" class="form-control form-control-sm" placeholder="Enter keyword" />
+                            <button type="submit" class="btn btn-search"><i class="fa fa-search"></i></button>
+                        </div>
+                    </form>
+                </li>
+            </ul>
+
         </div>
-        <div id="main" class="col-sm-9">
+
+
+        <div id="sidebar" class="sidebar">
+
+            <div id="menu" data-scrollbar="true" data-height="100%">
+
+                <ul class="nav">
+                    <li class="nav-header">Navigation</li>
+                    <li class="has-sub active">
+                        <a href="javascript:load('/');">
+                            <b class="caret"></b>
+                            <i class="fa fa-th-large"></i>
+                            <span>Kubernetes</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="javascript:load('/Dashboard v1');">Dashboard v1</a></li>
+                            <li><a href="javascript:load('/alerts');">Dashboard v2</a></li>
+                            <li><a href="javascript:load('/alerts');">Dashboard v3</a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <span class="badge pull-right">10</span>
+                            <i class="fa fa-hdd"></i>
+                            <span>Email</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="email_inbox.html">Inbox</a></li>
+                            <li><a href="email_compose.html">Compose</a></li>
+                            <li><a href="email_detail.html">Detail</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="widget.html">
+                            <i class="fab fa-simplybuilt"></i>
+                            <span>Widgets <span class="label label-theme">NEW</span></span>
+                        </a>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-gem"></i>
+                            <span>UI Elements <span class="label label-theme">NEW</span></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="ui_general.html">General <i class="fa fa-paper-plane text-theme"></i></a></li>
+                            <li><a href="ui_typography.html">Typography</a></li>
+                            <li><a href="ui_tabs_accordions.html">Tabs & Accordions</a></li>
+                            <li><a href="ui_unlimited_tabs.html">Unlimited Nav Tabs</a></li>
+                            <li><a href="ui_modal_notification.html">Modal & Notification <i class="fa fa-paper-plane text-theme"></i></a></li>
+                            <li><a href="ui_widget_boxes.html">Widget Boxes</a></li>
+                            <li><a href="ui_media_object.html">Media Object</a></li>
+                            <li><a href="ui_buttons.html">Buttons <i class="fa fa-paper-plane text-theme"></i></a></li>
+                            <li><a href="ui_icons.html">Icons</a></li>
+                            <li><a href="ui_simple_line_icons.html">Simple Line Icons</a></li>
+                            <li><a href="ui_ionicons.html">Ionicons</a></li>
+                            <li><a href="ui_tree.html">Tree View</a></li>
+                            <li><a href="ui_language_bar_icon.html">Language Bar & Icon</a></li>
+                            <li><a href="ui_social_buttons.html">Social Buttons</a></li>
+                            <li><a href="ui_tour.html">Intro JS</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="bootstrap_4.html">
+                            <div class="icon-img">
+                                <img src="assets/img/logo/logo-bs4.png" alt="" />
+                            </div>
+                            <span>Bootstrap 4 <span class="label label-theme">NEW</span></span>
+                        </a>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-list-ol"></i>
+                            <span>Form Stuff <span class="label label-theme">NEW</span></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="form_elements.html">Form Elements <i class="fa fa-paper-plane text-theme"></i></a></li>
+                            <li><a href="form_plugins.html">Form Plugins <i class="fa fa-paper-plane text-theme"></i></a></li>
+                            <li><a href="form_slider_switcher.html">Form Slider + Switcher</a></li>
+                            <li><a href="form_validation.html">Form Validation</a></li>
+                            <li><a href="form_wizards.html">Wizards</a></li>
+                            <li><a href="form_wizards_validation.html">Wizards + Validation</a></li>
+                            <li><a href="form_wysiwyg.html">WYSIWYG</a></li>
+                            <li><a href="form_editable.html">X-Editable</a></li>
+                            <li><a href="form_multiple_upload.html">Multiple File Upload</a></li>
+                            <li><a href="form_summernote.html">Summernote</a></li>
+                            <li><a href="form_dropzone.html">Dropzone</a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-table"></i>
+                            <span>Tables</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="table_basic.html">Basic Tables</a></li>
+                            <li class="has-sub">
+                                <a href="javascript:;"><b class="caret"></b> Managed Tables</a>
+                                <ul class="sub-menu">
+                                    <li><a href="table_manage.html">Default</a></li>
+                                    <li><a href="table_manage_autofill.html">Autofill</a></li>
+                                    <li><a href="table_manage_buttons.html">Buttons</a></li>
+                                    <li><a href="table_manage_colreorder.html">ColReorder</a></li>
+                                    <li><a href="table_manage_fixed_columns.html">Fixed Column</a></li>
+                                    <li><a href="table_manage_fixed_header.html">Fixed Header</a></li>
+                                    <li><a href="table_manage_keytable.html">KeyTable</a></li>
+                                    <li><a href="table_manage_responsive.html">Responsive</a></li>
+                                    <li><a href="table_manage_rowreorder.html">RowReorder</a></li>
+                                    <li><a href="table_manage_scroller.html">Scroller</a></li>
+                                    <li><a href="table_manage_select.html">Select</a></li>
+                                    <li><a href="table_manage_combine.html">Extension Combination</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-star"></i>
+                            <span>Front End</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="../../frontend/one-page-parallax/index.html" target="_blank">One Page Parallax</a></li>
+                            <li><a href="../../frontend/blog/index.html" target="_blank">Blog</a></li>
+                            <li><a href="../../frontend/forum/index.html" target="_blank">Forum</a></li>
+                            <li><a href="../../frontend/e-commerce/index.html" target="_blank">E-Commerce</a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-envelope"></i>
+                            <span>Email Template</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="email_system.html">System Template</a></li>
+                            <li><a href="email_newsletter.html">Newsletter Template</a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-chart-pie"></i>
+                            <span>Chart <span class="label label-theme">NEW</span></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="chart-flot.html">Flot Chart</a></li>
+                            <li><a href="chart-morris.html">Morris Chart</a></li>
+                            <li><a href="chart-js.html">Chart JS</a></li>
+                            <li><a href="chart-d3.html">d3 Chart</a></li>
+                            <li><a href="chart-apex.html">Apex Chart <i class="fa fa-paper-plane text-theme"></i></a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="calendar.html">
+                            <i class="fa fa-calendar"></i>
+                            <span>Calendar</span>
+                        </a>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-map"></i>
+                            <span>Map</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="map_vector.html">Vector Map</a></li>
+                            <li><a href="map_google.html">Google Map</a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-image"></i>
+                            <span>Gallery</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="gallery.html">Gallery v1</a></li>
+                            <li><a href="gallery_v2.html">Gallery v2</a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-cogs"></i>
+                            <span>Page Options <span class="label label-theme">NEW</span></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="page_blank.html">Blank Page</a></li>
+                            <li><a href="page_with_footer.html">Page with Footer</a></li>
+                            <li><a href="page_without_sidebar.html">Page without Sidebar</a></li>
+                            <li><a href="page_with_right_sidebar.html">Page with Right Sidebar</a></li>
+                            <li><a href="page_with_minified_sidebar.html">Page with Minified Sidebar</a></li>
+                            <li><a href="page_with_two_sidebar.html">Page with Two Sidebar</a></li>
+                            <li><a href="page_with_line_icons.html">Page with Line Icons</a></li>
+                            <li><a href="page_with_ionicons.html">Page with Ionicons</a></li>
+                            <li><a href="page_full_height.html">Full Height Content</a></li>
+                            <li><a href="page_with_wide_sidebar.html">Page with Wide Sidebar</a></li>
+                            <li><a href="page_with_light_sidebar.html">Page with Light Sidebar</a></li>
+                            <li><a href="page_with_mega_menu.html">Page with Mega Menu</a></li>
+                            <li><a href="page_with_top_menu.html">Page with Top Menu</a></li>
+                            <li><a href="page_with_boxed_layout.html">Page with Boxed Layout</a></li>
+                            <li><a href="page_with_mixed_menu.html">Page with Mixed Menu</a></li>
+                            <li><a href="page_boxed_layout_with_mixed_menu.html">Boxed Layout with Mixed Menu</a></li>
+                            <li><a href="page_with_transparent_sidebar.html">Page with Transparent Sidebar</a></li>
+                            <li><a href="page_with_search_sidebar.html">Page with Search Sidebar <i class="fa fa-paper-plane text-theme"></i></a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-gift"></i>
+                            <span>Extra <span class="label label-theme">NEW</span></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="extra_timeline.html">Timeline</a></li>
+                            <li><a href="extra_coming_soon.html">Coming Soon Page</a></li>
+                            <li><a href="extra_search_results.html">Search Results</a></li>
+                            <li><a href="extra_invoice.html">Invoice</a></li>
+                            <li><a href="extra_404_error.html">404 Error Page</a></li>
+                            <li><a href="extra_profile.html">Profile Page</a></li>
+                            <li><a href="extra_scrum_board.html">Scrum Board <i class="fa fa-paper-plane text-theme"></i></a></li>
+                            <li><a href="extra_cookie_acceptance_banner.html">Cookie Acceptance Banner <i class="fa fa-paper-plane text-theme"></i></a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-key"></i>
+                            <span>Login & Register</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="login.html">Login</a></li>
+                            <li><a href="login_v2.html">Login v2</a></li>
+                            <li><a href="login_v3.html">Login v3</a></li>
+                            <li><a href="register_v3.html">Register v3</a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-cubes"></i>
+                            <span>Version <span class="label label-theme">NEW</span></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="../html/index_v3.html">HTML</a></li>
+                            <li><a href="../ajax/">AJAX</a></li>
+                            <li><a href="../angularjs/">ANGULAR JS</a></li>
+                            <li><a href="../angularjs8/">ANGULAR JS 8</a></li>
+                            <li><a href="javascript:alert('Laravel only available on downloaded version of Color Admin');">LARAVEL</a></li>
+                            <li><a href="../vuejs/">VUE JS</a></li>
+                            <li><a href="../reactjs/">REACT JS</a></li>
+                            <li><a href="../material/index_v3.html">MATERIAL DESIGN</a></li>
+                            <li><a href="../apple/index_v3.html">APPLE DESIGN</a></li>
+                            <li><a href="../transparent/index_v3.html">TRANSPARENT DESIGN <i class="fa fa-paper-plane text-theme"></i></a></li>
+                            <li><a href="../facebook/index_v3.html">FACEBOOK DESIGN <i class="fa fa-paper-plane text-theme"></i></a></li>
+                            <li><a href="../google/index_v3.html">GOOGLE DESIGN <i class="fa fa-paper-plane text-theme"></i></a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-medkit"></i>
+                            <span>Helper</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li><a href="helper_css.html">Predefined CSS Classes</a></li>
+                        </ul>
+                    </li>
+                    <li class="has-sub">
+                        <a href="javascript:;">
+                            <b class="caret"></b>
+                            <i class="fa fa-align-left"></i>
+                            <span>Menu Level</span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li class="has-sub">
+                                <a href="javascript:;">
+                                    <b class="caret"></b> Menu 1.1
+                                </a>
+                                <ul class="sub-menu">
+                                    <li class="has-sub">
+                                        <a href="javascript:;">
+                                            <b class="caret"></b> Menu 2.1
+                                        </a>
+                                        <ul class="sub-menu">
+                                            <li><a href="javascript:;">Menu 111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111</a></li>
+                                            <li><a href="javascript:;">Menu 3.2</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="javascript:;">Menu 2.2</a></li>
+                                    <li><a href="javascript:;">Menu 2.3</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="javascript:;">Menu 1.2</a></li>
+                            <li><a href="javascript:;">Menu 1.3</a></li>
+                        </ul>
+                    </li>
+
+                    <li><a href="javascript:;" class="sidebar-minify-btn" data-click="sidebar-minify"><i class="fa fa-angle-double-left"></i></a></li>
+
+                </ul>
+
+            </div>
+
         </div>
+        <div class="sidebar-bg"></div>
+
+
+        <div id="content" class="content"></div>
+
+        <a href="javascript:;" class="btn btn-icon btn-circle btn-success btn-scroll-to-top fade" data-click="scroll-top"><i class="fa fa-angle-up"></i></a>
+
     </div>
 
-    <!--
+</body>
 
-  <div class="c-sidebar c-sidebar-dark c-sidebar-fixed c-sidebar-lg-show" id="sidebar">
+<script src="assets/js/app.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
+<script src="assets/js/theme/default.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
 
-    <div id="tree">123</div>
-    <ul class="c-sidebar-nav">
-      <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="index.html">
-          <svg class="c-sidebar-nav-icon">
-            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-speedometer"></use>
-          </svg> Dashboard<span class="badge badge-info">NEW</span></a></li>
-      <li class="c-sidebar-nav-title">Theme</li>
-      <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="colors.html">
-          <svg class="c-sidebar-nav-icon">
-            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-drop1"></use>
-          </svg> Colors</a></li>
-      <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="typography.html">
-          <svg class="c-sidebar-nav-icon">
-            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-pencil"></use>
-          </svg> Typography</a></li>
-      <li class="c-sidebar-nav-title">Components</li>
-      <li class="c-sidebar-nav-item c-sidebar-nav-dropdown"><a class="c-sidebar-nav-link c-sidebar-nav-dropdown-toggle"
-          href="#">
-          <svg class="c-sidebar-nav-icon">
-            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-puzzle"></use>
-          </svg> Base</a>
-        <ul class="c-sidebar-nav-dropdown-items">
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/breadcrumb.html"><span
-                class="c-sidebar-nav-icon"></span> Breadcrumb</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/cards.html"><span
-                class="c-sidebar-nav-icon"></span> Cards</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/carousel.html"><span
-                class="c-sidebar-nav-icon"></span> Carousel</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/collapse.html"><span
-                class="c-sidebar-nav-icon"></span> Collapse</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/forms.html"><span
-                class="c-sidebar-nav-icon"></span> Forms</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/jumbotron.html"><span
-                class="c-sidebar-nav-icon"></span> Jumbotron</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/list-group.html"><span
-                class="c-sidebar-nav-icon"></span> List group</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/navs.html"><span
-                class="c-sidebar-nav-icon"></span> Navs</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/pagination.html"><span
-                class="c-sidebar-nav-icon"></span> Pagination</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/popovers.html"><span
-                class="c-sidebar-nav-icon"></span> Popovers</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/progress.html"><span
-                class="c-sidebar-nav-icon"></span> Progress</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/scrollspy.html"><span
-                class="c-sidebar-nav-icon"></span> Scrollspy</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/switches.html"><span
-                class="c-sidebar-nav-icon"></span> Switches</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/tables.html"><span
-                class="c-sidebar-nav-icon"></span> Tables</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/tabs.html"><span
-                class="c-sidebar-nav-icon"></span> Tabs</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="base/tooltips.html"><span
-                class="c-sidebar-nav-icon"></span> Tooltips</a></li>
-        </ul>
-      </li>
-      <li class="c-sidebar-nav-item c-sidebar-nav-dropdown"><a class="c-sidebar-nav-link c-sidebar-nav-dropdown-toggle"
-          href="#">
-          <svg class="c-sidebar-nav-icon">
-            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-cursor"></use>
-          </svg> Buttons</a>
-        <ul class="c-sidebar-nav-dropdown-items">
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="buttons/buttons.html"><span
-                class="c-sidebar-nav-icon"></span> Buttons</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="buttons/button-group.html"><span
-                class="c-sidebar-nav-icon"></span> Buttons Group</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="buttons/dropdowns.html"><span
-                class="c-sidebar-nav-icon"></span> Dropdowns</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="buttons/brand-buttons.html"><span
-                class="c-sidebar-nav-icon"></span> Brand Buttons</a></li>
-        </ul>
-      </li>
-      <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="charts.html">
-          <svg class="c-sidebar-nav-icon">
-            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-chart-pie"></use>
-          </svg> Charts</a></li>
-      <li class="c-sidebar-nav-dropdown"><a class="c-sidebar-nav-dropdown-toggle" href="#">
-          <svg class="c-sidebar-nav-icon">
-            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-star"></use>
-          </svg> Icons</a>
-        <ul class="c-sidebar-nav-dropdown-items">
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="icons/coreui-icons-free.html"> CoreUI
-              Icons<span class="badge badge-success">Free</span></a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="icons/coreui-icons-brand.html"> CoreUI
-              Icons - Brand</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="icons/coreui-icons-flag.html"> CoreUI Icons
-              - Flag</a></li>
-        </ul>
-      </li>
-      <li class="c-sidebar-nav-item c-sidebar-nav-dropdown"><a class="c-sidebar-nav-link c-sidebar-nav-dropdown-toggle"
-          href="#">
-          <svg class="c-sidebar-nav-icon">
-            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-bell"></use>
-          </svg> Notifications</a>
-        <ul class="c-sidebar-nav-dropdown-items">
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="notifications/alerts.html"><span
-                class="c-sidebar-nav-icon"></span> Alerts</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="notifications/badge.html"><span
-                class="c-sidebar-nav-icon"></span> Badge</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="notifications/modals.html"><span
-                class="c-sidebar-nav-icon"></span> Modals</a></li>
-        </ul>
-      </li>
-      <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="widgets.html">
-          <svg class="c-sidebar-nav-icon">
-            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-calculator"></use>
-          </svg> Widgets<span class="badge badge-info">NEW</span></a></li>
-      <li class="c-sidebar-nav-divider"></li>
-      <li class="c-sidebar-nav-title">Extras</li>
-      <li class="c-sidebar-nav-item c-sidebar-nav-dropdown"><a class="c-sidebar-nav-link c-sidebar-nav-dropdown-toggle"
-          href="#">
-          <svg class="c-sidebar-nav-icon">
-            <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-star"></use>
-          </svg> Pages</a>
-        <ul class="c-sidebar-nav-dropdown-items">
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="login.html" target="_top">
-              <svg class="c-sidebar-nav-icon">
-                <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-account-logout"></use>
-              </svg> Login</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="register.html" target="_top">
-              <svg class="c-sidebar-nav-icon">
-                <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-account-logout"></use>
-              </svg> Register</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="404.html" target="_top">
-              <svg class="c-sidebar-nav-icon">
-                <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-bug"></use>
-              </svg> Error 404</a></li>
-          <li class="c-sidebar-nav-item"><a class="c-sidebar-nav-link" href="500.html" target="_top">
-              <svg class="c-sidebar-nav-icon">
-                <use xlink:href="vendors/@coreui/icons/svg/free.svg#cil-bug"></use>
-              </svg> Error 500</a></li>
-        </ul>
-      </li>
-    </ul>
-    <button class="c-sidebar-minimizer c-class-toggler" type="button" data-target="_parent"
-      data-class="c-sidebar-minimized"></button>
-  </div>
-  <div class="c-wrapper c-fixed-components">
-    
-  
-    <div class="c-body">
-      <main class="c-main">
-        <div class="container-fluid">
-          <div id="main" class="fade-in"></div>
-        </div>
-      </main>
- 
-    </div>
-  </div>
--->
-    <script src="vendors/jquery/js/jquery.min.js"></script>
-    <!--script src="vendors/bootstrap/js/bootstrap.min.js"></script-->
-    <script src="vendors/bootstrap/js/bootstrap.treeview.js"></script>
-    <script src="templates/templates.js"></script>
-    <script>
-        var messages = {};
 
-        function upd_table() {
-            var array = [];
+<script src="assets/plugins/d3/d3.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
+<script src="assets/plugins/nvd3/build/nv.d3.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
+<script src="assets/plugins/jvectormap-next/jquery-jvectormap.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
+<script src="assets/plugins/jvectormap-next/jquery-jvectormap-world-mill.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
+<script src="assets/plugins/apexcharts/dist/apexcharts.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
+<script src="assets/plugins/moment/min/moment.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
+<script src="assets/plugins/bootstrap-daterangepicker/daterangepicker.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
+<script src="assets/js/demo/dashboard-v3.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
 
-            $.each(messages, function(key, value) {
-                var line = {};
-                line['status'] = (value['status']) ? value['status'] : 'unknown';
-                line['node'] = (value['node']) ? value['node'] : 'unknown';
-                //line.push(value['node']);
-                //line.push(value['node']);
-                //line.push(value['node']);
-                array.push(line);
-            });
+<script src="https://ajax.cloudflare.com/cdn-cgi/scripts/7089c43e/cloudflare-static/rocket-loader.min.js" data-cf-settings="cda66ff8140fedf42539c6e0-|49" defer=""></script>
 
-            $('#alertsTable').DataTable({
-                retrieve: true,
-                "columns": [{
-                    "data": "status"
-                }, {
-                    "data": "node"
-                }, {
-                    "data": "status"
-                }, {
-                    "data": "status"
-                }, {
-                    "data": "status"
-                }, {
-                    "data": "status"
-                }],
-                data: array
-            });
+<script src="assets/js/demo/dashboard-v3.js" type="d529a51056515848844879da-text/javascript"></script>
+<script src="assets/plugins/moment/min/moment.min.js" type="d529a51056515848844879da-text/javascript"></script>
+<script src="assets/plugins/nvd3/build/nv.d3.min.js" type="d529a51056515848844879da-text/javascript"></script>
+<script src="assets/plugins/jvectormap-next/jquery-jvectormap-world-mill.js" type="d529a51056515848844879da-text/javascript"></script>
+<script src="assets/plugins/apexcharts/dist/apexcharts.min.js" type="d529a51056515848844879da-text/javascript"></script>
+<script src="assets/plugins/bootstrap-daterangepicker/daterangepicker.js" type="d529a51056515848844879da-text/javascript"></script>
 
-            delete(array);
-        }
+<script type="text/javascript" src="assets/js/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="templates/templates.js"></script>
+<script>
+    load10 = function() {};
+    load30 = function() {};
+    load60 = function() {};
+    //$.ajax({
+    //    url: '/api/v1/menu',
+    //    success: function(jsn) {
+    //        $('#menu').treeview({
+    //            data: jsn.data, // data is not optional
+    //            levels: 5,
+    //            backColor: 'green'
+    //        });
+    //    }
+    //});
 
-        (function alerts() {
-            $.ajax({
-                url: '/api/v1/alerts',
-                success: function(jsn) {
-                    //$('#alertsTable').bootstrapTable({
-                    //  data: jsn.data.alerts
-                    //});
-                    $.each(jsn.data.alerts, function(key, value) {
-                        messages[value['groupId']] = value;
-                    });
 
-                    //upd_table();
-                },
-                complete: function() {
-                    // Schedule the next request when the current one's complete
-                    setTimeout(alerts, 10000);
-                }
-            });
-        })();
-
-        $.ajax({
-            url: '/api/v1/menu',
-            success: function(jsn) {
-                $('#tree').treeview({
-                    data: jsn.data, // data is not optional
-                    levels: 5,
-                    backColor: 'green'
+    function load(url) {
+        $.each(templates, function(key, value) {
+            var re = new RegExp(value['url']);
+            //console.log(value['url']);
+            if (re.test(url)) {
+                $.ajax({
+                    url: value['tmpl'],
+                    success: function(html) {
+                        $("#content").empty();
+                        $("#content").append(html);
+                    }
                 });
+                return false;
             }
         });
 
+    }
 
-
-        function load(url) {
-            $.each(templates, function(key, value) {
-                var re = new RegExp(value['url']);
-                if (re.test(url)) {
-                    $.ajax({
-                        url: value['tmpl'],
-                        success: function(html) {
-                            $("#main").append(html);
-                        }
-                    });
-                    return false;
-                }
-            });
-
-        }
-
+    $(function() {
         load('/');
-    </script>
-
+        setInterval(load10, 10000);
+        setInterval(load30, 30000);
+        setInterval(load60, 60000);
+    });
+</script>
 </body>
 
 </html>

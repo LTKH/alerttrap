@@ -1,0 +1,215 @@
+<ol class="breadcrumb float-xl-right">
+    <li class="breadcrumb-item"><a href="javascript:;">Home</a></li>
+    <li class="breadcrumb-item"><a href="javascript:;">Dashboard</a></li>
+    <li class="breadcrumb-item active">Dashboard v3</li>
+</ol>
+
+<h1 class="page-header mb-3 text-muted">Dashboard v3</h1>
+
+<div class="row">
+
+    <div class="col-xl-3 col-md-6">
+        <div class="widget widget-stats bg-red">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">ERRORS</div>
+                <div id="widget-errors" class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-xl-3 col-md-6">
+        <div class="widget widget-stats bg-orange">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">WARNINGS</div>
+                <div id="widget-warnings" class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-xl-3 col-md-6">
+        <div class="widget widget-stats bg-teal">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-check-square"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">RESOLVED</div>
+                <div id="widget-resolved" class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-xl-3 col-md-6">
+        <div class="widget widget-stats bg-dark">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-th-list"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">INFO</div>
+                <div id="widget-info" class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-xl">
+
+        <div class="card border-0 mb-3 overflow-hidden bg-dark text-white">
+
+            <div class="card-body">
+                <div class="panel-body">
+                    <div id="data-table-default_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
+                        <!--div class="row">
+                            <div class="col-sm-12 col-md-6">
+                                <div class="dataTables_length" id="data-table-default_length"><label>Show <select name="data-table-default_length" aria-controls="data-table-default" class="custom-select custom-select-sm form-control form-control-sm"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label></div>
+                            </div>
+                            <div class="col-sm-12 col-md-6">
+                                <div id="data-table-default_filter" class="dataTables_filter"><label>Search:<input type="search" class="form-control form-control-sm" placeholder="" aria-controls="data-table-default"></label></div>
+                            </div>
+                        </div-->
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <table data-height="700" data-pagination-parts="pageInfoShort" id="alerts" class="table table-responsive-sm table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th data-field="status">Status</th>
+                                            <th data-field="repeat">Repeat</th>
+                                            <th data-field="alertname">Alertname</th>
+                                            <th data-field="node">Node</th>
+                                            <th data-field="startsAt">StartsAt</th>
+                                            <th data-field="endsAt">EndsAt</th>
+                                            <th data-field="description">Description</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                        <!--div class="row">
+                            <div class="col-sm-12 col-md-5">
+                                <div class="dataTables_info" id="data-table-default_info" role="status" aria-live="polite">Showing 1 to 10 of 57 entries</div>
+                            </div>
+                            <div class="col-sm-12 col-md-7">
+                                <div class="dataTables_paginate paging_simple_numbers" id="data-table-default_paginate">
+                                    <ul class="pagination">
+                                        <li class="paginate_button page-item previous disabled" id="data-table-default_previous"><a href="#" aria-controls="data-table-default" data-dt-idx="0" tabindex="0" class="page-link">Previous</a></li>
+                                        <li class="paginate_button page-item active"><a href="#" aria-controls="data-table-default" data-dt-idx="1" tabindex="0" class="page-link">1</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="2" tabindex="0" class="page-link">2</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="3" tabindex="0" class="page-link">3</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="4" tabindex="0" class="page-link">4</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="5" tabindex="0" class="page-link">5</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="6" tabindex="0" class="page-link">6</a></li>
+                                        <li class="paginate_button page-item next" id="data-table-default_next"><a href="#" aria-controls="data-table-default" data-dt-idx="7" tabindex="0" class="page-link">Next</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div-->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<script type="text/javascript" src="assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
+<script type="text/javascript">
+    load10 = function() {
+        var count = 0;
+        var alerts = [];
+        var widget = {};
+        widget['.bg-red'] = 0;
+        widget['.bg-orange'] = 0;
+        widget['.bg-teal'] = 0;
+        widget['.bg-dark'] = 0;
+
+        $.ajax({
+            url: '/api/v1/alerts',
+            success: function(jsn) {
+                $.each(jsn.data.alerts, function(key, value) {
+                    switch (value['status'] || 'firing') {
+                        case 'firing':
+                            widget['.bg-red']++;
+                            break
+                        case 'warning':
+                            widget['.bg-orange']++;
+                            break
+                        case 'resolved':
+                            widget['.bg-teal']++;
+                            break
+                        default:
+                            widget['.bg-dark']++;
+                            break
+                    }
+
+                    if (value['status'] != 'resolved') {
+                        alerts.push({
+                            status: value['status'] || 'firing',
+                            repeat: value['repeat'] || 1,
+                            alertname: value['labels']['alertname'] || 'unknown',
+                            node: value['labels']['node'] || '-',
+                            startsAt: value['startsAt'],
+                            endsAt: value['endsAt'],
+                            description: value['annotations']['description'] || '',
+                        });
+                    }
+
+                    count++;
+                });
+
+                alerts.sort(function(a, b) {
+                    return a['repeat'] - b['repeat'];
+                });
+
+                $.each(widget, function(key, value) {
+                    if ($('.widget.widget-stats' + key).length > 0) {
+                        var prc = Math.round(100 * value / count);
+                        $('.widget.widget-stats' + key + ' .stats-number').text(value);
+                        $('.widget.widget-stats' + key + ' .progress-bar').attr('style', 'width: ' + prc + '%;');
+                        $('.widget.widget-stats' + key + ' .stats-desc').text('Text (' + prc + '%)');
+                    }
+                });
+
+                if ($('#alerts').length > 0) {
+                    $('#alerts').bootstrapTable({
+                        pagination: true,
+                        search: true,
+                        classes: "table table-responsive-sm table-sm",
+                        data: alerts
+                    });
+                }
+
+                console.log('test');
+            },
+            complete: function() {
+                //console.log('complete');
+                // Schedule the next request when the current one's complete
+
+            }
+        });
+    }
+
+    $(function() {
+        load10();
+    });
+</script>

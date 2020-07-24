@@ -143,7 +143,7 @@ func checkMatches(alert *cache.Alert, matchers [][]*Matcher) bool {
 			if val == nil {
                 val = ""
 			}
-			if !m.matches(val.(string)) {
+			if !m.matches(fmt.Sprintf("%v", val)) {
 				match = false
 			    break
 			}
@@ -176,12 +176,11 @@ func authentication(cln db.DbClient, cfg config.DB, r *http.Request) (bool, int,
 		user, ok := CacheUsers.Get(login)
 		if !ok { 
 			usr, err := cln.LoadUser(login)
-			if err != nil {
-				return false, 403, errors.New("Forbidden")
-			}
-			CacheUsers.Set(login, usr)
-			if usr.Token == token {
-				return true, 204, nil
+			if err == nil {
+				CacheUsers.Set(login, usr)
+				if usr.Token == token {
+					return true, 204, nil
+				}
 			}
 			return false, 403, errors.New("Forbidden")
 		} else {
@@ -254,25 +253,6 @@ func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
 
 func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
-	/*
-	jsn, err := json.Marshal(api.Menu)
-	if err != nil {
-		log.Printf("[error] %v - %s", err, r.URL.Path)
-		w.WriteHeader(400)
-		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error()}))
-		return
-	}
-	*/
-
-	//log.Printf("[error] %q", api.Menu)
-	
-	//var nodes Nodes;
-	//for _, m := range api.Menu {
-	//	for _, v := range m.Section {
-	//		log.Printf("%v - %v", m.Name, v.Name)
-	//	}
-	//}
 	w.Write(encodeResp(&Resp{Status:"success", Data:api.Conf.Menu}))
 }
 
@@ -457,7 +437,6 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 					alert.Status         = value.Status
 					alert.ActiveAt       = time.Now().UTC().Unix()
-					alert.StartsAt       = starts_at
 					alert.EndsAt         = ends_at
 					alert.Annotations    = value.Annotations
 					alert.GeneratorURL   = value.GeneratorURL
