@@ -8,27 +8,22 @@
     <meta content="" name="description" />
     <meta content="" name="author" />
 
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
-
-    <link href="assets/plugins/bootstrap-table/dist/bootstrap-table.min.css" rel="stylesheet" />
-
-    <link href="assets/plugins/jvectormap-next/jquery-jvectormap.css" rel="stylesheet" />
-    <link href="assets/plugins/nvd3/build/nv.d3.css" rel="stylesheet" />
-    <link href="assets/plugins/bootstrap-daterangepicker/daterangepicker.css" rel="stylesheet" />
-
     <link href="assets/css/default/app.min.css" rel="stylesheet" />
     <link href="assets/css/default/theme/black.min.css" rel="stylesheet" id="theme-css-link">
+    <link href="assets/plugins/bootstrap-table/dist/bootstrap-table.min.css" rel="stylesheet" />
+
 
 </head>
 
 <body style="background-color: #1a2229;">
 
-    <div id="page-loader" class="fade show">
+    <!--div id="page-loader" class="fade show">
         <span class="spinner"></span>
-    </div>
+    </div-->
 
 
-    <div id="page-container" class="fade page-sidebar-fixed page-header-fixed">
+    <!--div id="page-container" class="fade page-sidebar-fixed page-header-fixed"-->
+    <div id="page-container" class="page-sidebar-fixed page-header-fixed">
 
         <div id="header" class="header navbar-dark">
 
@@ -372,45 +367,46 @@
 
 </body>
 
-<script src="assets/js/app.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
-<script src="assets/js/theme/default.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
+<!--script src="assets/js/app.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script-->
+<!--script src="assets/js/theme/default.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script-->
 
 
-<script src="assets/plugins/d3/d3.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
-<script src="assets/plugins/nvd3/build/nv.d3.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
-<script src="assets/plugins/jvectormap-next/jquery-jvectormap.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
-<script src="assets/plugins/jvectormap-next/jquery-jvectormap-world-mill.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
-<script src="assets/plugins/apexcharts/dist/apexcharts.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
-<script src="assets/plugins/moment/min/moment.min.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
-<script src="assets/plugins/bootstrap-daterangepicker/daterangepicker.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
-<script src="assets/js/demo/dashboard-v3.js" type="cda66ff8140fedf42539c6e0-text/javascript"></script>
+<!--script src="https://ajax.cloudflare.com/cdn-cgi/scripts/7089c43e/cloudflare-static/rocket-loader.min.js" data-cf-settings="cda66ff8140fedf42539c6e0-|49" defer=""></script!-->
 
-<script src="https://ajax.cloudflare.com/cdn-cgi/scripts/7089c43e/cloudflare-static/rocket-loader.min.js" data-cf-settings="cda66ff8140fedf42539c6e0-|49" defer=""></script>
-
-<script src="assets/js/demo/dashboard-v3.js" type="d529a51056515848844879da-text/javascript"></script>
-<script src="assets/plugins/moment/min/moment.min.js" type="d529a51056515848844879da-text/javascript"></script>
-<script src="assets/plugins/nvd3/build/nv.d3.min.js" type="d529a51056515848844879da-text/javascript"></script>
-<script src="assets/plugins/jvectormap-next/jquery-jvectormap-world-mill.js" type="d529a51056515848844879da-text/javascript"></script>
-<script src="assets/plugins/apexcharts/dist/apexcharts.min.js" type="d529a51056515848844879da-text/javascript"></script>
-<script src="assets/plugins/bootstrap-daterangepicker/daterangepicker.js" type="d529a51056515848844879da-text/javascript"></script>
 
 <script type="text/javascript" src="assets/js/jquery/jquery.min.js"></script>
 <script type="text/javascript" src="templates/templates.js"></script>
 <script>
-    load10 = function() {};
-    load30 = function() {};
-    load60 = function() {};
-    //$.ajax({
-    //    url: '/api/v1/menu',
-    //    success: function(jsn) {
-    //        $('#menu').treeview({
-    //            data: jsn.data, // data is not optional
-    //            levels: 5,
-    //            backColor: 'green'
-    //        });
-    //    }
-    //});
+    var loaded = {};
 
+    setInterval(function() {
+        if (typeof(loaded.load10) !== 'undefined') {
+            loaded.load10();
+        }
+    }, 10000);
+
+    setInterval(function() {
+        if (typeof(loaded.load30) !== 'undefined') {
+            loaded.load30();
+        }
+    }, 30000);
+
+    setInterval(function() {
+        if (typeof(loaded.load60) !== 'undefined') {
+            loaded.load60();
+        }
+    }, 60000);
+
+    $.ajax({
+        url: '/api/v1/menu',
+        success: function(jsn) {
+            $('#menu').treeview({
+                data: jsn.data, // data is not optional
+                levels: 5,
+                backColor: 'green'
+            });
+        }
+    });
 
     function load(url) {
         $.each(templates, function(key, value) {
@@ -431,10 +427,7 @@
     }
 
     $(function() {
-        load('/');
-        setInterval(load10, 10000);
-        setInterval(load30, 30000);
-        setInterval(load60, 60000);
+        load('/alerts');
     });
 </script>
 </body>

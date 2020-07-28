@@ -3,7 +3,7 @@ create database alertstrap;
 create table if not exists mon_alerts (
   `alert_id`      varchar(50) not null,
   `group_id`      varchar(50) not null,
-  `status`        varchar(10) not null,
+  `state`         varchar(10) not null,
   `active_at`     bigint(20) default 0,
   `starts_at`     bigint(20) default 0,
   `ends_at`       bigint(20) default 0,
@@ -35,3 +35,6 @@ create table if not exists mon_users (
   `token`         varchar(100) not null,
   unique key IDX_mon_users_login (login)
 ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci;
+
+
+--alter table mon_alerts rename column `status` TO `state`;

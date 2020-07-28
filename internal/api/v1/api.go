@@ -46,7 +46,7 @@ type Alerts struct {
 type Alert struct {
   	AlertId      string                  `json:"alertId"`
   	GroupId      string                  `json:"groupId"`
-	Status       string                  `json:"status"`
+	State        string                  `json:"state"`
   	StartsAt     time.Time               `json:"startsAt"`
   	EndsAt       time.Time               `json:"endsAt"`
 	Repeat       int                     `json:"repeat"`
@@ -272,7 +272,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 		//query
 		limit       := api.Conf.Server.Alerts_limit
-		status      := make(map[string]int)
+		state       := make(map[string]int)
 		strArgs     := make(map[string]string)
 		intArgs     := make(map[string]int64)
 		var labels  [][]*Matcher
@@ -281,9 +281,9 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
             switch k {
 				case "alert_id","group_id":
 					strArgs[k] = v[0]
-				case "status":
+				case "state":
 					for _, st := range strings.Split(v[0], "|") {
-					    status[st] = 1
+					    state[st] = 1
 					}
 				case "position","repeat_min","repeat_max":
 					i, err := strconv.Atoi(v[0])
@@ -340,7 +340,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 			if strArgs["group_id"] != "" && strArgs["group_id"] != a.GroupId {
                 continue
 			}
-			if len(status) != 0 && status[a.Status] == 0 {
+			if len(state) != 0 && state[a.State] == 0 {
                 continue
 			}
 			if len(labels) != 0 && !checkMatches(&a, labels) {
@@ -351,7 +351,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 			alert.AlertId      = a.AlertId
 			alert.GroupId      = a.GroupId
-			alert.Status       = a.Status
+			alert.State        = a.State
 			alert.StartsAt     = time.Unix(a.StartsAt, 0)
 			alert.EndsAt       = time.Unix(a.EndsAt, 0)
 			alert.Repeat       = a.Repeat
@@ -413,8 +413,8 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				if value.Status == "" {
-                    value.Status = "firing"
+				if value.State == "" {
+                    value.State = "firing"
 				}
 			
 				starts_at := value.StartsAt.UTC().Unix()
@@ -431,11 +431,11 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 				alert, found := CacheAlerts.Get(group_id)
 				if found {
 
-					if alert.Status != value.Status {
+					if alert.State != value.State {
 						alert.ChangeSt ++ 
 					}
 
-					alert.Status         = value.Status
+					alert.State         = value.State
 					alert.ActiveAt       = time.Now().UTC().Unix()
 					alert.EndsAt         = ends_at
 					alert.Annotations    = value.Annotations
@@ -452,7 +452,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
 					alert.AlertId        = alert_id
 					alert.GroupId        = group_id
-					alert.Status         = value.Status
+					alert.State          = value.State
 					alert.ActiveAt       = time.Now().UTC().Unix()
 					alert.StartsAt       = starts_at
 					alert.EndsAt         = ends_at

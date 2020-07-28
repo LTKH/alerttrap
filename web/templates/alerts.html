@@ -134,82 +134,88 @@
 </div>
 <script type="text/javascript" src="assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
 <script type="text/javascript">
-    load10 = function() {
-        var count = 0;
-        var alerts = [];
-        var widget = {};
-        widget['.bg-red'] = 0;
-        widget['.bg-orange'] = 0;
-        widget['.bg-teal'] = 0;
-        widget['.bg-dark'] = 0;
+    var Loaded = class {
 
-        $.ajax({
-            url: '/api/v1/alerts',
-            success: function(jsn) {
-                $.each(jsn.data.alerts, function(key, value) {
-                    switch (value['status'] || 'firing') {
-                        case 'firing':
-                            widget['.bg-red']++;
-                            break
-                        case 'warning':
-                            widget['.bg-orange']++;
-                            break
-                        case 'resolved':
-                            widget['.bg-teal']++;
-                            break
-                        default:
-                            widget['.bg-dark']++;
-                            break
-                    }
+        load10() {
+            var count = 0;
+            var alerts = [];
+            var widget = {};
+            widget['.bg-red'] = 0;
+            widget['.bg-orange'] = 0;
+            widget['.bg-teal'] = 0;
+            widget['.bg-dark'] = 0;
 
-                    if (value['status'] != 'resolved') {
-                        alerts.push({
-                            status: value['status'] || 'firing',
-                            repeat: value['repeat'] || 1,
-                            alertname: value['labels']['alertname'] || 'unknown',
-                            node: value['labels']['node'] || '-',
-                            startsAt: value['startsAt'],
-                            endsAt: value['endsAt'],
-                            description: value['annotations']['description'] || '',
+            $.ajax({
+                url: '/api/v1/alerts',
+                success: function(jsn) {
+                    $.each(jsn.data.alerts, function(key, value) {
+                        switch (value['status'] || 'firing') {
+                            case 'firing':
+                                widget['.bg-red']++;
+                                break
+                            case 'error':
+                                widget['.bg-red']++;
+                                break
+                            case 'critical':
+                                widget['.bg-red']++;
+                                break
+                            case 'warning':
+                                widget['.bg-orange']++;
+                                break
+                            case 'resolved':
+                                widget['.bg-teal']++;
+                                break
+                            default:
+                                widget['.bg-dark']++;
+                                break
+                        }
+
+                        if (value['status'] != 'resolved') {
+                            alerts.push({
+                                status: value['status'] || 'firing',
+                                repeat: value['repeat'] || 1,
+                                alertname: value['labels']['alertname'] || 'unknown',
+                                node: value['labels']['node'] || '-',
+                                startsAt: value['startsAt'],
+                                endsAt: value['endsAt'],
+                                description: value['annotations']['description'] || '',
+                            });
+                        }
+
+                        count++;
+                    });
+
+                    alerts.sort(function(a, b) {
+                        return a['repeat'] - b['repeat'];
+                    });
+
+                    $.each(widget, function(key, value) {
+                        if ($('.widget.widget-stats' + key).length > 0) {
+                            var prc = Math.round(100 * value / count);
+                            $('.widget.widget-stats' + key + ' .stats-number').text(value);
+                            $('.widget.widget-stats' + key + ' .progress-bar').attr('style', 'width: ' + prc + '%;');
+                            $('.widget.widget-stats' + key + ' .stats-desc').text('Text (' + prc + '%)');
+                        }
+                    });
+
+                    if ($('#alerts').length > 0) {
+                        $('#alerts').bootstrapTable({
+                            pagination: true,
+                            search: true,
+                            classes: "table table-responsive-sm table-sm",
+                            data: alerts
                         });
                     }
 
-                    count++;
-                });
-
-                alerts.sort(function(a, b) {
-                    return a['repeat'] - b['repeat'];
-                });
-
-                $.each(widget, function(key, value) {
-                    if ($('.widget.widget-stats' + key).length > 0) {
-                        var prc = Math.round(100 * value / count);
-                        $('.widget.widget-stats' + key + ' .stats-number').text(value);
-                        $('.widget.widget-stats' + key + ' .progress-bar').attr('style', 'width: ' + prc + '%;');
-                        $('.widget.widget-stats' + key + ' .stats-desc').text('Text (' + prc + '%)');
-                    }
-                });
-
-                if ($('#alerts').length > 0) {
-                    $('#alerts').bootstrapTable({
-                        pagination: true,
-                        search: true,
-                        classes: "table table-responsive-sm table-sm",
-                        data: alerts
-                    });
+                    console.log('test');
                 }
+            });
+        }
 
-                console.log('test');
-            },
-            complete: function() {
-                //console.log('complete');
-                // Schedule the next request when the current one's complete
-
-            }
-        });
     }
 
     $(function() {
-        load10();
+        loaded = new Loaded();
+        loaded.load10();
     });
 </script>

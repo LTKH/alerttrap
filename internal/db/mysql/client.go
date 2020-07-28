@@ -141,8 +141,8 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
 					a.AlertId = string(value)
 				case "group_id":
 					a.GroupId = string(value)
-				case "status":
-					a.Status = string(value)
+				case "state":
+					a.State = string(value)
 				case "active_at":
 					cl, err := strconv.Atoi(string(value))
 					if err == nil {
@@ -213,7 +213,7 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
 		_, err = stmt.Exec(
 			i.AlertId,
 			i.GroupId,
-			i.Status,
+			i.State,
 			i.ActiveAt,
 			i.StartsAt,
 			i.EndsAt,
@@ -257,7 +257,7 @@ func (db *Client) AddAlert(alert cache.Alert) error {
 	_, err = stmt.Exec(
 		alert.AlertId,
 		alert.GroupId,
-		alert.Status,
+		alert.State,
 		alert.StartsAt,
 		alert.EndsAt,
 		alert.Repeat,
@@ -276,7 +276,7 @@ func (db *Client) AddAlert(alert cache.Alert) error {
 func (db *Client) UpdAlert(alert cache.Alert) error {
 
 	stmt, err := db.client.Prepare(fmt.Sprintf(
-		"update %s set status=?,ends_at=?,repeat=?,change_st=?,annotations=?,generator_url=? where alert_id = ?", 
+		"update %s set state=?,ends_at=?,repeat=?,change_st=?,annotations=?,generator_url=? where alert_id = ?", 
 		db.config.Alerts_table,
 	))
 	if err != nil {
@@ -290,7 +290,7 @@ func (db *Client) UpdAlert(alert cache.Alert) error {
 	}
 
 	_, err = stmt.Exec(
-		alert.Status,
+		alert.State,
 		alert.EndsAt,
 		alert.Repeat,
 		alert.ChangeSt,

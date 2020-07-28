@@ -14,7 +14,7 @@ type Alerts struct {
 type Alert struct {
     AlertId         string                  
     GroupId         string                  
-    Status          string 
+    State           string 
     ActiveAt        int64                
     StartsAt        int64                   
 	EndsAt          int64                                     
@@ -119,8 +119,8 @@ func (a *Alerts) ResolvedItems() []string {
 	var keys []string
 
 	for k, v := range a.items {
-		if v.Status != "resolved" && time.Now().UTC().Unix() > v.EndsAt {
-			v.Status = "resolved"
+		if v.State != "resolved" && time.Now().UTC().Unix() > v.EndsAt {
+			v.State = "resolved"
 			v.ChangeSt = v.ChangeSt + 1
 			a.items[k] = v
 			keys = append(keys, k)

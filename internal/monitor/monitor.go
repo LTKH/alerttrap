@@ -10,13 +10,6 @@ import (
 	"strings"
 )
 
-type cAlerts struct {
-	status       string 
-	alertname    string
-	node         string
-	cnt          int
-}
-
 var (
 	cntAlerts = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -24,7 +17,7 @@ var (
 			Name:      "cnt_alerts",
 			Help:      "",
 		},
-		[]string{"status","alertname","node"},
+		[]string{"state","alertname","node"},
 	)
 )
 
@@ -50,12 +43,12 @@ func Start(Listen string) {
 						node = val.(string)
 					}
 				}
-				lmap[a.Status+"|"+alertname+"|"+node] ++
+				lmap[a.State+"|"+alertname+"|"+node] ++
 			}
 
 			for key, val := range lmap {
 				spl := strings.Split(key, "|")
-				cntAlerts.With(prometheus.Labels{ "status": spl[0], "alertname": spl[1], "node": spl[2] }).Set(float64(val))
+				cntAlerts.With(prometheus.Labels{ "state": spl[0], "alertname": spl[1], "node": spl[2] }).Set(float64(val))
 			}
 
 			time.Sleep(60 * time.Second)
