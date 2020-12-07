@@ -35,6 +35,3 @@ create table if not exists mon_users (
   `token`         varchar(100) not null,
   unique key IDX_mon_users_login (login)
 ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci;
-
-
---alter table mon_alerts rename column `status` TO `state`;

@@ -27,27 +27,38 @@ log_max_size    = 1
 log_max_backups = 3
 log_max_age     = 28
 log_compress    = true
+sync_nodes      = ["http://127.0.0.1:8000"]
 
 [monit]
 listen          = ":5000"
 
 [[menu]]
-text = "Etcd"
-type = "etcd"
+id = "/kubernetes"
+text = "Kubernetes"
+class = "fa fa-th-large"
 
   [[menu.nodes]]
+  id = "/kubernetes/prom"
   text = "prom"
-  href = "/etcd/prom"
+  href = "/api/v1/alerts?match[]={job=\"prometheus\"}"
 
   [[menu.nodes]]
+  id = "/kubernetes/test"
   text = "test"
-  href = "/etcd/test"
+  href = "/api/v1/alerts?match[]={job=\"prometheus\"}"
+
+    [[menu.nodes.nodes]]
+    id = "/kubernetes/test/test"
+    text = "test"
+    href = "/api/v1/alerts?match[]={job=\"prometheus\"}"
 
 [[menu]]
+id = "/kubernetes"
 text = "Kubernetes"
-type = "prometheus"
+class = "fa fa-gem"
  
   [[menu.nodes]]
+  id = "/kubernetes/test_2"
   text = "test 2"
   href = "/api/v1/alerts?match[]={job=\"prometheus\"}"
 

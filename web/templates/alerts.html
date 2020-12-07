@@ -9,11 +9,11 @@
 <div class="row">
 
     <div class="col-xl-3 col-md-6">
-        <div class="widget widget-stats bg-red">
+        <div id="widget-red" class="widget widget-stats bg-dark">
             <div class="stats-icon stats-icon-lg"><i class="fas fa-exclamation-triangle"></i></div>
             <div class="stats-content">
                 <div class="stats-title">ERRORS</div>
-                <div id="widget-errors" class="stats-number">0</div>
+                <div class="stats-number">0</div>
                 <div class="stats-progress progress">
                     <div class="progress-bar" style="width: 0%;"></div>
                 </div>
@@ -24,11 +24,11 @@
 
 
     <div class="col-xl-3 col-md-6">
-        <div class="widget widget-stats bg-orange">
+        <div id="widget-orange" class="widget widget-stats bg-dark">
             <div class="stats-icon stats-icon-lg"><i class="fas fa-exclamation-circle"></i></div>
             <div class="stats-content">
                 <div class="stats-title">WARNINGS</div>
-                <div id="widget-warnings" class="stats-number">0</div>
+                <div class="stats-number">0</div>
                 <div class="stats-progress progress">
                     <div class="progress-bar" style="width: 0%;"></div>
                 </div>
@@ -39,11 +39,11 @@
 
 
     <div class="col-xl-3 col-md-6">
-        <div class="widget widget-stats bg-teal">
+        <div id="widget-teal" class="widget widget-stats bg-dark">
             <div class="stats-icon stats-icon-lg"><i class="fas fa-check-square"></i></div>
             <div class="stats-content">
                 <div class="stats-title">RESOLVED</div>
-                <div id="widget-resolved" class="stats-number">0</div>
+                <div class="stats-number">0</div>
                 <div class="stats-progress progress">
                     <div class="progress-bar" style="width: 0%;"></div>
                 </div>
@@ -54,11 +54,11 @@
 
 
     <div class="col-xl-3 col-md-6">
-        <div class="widget widget-stats bg-dark">
+        <div id="widget-dark" class="widget widget-stats bg-dark">
             <div class="stats-icon stats-icon-lg"><i class="fas fa-th-list"></i></div>
             <div class="stats-content">
                 <div class="stats-title">INFO</div>
-                <div id="widget-info" class="stats-number">0</div>
+                <div class="stats-number">0</div>
                 <div class="stats-progress progress">
                     <div class="progress-bar" style="width: 0%;"></div>
                 </div>
@@ -91,7 +91,7 @@
                                 <table data-height="700" data-pagination-parts="pageInfoShort" id="alerts" class="table table-responsive-sm table-sm">
                                     <thead>
                                         <tr>
-                                            <th data-field="status">Status</th>
+                                            <th data-field="state">State</th>
                                             <th data-field="repeat">Repeat</th>
                                             <th data-field="alertname">Alertname</th>
                                             <th data-field="node">Node</th>
@@ -137,42 +137,41 @@
     var Loaded = class {
 
         load10() {
-            var count = 0;
             var alerts = [];
             var widget = {};
-            widget['.bg-red'] = 0;
-            widget['.bg-orange'] = 0;
-            widget['.bg-teal'] = 0;
-            widget['.bg-dark'] = 0;
+            widget['red'] = 0;
+            widget['orange'] = 0;
+            widget['teal'] = 0;
+            widget['dark'] = 0;
 
             $.ajax({
                 url: '/api/v1/alerts',
                 success: function(jsn) {
                     $.each(jsn.data.alerts, function(key, value) {
-                        switch (value['status'] || 'firing') {
+                        switch (value['state'] || 'firing') {
                             case 'firing':
-                                widget['.bg-red']++;
+                                widget['red']++;
                                 break
                             case 'error':
-                                widget['.bg-red']++;
+                                widget['red']++;
                                 break
                             case 'critical':
-                                widget['.bg-red']++;
+                                widget['red']++;
                                 break
                             case 'warning':
-                                widget['.bg-orange']++;
+                                widget['orange']++;
                                 break
                             case 'resolved':
-                                widget['.bg-teal']++;
+                                widget['teal']++;
                                 break
                             default:
-                                widget['.bg-dark']++;
+                                widget['dark']++;
                                 break
                         }
 
-                        if (value['status'] != 'resolved') {
+                        if (value['state'] != 'resolved') {
                             alerts.push({
-                                status: value['status'] || 'firing',
+                                state: '<label class="label label-danger">' + value['state'] + '</label>',
                                 repeat: value['repeat'] || 1,
                                 alertname: value['labels']['alertname'] || 'unknown',
                                 node: value['labels']['node'] || '-',
@@ -182,7 +181,6 @@
                             });
                         }
 
-                        count++;
                     });
 
                     alerts.sort(function(a, b) {
@@ -190,22 +188,48 @@
                     });
 
                     $.each(widget, function(key, value) {
-                        if ($('.widget.widget-stats' + key).length > 0) {
-                            var prc = Math.round(100 * value / count);
-                            $('.widget.widget-stats' + key + ' .stats-number').text(value);
-                            $('.widget.widget-stats' + key + ' .progress-bar').attr('style', 'width: ' + prc + '%;');
-                            $('.widget.widget-stats' + key + ' .stats-desc').text('Text (' + prc + '%)');
+                        var prc = 0;
+                        if (jsn.data.alerts.length > 0) {
+                            prc = Math.round(100 * widget[key] / jsn.data.alerts.length);
                         }
+                        $('#widget-' + key + ' .progress-bar').attr('style', 'width: ' + prc + '%;');
+                        $('#widget-' + key + ' .stats-desc').text('Percentage (' + prc + '%)');
+
+                        $('#widget-' + key + ' .stats-number').text(value);
+                        if (widget[key] > 0) {
+                            $('#widget-' + key).removeClass("bg-dark").addClass("bg-" + key);
+                        } else {
+                            $('#widget-' + key).removeClass("bg-red bg-orange bg-teal").addClass("bg-dark");
+                        }
+
+
+
+                        //if ($('.widget.widget-stats' + key).length > 0) {
+                        //    var prc = Math.round(100 * value / widget[key]);
+                        //    $('.widget.widget-stats' + key + ' .stats-number').text(value);
+                        //    $('.widget.widget-stats' + key + ' .progress-bar').attr('style', 'width: ' + prc + '%;');
+                        //    $('.widget.widget-stats' + key + ' .stats-desc').text('Text (' + prc + '%)');
+                        //} else {
+                        //
+                        //}
                     });
 
-                    if ($('#alerts').length > 0) {
-                        $('#alerts').bootstrapTable({
-                            pagination: true,
-                            search: true,
-                            classes: "table table-responsive-sm table-sm",
-                            data: alerts
-                        });
-                    }
+
+                    //$('#alerts').bootstrapTable({
+                    //    pagination: true,
+                    //    search: true,
+                    //    classes: "table table-responsive-sm table-sm",
+                    //    data: []
+                    //});
+
+                    //if (alerts.length > 0) {
+                    $('#alerts').bootstrapTable({
+                        pagination: true,
+                        search: true,
+                        classes: "table table-responsive-sm table-sm",
+                        data: alerts
+                    });
+                    //}
 
                     console.log('test');
                 }

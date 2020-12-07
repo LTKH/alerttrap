@@ -1,4 +1,4 @@
 var templates = [
-    { 'url': '^/alerts', 'tmpl': 'templates/alerts.html' },
+    { 'url': '#/kubernetes', 'tmpl': 'templates/alerts.html' },
     { 'url': '^/', 'tmpl': 'templates/content.html' }
 ];

@@ -10,10 +10,10 @@ import (
 	"runtime"
 	"flag"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"github.com/ltkh/alertstrap/internal/db"
-	"github.com/ltkh/alertstrap/internal/api/v1"
-	"github.com/ltkh/alertstrap/internal/config"
-	"github.com/ltkh/alertstrap/internal/monitor"
+	"github.com/ltkh/alerttrap/internal/db"
+	"github.com/ltkh/alerttrap/internal/api/v1"
+	"github.com/ltkh/alerttrap/internal/config"
+	"github.com/ltkh/alerttrap/internal/monitor"
 )
 
 //var logger *log.Logger
@@ -49,6 +49,7 @@ func main() {
 
 	//enabled listen port
 	http.HandleFunc("/-/healthy", apiV1.ApiHealthy)
+	http.HandleFunc("/api/v1/sync", apiV1.ApiSync)
 	http.HandleFunc("/api/v1/auth", apiV1.ApiAuth)
 	http.HandleFunc("/api/v1/menu", apiV1.ApiMenu)
 	http.HandleFunc("/api/v1/login", apiV1.ApiLogin)

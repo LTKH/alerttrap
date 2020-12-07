@@ -2,9 +2,9 @@ package db
 
 import (
 	"errors"
-	"github.com/ltkh/alertstrap/internal/config"
-    "github.com/ltkh/alertstrap/internal/cache"
-	"github.com/ltkh/alertstrap/internal/db/mysql"
+	"github.com/ltkh/alerttrap/internal/config"
+    "github.com/ltkh/alerttrap/internal/cache"
+	"github.com/ltkh/alerttrap/internal/db/mysql"
 )
 
 type DbClient interface {

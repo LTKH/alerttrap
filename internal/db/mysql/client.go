@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/ltkh/alertstrap/internal/config"
-	"github.com/ltkh/alertstrap/internal/cache"
+	"github.com/ltkh/alerttrap/internal/config"
+	"github.com/ltkh/alerttrap/internal/cache"
 )
 
 type Client struct {

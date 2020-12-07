@@ -1,4 +1,4 @@
-module github.com/ltkh/alertstrap
+module github.com/ltkh/alerttrap
 
 go 1.14
 

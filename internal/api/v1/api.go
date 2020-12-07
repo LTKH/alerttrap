@@ -14,10 +14,10 @@ import (
 	"strings"
     "io/ioutil"
 	"encoding/json"
-	"github.com/ltkh/alertstrap/internal/db"
-	"github.com/ltkh/alertstrap/internal/cache"
-	"github.com/ltkh/alertstrap/internal/config"
-	"github.com/ltkh/alertstrap/internal/ldap"
+	"github.com/ltkh/alerttrap/internal/db"
+	"github.com/ltkh/alerttrap/internal/cache"
+	"github.com/ltkh/alerttrap/internal/config"
+	"github.com/ltkh/alerttrap/internal/ldap"
 )
 
 var (
@@ -256,6 +256,29 @@ func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
 	w.Write(encodeResp(&Resp{Status:"success", Data:api.Conf.Menu}))
 }
 
+func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+    var alert Alert
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("[error] %v - %s", err, r.URL.Path)
+		w.WriteHeader(400)
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+		return
+	}
+
+	if err := json.Unmarshal(body, &alert); err != nil {
+		log.Printf("[error] %v - %s", err, r.URL.Path)
+		w.WriteHeader(400)
+		w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+		return
+	}
+
+	
+}
+
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -435,7 +458,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 						alert.ChangeSt ++ 
 					}
 
-					alert.State         = value.State
+					alert.State          = value.State
 					alert.ActiveAt       = time.Now().UTC().Unix()
 					alert.EndsAt         = ends_at
 					alert.Annotations    = value.Annotations
@@ -475,18 +498,12 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "DELETE" {
-        ok, code, err := authentication(api.Client, api.Conf.DB, r)
-		if !ok {
-			w.WriteHeader(code)
-			w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-			return
-		}
 
-		if r.URL.Query()["groupId"] != nil {
+		if r.URL.Query()["group_id"] != nil {
 			
-			_, found := CacheAlerts.Get(r.URL.Query()["groupId"][0])
+			_, found := CacheAlerts.Get(r.URL.Query()["group_id"][0])
 			if found {
-				CacheAlerts.Delete(r.URL.Query()["groupId"][0])
+				CacheAlerts.Delete(r.URL.Query()["group_id"][0])
                 w.WriteHeader(200)
 				w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
 				return
@@ -499,7 +516,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(400)
-		w.Write(encodeResp(&Resp{Status:"error", Error:"GroupId required", Data:make(map[string]string, 0)}))
+		w.Write(encodeResp(&Resp{Status:"error", Error:"group_id required", Data:make(map[string]string, 0)}))
 		return
 	}
 

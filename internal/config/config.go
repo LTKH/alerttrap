@@ -36,13 +36,15 @@ type Ldap struct {
 }
 
 type Menu []struct {
+	Id               string      `json:"id"`
 	Text             string      `json:"text"`
-	Type             string      `json:"-"`
 	Href             string      `json:"href"`
+	Class            string      `json:"class"`
 	Nodes            []Node      `json:"nodes,omitempty"`
 }
 
-type Node struct {         
+type Node struct {   
+	Id               string      `json:"id"`      
 	Text             string      `json:"text"`
 	Href             string      `json:"href"`
 	Nodes            []Node      `json:"nodes,omitempty"`
@@ -59,6 +61,7 @@ type Server struct {
 	Log_max_backups  int
 	Log_max_age      int
 	Log_compress     bool
+	Sync_nodes       []string
 }
 
 func New(filename string) (cfg Config, err error) {

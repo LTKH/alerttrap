@@ -1,0 +1,17 @@
+[{
+        "protocol": "tcp",
+        "address": "localhost:81"
+    },
+    {
+        "protocol": "tcp",
+        "address": "google.com:444"
+    },
+    {
+        "protocol": "tcp",
+        "address": "google1234:444"
+    },
+    {
+        "protocol": "tcp",
+        "address": "localhost1:123"
+    }
+]

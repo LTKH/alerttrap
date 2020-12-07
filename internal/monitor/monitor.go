@@ -4,7 +4,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
-	"github.com/ltkh/alertstrap/internal/api/v1"
+	"github.com/ltkh/alerttrap/internal/api/v1"
 	"time"
 	//"log"
 	"strings"
@@ -13,7 +13,7 @@ import (
 var (
 	cntAlerts = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: "alertstrap",
+			Namespace: "alerttrap",
 			Name:      "cnt_alerts",
 			Help:      "",
 		},
