@@ -1,75 +1,78 @@
 package config
 
 import (
-	"os"
-	"github.com/naoina/toml"
+	"io/ioutil"
+	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	DB               DB
-	Ldap             Ldap
-	Server           Server
-	Menu             Menu
-	Monit struct {
-		Listen       string
-	}
+	Global           *Global            `yaml:"global"`
+	Menu             *Menu              `yaml:"menu"`
+}
+
+type Global struct {
+	Listen           string             `yaml:"listen_address"`
+	Cert_file        string             `yaml:"cert_file"`
+	Cert_key         string             `yaml:"cert_key"`
+	Alerts_limit     int                `yaml:"alerts_limit"`
+	Alerts_resolve   int64              `yaml:"alerts_resolve"`
+	Alerts_delete    int64              `yaml:"alerts_delete"`
+	Sync_nodes       []string           `yaml:"sync_nodes"`
+	DB               *DB                `yaml:"db"`
+	Ldap             *Ldap              `yaml:"ldap"`
+	Monit            *Monit             `yaml:"monit"`
+}
+
+type Monit struct {
+	Listen           string             `yaml:"listen_address"`
 }
 
 type DB struct {
-	Client           string
-	Conn_string      string
-	History_days     int
-	Alerts_table     string
-	Users_table      string
+	Client           string             `yaml:"client"`
+	Conn_string      string             `yaml:"conn_string"`
+	History_days     int                `yaml:"history_days"`
+	Alerts_table     string             `yaml:"alerts_table"`
+	Users_table      string             `yaml:"users_table"`
 }
 
 type Ldap struct {
-	Search_base      string
-	Host             string
-	Port             int
-	Use_ssl          bool
-	Bind_dn          string
-	Bind_user        string
-	Bind_pass        string
-	User_filter      string
-	Attributes       map[string]string
+	Search_base      string             `yaml:"search_base"`
+	Host             string             `yaml:"host"`
+	Port             int                `yaml:"port"`
+	Use_ssl          bool               `yaml:"use_ssl"`
+	Bind_dn          string             `yaml:"bind_dn"`
+	Bind_user        string             `yaml:"bind_user"`
+	Bind_pass        string             `yaml:"bind_pass"`
+	User_filter      string             `yaml:"user_filter"`
+	Attributes       map[string]string  `yaml:"attributes"`
 }
 
 type Menu []struct {
-	Id               string      `json:"id"`
-	Text             string      `json:"text"`
-	Href             string      `json:"href"`
-	Class            string      `json:"class"`
-	Nodes            []Node      `json:"nodes,omitempty"`
+	Id               string             `yaml:"id" json:"id"`
+	Text             string             `yaml:"text" json:"text"`
+	Href             string             `yaml:"href" json:"href"`
+	Class            string             `yaml:"class" json:"class"`
+	Nodes            []*Node            `yaml:"nodes" json:"nodes,omitempty"`
 }
 
 type Node struct {   
-	Id               string      `json:"id"`      
-	Text             string      `json:"text"`
-	Href             string      `json:"href"`
-	Nodes            []Node      `json:"nodes,omitempty"`
+	Id               string             `yaml:"id" json:"id"`      
+	Text             string             `yaml:"text" json:"text"`
+	Href             string             `yaml:"href" json:"href"`
+	Nodes            []*Node            `yaml:"nodes" json:"nodes,omitempty"`
 }
 
-type Server struct {
-	Listen           string
-	Cert_file        string
-	Cert_key         string
-	Alerts_limit     int
-	Alerts_resolve   int64
-	Alerts_delete    int64
-	Log_max_size     int
-	Log_max_backups  int
-	Log_max_age      int
-	Log_compress     bool
-	Sync_nodes       []string
-}
+func New(filename string) (*Config, error) {
+	cfg := &Config{}
 
-func New(filename string) (cfg Config, err error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return cfg, err
+    content, err := ioutil.ReadFile(filename)
+    if err != nil {
+       return cfg, err
+    }
+
+    if err := yaml.UnmarshalStrict(content, cfg); err != nil {
+        return cfg, err
 	}
-	defer f.Close()
-
-	return cfg, toml.NewDecoder(f).Decode(&cfg)
+	
+	return cfg, nil
 }

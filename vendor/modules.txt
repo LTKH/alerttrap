@@ -13,13 +13,6 @@ github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
 # github.com/matttproud/golang_protobuf_extensions v1.0.1
 github.com/matttproud/golang_protobuf_extensions/pbutil
-# github.com/naoina/go-stringutil v0.1.0
-## explicit
-github.com/naoina/go-stringutil
-# github.com/naoina/toml v0.1.1
-## explicit
-github.com/naoina/toml
-github.com/naoina/toml/ast
 # github.com/prometheus/client_golang v1.6.0
 ## explicit
 github.com/prometheus/client_golang/prometheus
@@ -77,3 +70,6 @@ gopkg.in/ldap.v3
 # gopkg.in/natefinch/lumberjack.v2 v2.0.0
 ## explicit
 gopkg.in/natefinch/lumberjack.v2
+# gopkg.in/yaml.v2 v2.4.0
+## explicit
+gopkg.in/yaml.v2

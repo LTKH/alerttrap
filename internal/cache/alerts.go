@@ -1,13 +1,13 @@
 package cache
 
 import (
-	"sync"
+    "sync"
     "time"
     "log"
 )
 
 type Alerts struct {
-	sync.RWMutex
+    sync.RWMutex
     items           map[string]Alert
 }
 
@@ -17,9 +17,9 @@ type Alert struct {
     State           string 
     ActiveAt        int64                
     StartsAt        int64                   
-	EndsAt          int64                                     
+    EndsAt          int64                                     
     Repeat          int
-	ChangeSt        int                     
+    ChangeSt        int                     
     Labels          map[string]interface{}  
     Annotations     map[string]interface{}  
     GeneratorURL    string                  
@@ -74,15 +74,15 @@ func (a *Alerts) Delete(key string) {
 // Copies all unexpired items in the cache into a new map and returns it.
 func (a *Alerts) Items() map[string]Alert {
 
-	a.RLock()
+    a.RLock()
     defer a.RUnlock()
     
-	items := make(map[string]Alert, len(a.items))
-	for k, v := range a.items {
-		items[k] = v
+    items := make(map[string]Alert, len(a.items))
+    for k, v := range a.items {
+        items[k] = v
     }
     
-	return items
+    return items
 }
 
 //cleaning cache items
@@ -114,16 +114,16 @@ func (a *Alerts) ExpiredItems() map[string]Alert {
 
 func (a *Alerts) ResolvedItems() []string {
     a.Lock()
-	defer a.Unlock()
+    defer a.Unlock()
 
-	var keys []string
+    var keys []string
 
-	for k, v := range a.items {
-		if v.State != "resolved" && time.Now().UTC().Unix() > v.EndsAt {
-			v.State = "resolved"
-			v.ChangeSt = v.ChangeSt + 1
-			a.items[k] = v
-			keys = append(keys, k)
+    for k, v := range a.items {
+        if v.State != "resolved" && time.Now().UTC().Unix() > v.EndsAt {
+            v.State = "resolved"
+            v.ChangeSt = v.ChangeSt + 1
+            a.items[k] = v
+            keys = append(keys, k)
         }
     }
 

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"github.com/ltkh/alerttrap/internal/api/v1"
 	"time"
-	//"log"
 	"strings"
 )
 
