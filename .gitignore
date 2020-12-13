@@ -1,3 +1,4 @@
 bin
+logs
 config/server.key
 config/server.crt
