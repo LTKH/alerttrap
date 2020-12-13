@@ -10,7 +10,7 @@ global:
   
   db:
     client:         "mysql"
-    conn_string:    "root:password@(127.0.0.1)/alertstrap?parseTime=true"
+    conn_string:    "root:password@(127.0.0.1)/alerttrap?parseTime=true"
     history_days:   7
     alerts_table:   "mon_alerts"
     users_table:    "mon_users"

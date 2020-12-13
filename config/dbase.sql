@@ -1,4 +1,4 @@
-create database alertstrap;
+create database alerttrap;
 
 create table if not exists mon_alerts (
   `alert_id`      varchar(50) not null,
