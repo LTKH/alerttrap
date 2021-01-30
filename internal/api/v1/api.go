@@ -47,6 +47,7 @@ type Alert struct {
     AlertId      string                    `json:"alertId"`
     GroupId      string                    `json:"groupId"`
     State        string                    `json:"state"`
+    Status       string                    `json:"status,omitempty"`
     StartsAt     time.Time                 `json:"startsAt"`
     EndsAt       time.Time                 `json:"endsAt"`
     Repeat       int                       `json:"repeat"`
