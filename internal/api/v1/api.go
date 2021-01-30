@@ -436,6 +436,10 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
                     return
                 }
 
+                if value.Status != "" {
+                    value.State = value.Status
+                }
+
                 if value.State == "" {
                     value.State = "firing"
                 }
