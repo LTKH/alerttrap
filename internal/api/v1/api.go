@@ -159,33 +159,48 @@ func checkMatches(alert *cache.Alert, matchers [][]*Matcher) bool {
 }
 
 func authentication(cln db.DbClient, cfg *config.DB, r *http.Request) (bool, int, error) {
-    var login, token string
 
-    login, token, ok := r.BasicAuth()
-    if !ok {
-        lg, err := r.Cookie("login")
-        if err == nil {
-            login = lg.Value
+    login, password, ok := r.BasicAuth()
+    if ok {
+        user, ok := CacheUsers.Get(login)
+        if ok { 
+            if user.Password == getHash(password) {
+                return true, 204, nil
+            }
+            return false, 403, errors.New("Forbidden")
         }
-        tk, err := r.Cookie("token")
+        usr, err := cln.LoadUser(login)
         if err == nil {
-            token = tk.Value
+            CacheUsers.Set(login, usr)
+            if usr.Password == getHash(password) {
+                return true, 204, nil
+            }
         }
+        return false, 403, errors.New("Forbidden")
     }
 
-    if login != "" && token != "" {
-        user, ok := CacheUsers.Get(login)
+    lg, err := r.Cookie("login")
+    if err != nil {
+        return false, 401, errors.New("Unauthorized")
+    }
+    tk, err := r.Cookie("token")
+    if err != nil {
+        return false, 401, errors.New("Unauthorized")
+    }
+
+    if lg.Value != "" && tk.Value != "" {
+        user, ok := CacheUsers.Get(lg.Value)
         if !ok { 
-            usr, err := cln.LoadUser(login)
+            usr, err := cln.LoadUser(lg.Value)
             if err == nil {
-                CacheUsers.Set(login, usr)
-                if usr.Token == token {
+                CacheUsers.Set(lg.Value, usr)
+                if usr.Token == tk.Value {
                     return true, 204, nil
                 }
             }
             return false, 403, errors.New("Forbidden")
         } else {
-            if user.Token == token {
+            if user.Token == tk.Value {
                 return true, 204, nil
             }
             return false, 403, errors.New("Forbidden")
@@ -244,6 +259,7 @@ func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
 func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
     ok, code, err := authentication(api.Client, api.Conf.Global.DB, r)
     if !ok {
+        log.Printf("[error] %v", err)
         w.WriteHeader(code)
         w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
         return
@@ -277,7 +293,6 @@ func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    
 }
 
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
@@ -285,6 +300,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
     ok, code, err := authentication(api.Client, api.Conf.Global.DB, r)
     if !ok {
+        log.Printf("[error] %v", err)
         w.WriteHeader(code)
         w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
         return
@@ -410,7 +426,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
     if r.Method == "POST" {
 
-        var alerts []Alert
+        var alerts Alerts
 
         body, err := ioutil.ReadAll(r.Body)
         if err != nil {
@@ -427,9 +443,9 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        go func(data []Alert){
+        go func(data Alerts){
 
-            for _, value := range data {
+            for _, value := range data.AlertsArray {
 
                 labels, err := json.Marshal(value.Labels)
                 if err != nil {
