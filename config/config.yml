@@ -10,7 +10,7 @@ global:
   
   db:
     client:         "mysql"
-    conn_string:    "root:password@(127.0.0.1)/alertstrap?parseTime=true"
+    conn_string:    "test:hngtr35LKH!@(127.0.0.1)/alerttrap?parseTime=true"
     history_days:   7
     alerts_table:   "mon_alerts"
     users_table:    "mon_users"
@@ -34,101 +34,105 @@ global:
 
 menu:
   - id: "sdiscovery"
-    text: "Service Discovery"
+    name: "Service Discovery"
     class: "fa fa-th-list"
-
     nodes:
       - id: "alpha"
-        text: "alpha"
-
+        name: "alpha"
+        options:
+          href: "/api/v1/alerts?test=test"
       - id: "beta"
-        text: "beta"
-
+        name: "beta"
+        options:
+          href: "/api/v1/alerts"
   - id: "kubernetes"
-    text: "Kubernetes"
+    name: "Kubernetes"
     class: "fa fa-th-large"
-
     nodes:
       - id: "alpha"
-        text: "alpha"
-
+        name: "alpha"
+        options:
+          href: "/api/v1/alerts?test=test"
       - id: "beta"
-        text: "beta"
-
+        name: "beta"
+        options:
+          href: "/api/v1/alerts"
   - id: "monitoring"
-    text: "Monitoring"
+    name: "Monitoring"
     class: "fa fa-chart-area"
-
     nodes:
       - id: "test"
-        text: "Test Zones"
-
+        name: "Test Zones"
         nodes:
           - id: "alpha"
-            text: "alpha"
-
+            name: "alpha"
+            options:
+              href: "/api/v1/alerts"
           - id: "beta"
-            text: "beta"
-
+            name: "beta"
+            options:
+              href: "/api/v1/alerts"
   - id: "alerttrap"
-    text: "Alerttrap"
+    name: "Alerttrap"
     class: "fa fa-chart-area"
-
     nodes:
       - id: "history"
-        text: "History"
-
-      
-
+        name: "History"
+        options:
+          href: "/api/v1/alerts"
   - id: "netmap"
-    text: "Netmap"
+    name: "Netmap"
     class: "fa fa-cloud"
-
     nodes:
       - id: "alpha"
-        text: "alpha"
-
+        name: "alpha"
+        options:
+          href: "/api/v1/alerts"
       - id: "beta"
-        text: "beta"
-
+        name: "beta"
+        options:
+          href: "/api/v1/alerts"
   - id: "vmetrics"
-    text: "Victoria Metrics"
+    name: "Victoria Metrics"
     class: "fa fa-chart-bar"
-
     nodes:
       - id: "test"
-        text: "Victoria Metrics TEST"
-
+        name: "Victoria Metrics TEST"
+        options:
+          href: "/api/v1/alerts"
         nodes:
           - id: "targets"
-            text: "Targets"
-
+            name: "Targets"
+            options:
+              href: "/api/v1/alerts"
           - id: "alerts"
-            text: "Alerts"
-
+            name: "Alerts"
+            options:
+              href: "/api/v1/alerts"
       - id: "k8s"
-        text: "Victoria Metrics K8S"
-
+        name: "Victoria Metrics K8S"
         nodes:
           - id: "targets"
-            text: "Targets"
-
+            name: "Targets"
+            options:
+              href: "/api/v1/alerts"
           - id: "alerts"
-            text: "Alerts" 
-
+            name: "Alerts" 
+            options:
+              href: "/api/v1/alerts"
   - id: "settings"
-    text: "Settings"
+    name: "Settings"
     class: "fa fa-cogs"
-
-
   - id: "users"
-    text: "Users"
+    name: "Users"
     class: "fa fa-user"
-
     nodes:
       - id: "alpha"
-        text: "alpha"
-
+        name: "alpha"
+        options:
+          href: "/api/v1/alerts"
       - id: "beta"
-        text: "beta"
+        name: "beta"
+        options:
+          href: "/api/v1/alerts"
 

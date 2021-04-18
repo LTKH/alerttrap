@@ -259,7 +259,6 @@ func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
 func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
     ok, code, err := authentication(api.Client, api.Conf.Global.DB, r)
     if !ok {
-        log.Printf("[error] %v", err)
         w.WriteHeader(code)
         w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
         return
@@ -298,13 +297,12 @@ func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
 
-    ok, code, err := authentication(api.Client, api.Conf.Global.DB, r)
-    if !ok {
-        log.Printf("[error] %v", err)
-        w.WriteHeader(code)
-        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-        return
-    }
+    //ok, code, err := authentication(api.Client, api.Conf.Global.DB, r)
+    //if !ok {
+    //    w.WriteHeader(code)
+    //    w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+    //    return
+    //}
 
     if r.Method == "GET" {
 
@@ -453,12 +451,16 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
                     return
                 }
 
-                if value.Status != "" {
-                    value.State = value.Status
-                }
+                group_id := getHash(string(labels))
 
-                if value.State == "" {
-                    value.State = "firing"
+                if value.Status != "" {
+                    if value.Status != "resolved" {
+                        if value.Labels["severity"] != nil {
+                            value.State = value.Labels["severity"].(string)
+                        }
+                    } else {
+                        value.State = value.Status
+                    }
                 }
             
                 starts_at := value.StartsAt.UTC().Unix()
@@ -469,9 +471,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
                 if ends_at < 0 {
                     ends_at    = time.Now().UTC().Unix() + api.Conf.Global.Alerts_resolve
                 } 
-            
-                group_id := getHash(string(labels))
-            
+
                 alert, found := CacheAlerts.Get(group_id)
                 if found {
 
