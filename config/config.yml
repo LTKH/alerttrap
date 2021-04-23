@@ -33,6 +33,28 @@ global:
     listen_address: ":5000"
 
 menu:
+  - id: "netmap"
+    name: "Netmap"
+    class: "fa fa-cloud"
+    options:
+      href: "/api/v1/netmap/records"
+    nodes:
+      - id: "records"
+        name: "records"
+        options:
+          href: "/api/v1/netmap/records"
+  - id: "vmetrics"
+    name: "Victoria Metrics"
+    class: "fa fa-chart-bar"
+    nodes:
+      - id: "targets"
+        name: "Targets"
+        options:
+          href: "/api/v1/alerts"
+      - id: "alerts"
+        name: "Alerts"
+        options:
+          href: "/api/v1/alerts"
   - id: "sdiscovery"
     name: "Service Discovery"
     class: "fa fa-th-list"
@@ -80,35 +102,6 @@ menu:
         name: "History"
         options:
           href: "/api/v1/alerts"
-  - id: "netmap"
-    name: "Netmap"
-    class: "fa fa-cloud"
-    nodes:
-      - id: "alpha"
-        name: "alpha"
-        options:
-          href: "/api/v1/alerts"
-      - id: "beta"
-        name: "beta"
-        options:
-          href: "/api/v1/alerts"
-  - id: "vmetrics"
-    name: "Victoria Metrics"
-    class: "fa fa-chart-bar"
-    nodes:
-      - id: "test"
-        name: "Victoria Metrics TEST"
-        options:
-          href: "/api/v1/alerts"
-        nodes:
-          - id: "targets"
-            name: "Targets"
-            options:
-              href: "/api/v1/alerts"
-          - id: "alerts"
-            name: "Alerts"
-            options:
-              href: "/api/v1/alerts"
       - id: "k8s"
         name: "Victoria Metrics K8S"
         nodes:
