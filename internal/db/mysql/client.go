@@ -131,7 +131,7 @@ func (db *Client) LoadUsers() ([]cache.User, error) {
 func (db *Client) LoadAlerts() ([]cache.Alert, error) {
     result := []cache.Alert{}
 
-    rows, err := db.client.Query("select * from alerts a where a.ends_at > UNIX_TIMESTAMP() - 600 and a.ends_at = (select max(ends_at) from alerts where group_id = a.group_id)")
+    rows, err := db.client.Query("select * from alerts a where a.ends_at > UNIX_TIMESTAMP() and a.ends_at = (select max(ends_at) from alerts where group_id = a.group_id)")
     if err != nil {
         return nil, err
     }

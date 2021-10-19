@@ -58,6 +58,16 @@ func main() {
     if err != nil {
         log.Fatalf("[error] create tables: %v", err)
     }
+    //loading alerts
+    alerts, err := client.LoadAlerts()
+    if err != nil {
+        log.Fatalf("[error] loading alerts: %v", err)
+    }
+    for _, alert := range alerts {
+        v1.CacheAlerts.Set(alert.GroupId, alert)
+    }
+    log.Printf("[info] loaded alerts from dbase (%d)", len(alerts))
+    //close connection
     client.Close()
 
     //creating api
@@ -96,9 +106,15 @@ func main() {
         <- c
         //saving cache items
         if items := v1.CacheAlerts.Items(); len(items) != 0 {
+            //connection to data base
+            client, err := db.NewClient(cfg.Global.DB) 
+            if err != nil {
+                log.Fatalf("[error] connect to db: %v", err)
+            }
             if err := client.SaveAlerts(items); err != nil {
                 log.Printf("[error] %v", err)
             }
+            client.Close()
         }
         log.Print("[info] alertstrap stopped")
         os.Exit(0)

@@ -27,7 +27,6 @@ var (
 )
 
 type Api struct {
-    Client       db.DbClient
     Conf         *config.Config
 }
 
@@ -158,7 +157,13 @@ func checkMatches(alert *cache.Alert, matchers [][]*Matcher) bool {
     return false
 }
 
-func authentication(cln db.DbClient, cfg *config.DB, r *http.Request) (bool, int, error) {
+func authentication(cfg *config.DB, r *http.Request) (bool, int, error) {
+    //connection to data base
+    client, err := db.NewClient(cfg) 
+    if err != nil {
+        return false, 500, errors.New("Internal Server Error")
+    }
+    defer client.Close()
 
     login, password, ok := r.BasicAuth()
     if ok {
@@ -169,7 +174,7 @@ func authentication(cln db.DbClient, cfg *config.DB, r *http.Request) (bool, int
             }
             return false, 403, errors.New("Forbidden")
         }
-        usr, err := cln.LoadUser(login)
+        usr, err := client.LoadUser(login)
         if err == nil {
             CacheUsers.Set(login, usr)
             if usr.Password == getHash(password) {
@@ -191,7 +196,7 @@ func authentication(cln db.DbClient, cfg *config.DB, r *http.Request) (bool, int
     if lg.Value != "" && tk.Value != "" {
         user, ok := CacheUsers.Get(lg.Value)
         if !ok { 
-            usr, err := cln.LoadUser(lg.Value)
+            usr, err := client.LoadUser(lg.Value)
             if err == nil {
                 CacheUsers.Set(lg.Value, usr)
                 if usr.Token == tk.Value {
@@ -212,52 +217,43 @@ func authentication(cln db.DbClient, cfg *config.DB, r *http.Request) (bool, int
 
 func New(conf *config.Config) (*Api, error) {
     //connection to data base
-    client, err := db.NewClient(conf.Global.DB)
-    if err != nil {
-        return nil, err
-    }
-    log.Print("[info] connected to dbase")
-    //loading alerts
-    alerts, err := client.LoadAlerts()
-    if err != nil {
-        return nil, err
-    }
-    for _, alert := range alerts {
-        CacheAlerts.Set(alert.GroupId, alert)
-    }
-    log.Printf("[info] loaded alerts from dbase (%d)", len(alerts))
+    //client, err := db.NewClient(conf.Global.DB)
+    //if err != nil {
+    //    return nil, err
+    //}
+    //log.Print("[info] connected to dbase")
     //loading users
-    users, err := client.LoadUsers()
-    if err != nil {
-        return nil, err
-    }
-    for _, user := range users {
-        CacheUsers.Set(user.Login, user)
-    }
-    log.Printf("[info] loaded users from dbase (%d)", len(users))
+    //users, err := client.LoadUsers()
+    //if err != nil {
+    //    return nil, err
+    //}
+    //for _, user := range users {
+    //    CacheUsers.Set(user.Login, user)
+    //}
+    //log.Printf("[info] loaded users from dbase (%d)", len(users))
     
-    return &Api{ Client: client, Conf: conf }, nil
+    return &Api{ Conf: conf }, nil
 }
 
 func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
-    var alerts []string
+    //var alerts []string
 
-    if err := api.Client.Healthy(); err != nil {
-        alerts = append(alerts, err.Error())
-    }
+    //if err := api.Client.Healthy(); err != nil {
+    //    alerts = append(alerts, err.Error())
+    //}
 
-    if len(alerts) > 0 {
-        w.WriteHeader(200)
-        w.Write(encodeResp(&Resp{Status:"success", Warnings:alerts, Data:make(map[string]string, 0)}))
-        return
-    }
+    //if len(alerts) > 0 {
+    //    w.WriteHeader(200)
+    //    w.Write(encodeResp(&Resp{Status:"success", Warnings:alerts, Data:make(map[string]string, 0)}))
+    //    return
+    //}
 
     w.WriteHeader(200)
     w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
 }
 
 func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
-    ok, code, err := authentication(api.Client, api.Conf.Global.DB, r)
+    ok, code, err := authentication(api.Conf.Global.DB, r)
     if !ok {
         w.WriteHeader(code)
         w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
@@ -608,11 +604,18 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
     
     CacheUsers.Set(username, user)
 
-    if err := api.Client.SaveUser(user); err != nil {
+    client, err := db.NewClient(api.Conf.Global.DB)
+    if err != nil {
+        log.Printf("[error] connect to db: %v", err)
+        w.WriteHeader(500)
+        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+    }
+    if err := client.SaveUser(user); err != nil {
         log.Printf("[error] saving user %s: %+v", username, err)
         w.WriteHeader(500)
         w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
     }
+    client.Close()
 
     w.WriteHeader(200)
     w.Write(encodeResp(&Resp{Status:"success", Data:user}))
