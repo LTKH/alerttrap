@@ -9,11 +9,11 @@ global:
     - "http://127.0.0.1:8000"
   
   db:
-    client:         "mysql"
-    conn_string:    "test:hngtr35LKH!@(127.0.0.1)/alerttrap?parseTime=true"
+    #client:         "mysql"
+    #conn_string:    "test:hngtr35LKH!@(127.0.0.1)/alerttrap?parseTime=true"
+    client:         "sqlite3"
+    conn_string:    "config/dbase.db"
     history_days:   7
-    alerts_table:   "mon_alerts"
-    users_table:    "mon_users"
 
   ldap:
     search_base:    "dc=example,dc=com"

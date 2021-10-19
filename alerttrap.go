@@ -52,7 +52,11 @@ func main() {
     //connection to data base
     client, err := db.NewClient(cfg.Global.DB); 
     if err != nil {
-        log.Fatalf("[error] %v", err)
+        log.Fatalf("[error] connect to db: %v", err)
+    }
+    err = client.CreateTables()
+    if err != nil {
+        log.Fatalf("[error] create tables: %v", err)
     }
 
     //creating api

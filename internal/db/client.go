@@ -5,9 +5,11 @@ import (
 	"github.com/ltkh/alerttrap/internal/config"
     "github.com/ltkh/alerttrap/internal/cache"
 	"github.com/ltkh/alerttrap/internal/db/mysql"
+    "github.com/ltkh/alerttrap/internal/db/sqlite3"	
 )
 
 type DbClient interface {
+	CreateTables() error
 	Healthy() error
 	LoadUser(login string) (cache.User, error)
 	SaveUser(user cache.User) error
@@ -23,6 +25,8 @@ func NewClient(config *config.DB) (DbClient, error) {
 	switch config.Client {
 	    case "mysql":
             return mysql.NewClient(config)
+		case "sqlite3":
+            return sqlite3.NewClient(config)
 	}
 	return nil, errors.New("invalid client")
 }

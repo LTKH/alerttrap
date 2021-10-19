@@ -32,8 +32,6 @@ type DB struct {
     Client           string             `yaml:"client"`
     Conn_string      string             `yaml:"conn_string"`
     History_days     int                `yaml:"history_days"`
-    Alerts_table     string             `yaml:"alerts_table"`
-    Users_table      string             `yaml:"users_table"`
 }
 
 type Ldap struct {
