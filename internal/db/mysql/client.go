@@ -24,6 +24,12 @@ func NewClient(conf *config.DB) (*Client, error) {
     return &Client{ client: conn, config: conf }, nil
 }
 
+func (db *Client) Close() error {
+	db.client.Close()
+
+	return nil
+}
+
 func (db *Client) CreateTables() error {
     _, err := db.client.Exec(
       `create table if not exists alerts (

@@ -9,6 +9,7 @@ import (
 )
 
 type DbClient interface {
+	Close() error
 	CreateTables() error
 	Healthy() error
 	LoadUser(login string) (cache.User, error)

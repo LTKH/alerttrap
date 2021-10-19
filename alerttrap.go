@@ -50,7 +50,7 @@ func main() {
     }
 
     //connection to data base
-    client, err := db.NewClient(cfg.Global.DB); 
+    client, err := db.NewClient(cfg.Global.DB) 
     if err != nil {
         log.Fatalf("[error] connect to db: %v", err)
     }
@@ -58,6 +58,7 @@ func main() {
     if err != nil {
         log.Fatalf("[error] create tables: %v", err)
     }
+    client.Close()
 
     //creating api
     apiV1, err := v1.New(cfg)
@@ -108,6 +109,10 @@ func main() {
     //delete old alerts
     go func(cfg *config.DB){
         for {
+            client, err := db.NewClient(cfg) 
+            if err != nil {
+                log.Printf("[error] connect to db: %v", err)
+            }
             //cleaning old alerts
             cnt, err := client.DeleteOldAlerts()
             if err != nil {
@@ -117,6 +122,7 @@ func main() {
                     log.Printf("[info] old alerts moved to database (%d)", cnt)
                 }
             }
+            client.Close()
 
             time.Sleep(24 * time.Hour)
         }
@@ -132,15 +138,20 @@ func main() {
 
         //cleaning cache alerts
         if items := v1.CacheAlerts.ExpiredItems(); len(items) != 0 {
+            client, err := db.NewClient(cfg.Global.DB)
+            if err != nil {
+                log.Printf("[error] connect to db: %v", err)
+            }
             if err := client.SaveAlerts(items); err != nil {
                 log.Printf("[error] %v", err)
             } else {
                 log.Printf("[info] alerts recorded in database (%d)", len(items))
                 v1.CacheAlerts.ClearItems(items)
             }
+            client.Close()
         }
 
-        time.Sleep(10 * time.Second)
+        time.Sleep(600 * time.Second)
 
     }
 }
