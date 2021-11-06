@@ -5,10 +5,12 @@ import (
     "time"
     "log"
     "os"
+    "fmt"
     "os/signal"
     "syscall"
     "runtime"
     "flag"
+    "math/rand"
     "gopkg.in/natefinch/lumberjack.v2"
     "github.com/ltkh/alerttrap/internal/db"
     "github.com/ltkh/alerttrap/internal/api/v1"
@@ -30,6 +32,7 @@ func main() {
     log_max_backups := flag.Int("log_max_backups", 3, "log max backups")
     log_max_age     := flag.Int("log_max_age", 10, "log max age")
     log_compress    := flag.Bool("log_compress", true, "log compress")
+    test            := flag.Bool("test", false, "generate alerts")
     flag.Parse()
 
     // Logging settings
@@ -104,6 +107,7 @@ func main() {
     signal.Notify(c, os.Interrupt, syscall.SIGTERM)
     go func() {
         <- c
+        log.Print("[info] stoping application")
         //saving cache items
         if items := v1.CacheAlerts.Items(); len(items) != 0 {
             //connection to data base
@@ -135,7 +139,7 @@ func main() {
                 log.Printf("[error] %v", err)
             } else {
                 if cnt > 0 {
-                    log.Printf("[info] old alerts moved to database (%d)", cnt)
+                    log.Printf("[info] deleted old alerts (%d)", cnt)
                 }
             }
             client.Close()
@@ -143,6 +147,32 @@ func main() {
             time.Sleep(24 * time.Hour)
         }
     }(cfg.Global.DB)
+
+    //test generate alerts
+    if (*test){
+        go func(){
+            for {
+                var alerts v1.Alerts
+                for i := 0; i < 10000; i++ {
+                    st := []string{"firing", "warning", "error", "resolved"}
+                    ri := rand.Intn(len(st))
+                    alert := v1.Alert{
+                        State:        st[ri],
+                        Labels:       map[string]interface{}{
+                            "alertname":  fmt.Sprintf("alertName-%d", i),
+                            "host":       fmt.Sprintf("host-%d", i),
+                            "node":       fmt.Sprintf("host-%d", i),
+                        },
+                        Annotations:  map[string]interface{}{},
+                        GeneratorURL: "",
+                    }
+                    alerts.AlertsArray = append(alerts.AlertsArray, alert)
+                }
+                apiV1.SetAlerts(alerts)
+                time.Sleep(10 * time.Second)
+            }
+        }()
+    }
 
     //daemon mode
     for {

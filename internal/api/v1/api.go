@@ -290,6 +290,77 @@ func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (api *Api) SetAlerts(data Alerts) {
+    for _, value := range data.AlertsArray {
+
+        labels, err := json.Marshal(value.Labels)
+        if err != nil {
+            log.Printf("[error] read alert %v", err)
+            return
+        }
+
+        group_id := getHash(string(labels))
+
+        if value.Status != "" {
+            if value.Status != "resolved" {
+                if value.Labels["severity"] != nil {
+                    value.State = value.Labels["severity"].(string)
+                }
+            } else {
+                value.State = value.Status
+            }
+        }
+    
+        starts_at := value.StartsAt.UTC().Unix()
+        ends_at   := value.EndsAt.UTC().Unix()
+        if starts_at < 0 {
+            starts_at  = time.Now().UTC().Unix()
+        } 
+        if ends_at < 0 {
+            ends_at    = time.Now().UTC().Unix() + api.Conf.Global.Alerts_resolve
+        } 
+
+        alert, found := CacheAlerts.Get(group_id)
+        if found {
+
+            if alert.State != value.State {
+                alert.ChangeSt ++ 
+            }
+
+            alert.State          = value.State
+            alert.ActiveAt       = time.Now().UTC().Unix()
+            alert.EndsAt         = ends_at
+            alert.Annotations    = value.Annotations
+            alert.GeneratorURL   = value.GeneratorURL
+            alert.Repeat         = alert.Repeat + 1
+    
+            CacheAlerts.Set(group_id, alert)
+    
+        } else {
+
+            alert_id := getHash(string(strconv.FormatInt(time.Now().UTC().UnixNano(), 16)+group_id))
+            
+            var alert cache.Alert
+
+            alert.AlertId        = alert_id
+            alert.GroupId        = group_id
+            alert.State          = value.State
+            alert.ActiveAt       = time.Now().UTC().Unix()
+            alert.StartsAt       = starts_at
+            alert.EndsAt         = ends_at
+            alert.Labels         = value.Labels
+            alert.Annotations    = value.Annotations
+            alert.GeneratorURL   = value.GeneratorURL
+            alert.Repeat         = 1
+            alert.ChangeSt       = 0
+    
+            CacheAlerts.Set(group_id, alert)
+
+        }
+
+    }
+}
+
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
 
@@ -437,78 +508,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        go func(data Alerts){
-
-            for _, value := range data.AlertsArray {
-
-                labels, err := json.Marshal(value.Labels)
-                if err != nil {
-                    log.Printf("[error] read alert %v", err)
-                    return
-                }
-
-                group_id := getHash(string(labels))
-
-                if value.Status != "" {
-                    if value.Status != "resolved" {
-                        if value.Labels["severity"] != nil {
-                            value.State = value.Labels["severity"].(string)
-                        }
-                    } else {
-                        value.State = value.Status
-                    }
-                }
-            
-                starts_at := value.StartsAt.UTC().Unix()
-                ends_at   := value.EndsAt.UTC().Unix()
-                if starts_at < 0 {
-                    starts_at  = time.Now().UTC().Unix()
-                } 
-                if ends_at < 0 {
-                    ends_at    = time.Now().UTC().Unix() + api.Conf.Global.Alerts_resolve
-                } 
-
-                alert, found := CacheAlerts.Get(group_id)
-                if found {
-
-                    if alert.State != value.State {
-                        alert.ChangeSt ++ 
-                    }
-
-                    alert.State          = value.State
-                    alert.ActiveAt       = time.Now().UTC().Unix()
-                    alert.EndsAt         = ends_at
-                    alert.Annotations    = value.Annotations
-                    alert.GeneratorURL   = value.GeneratorURL
-                    alert.Repeat         = alert.Repeat + 1
-            
-                    CacheAlerts.Set(group_id, alert)
-            
-                } else {
-
-                    alert_id := getHash(string(strconv.FormatInt(time.Now().UTC().UnixNano(), 16)+group_id))
-                    
-                    var alert cache.Alert
-
-                    alert.AlertId        = alert_id
-                    alert.GroupId        = group_id
-                    alert.State          = value.State
-                    alert.ActiveAt       = time.Now().UTC().Unix()
-                    alert.StartsAt       = starts_at
-                    alert.EndsAt         = ends_at
-                    alert.Labels         = value.Labels
-                    alert.Annotations    = value.Annotations
-                    alert.GeneratorURL   = value.GeneratorURL
-                    alert.Repeat         = 1
-                    alert.ChangeSt       = 0
-            
-                    CacheAlerts.Set(group_id, alert)
-
-                }
-
-            }
-
-        }(alerts)
+        go api.SetAlerts(alerts)
 
         w.WriteHeader(204)
         return
