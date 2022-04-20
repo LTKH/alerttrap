@@ -240,10 +240,11 @@
             }
 
             for (t in tags) {
-                if (t in value.labels){
-                    if (alerts[key].labels[t] != tags[t]){
-                        return;
-                    }
+                if (!(t in value.labels)){
+                    value.labels[t] = '---';
+                }
+                if (value.labels[t] != tags[t]){
+                    return;
                 }
             }
 
