@@ -1,16 +1,16 @@
 global:
-  listen_address:   ":8100"
+  listen_address:   ":8000"
   cert_file:        ""
   cert_key:         ""
   alerts_limit:     5000
   alerts_resolve:   180
   alerts_delete:    600
-  sync_nodes: 
-    - "http://127.0.0.1:8000"
+  #sync_nodes: 
+  #  - "http://127.0.0.1:8000"
   
   db:
     #client:         "mysql"
-    #conn_string:    "test:test@(127.0.0.1)/alerttrap?parseTime=true"
+    #conn_string:    "root:test@(172.17.0.1)/alerttrap?parseTime=true"
     client:         "sqlite3"
     conn_string:    "config/dbase.db"
     history_days:   7
@@ -33,16 +33,6 @@ global:
     listen_address: ":5000"
 
 menu:
-  - id: "netmap"
-    name: "Netmap"
-    class: "fa fa-cloud"
-    options:
-      href: "/api/v1/netmap/records"
-    nodes:
-      - id: "records"
-        name: "records"
-        options:
-          href: "/api/v1/netmap/records"
   - id: "vmetrics"
     name: "Victoria Metrics"
     class: "fa fa-chart-bar"
@@ -53,83 +43,93 @@ menu:
           href: "/api/v1/alerts"
       - id: "alerts"
         name: "Alerts"
-        options:
-          href: "/api/v1/alerts"
-  - id: "sdiscovery"
-    name: "Service Discovery"
-    class: "fa fa-th-list"
-    nodes:
-      - id: "alpha"
-        name: "alpha"
-        options:
-          href: "/api/v1/alerts?test=test"
-      - id: "beta"
-        name: "beta"
-        options:
-          href: "/api/v1/alerts"
-  - id: "kubernetes"
-    name: "Kubernetes"
-    class: "fa fa-th-large"
-    nodes:
-      - id: "host-1"
-        name: "host-1"
-        options:
-          href: "/api/v1/alerts?match[]={host=~\"host-[1].*\"}"
-      - id: "host-2"
-        name: "host-2"
-        options:
-          href: "/api/v1/alerts?match[]={host=~\"host-[2].*\"}"
-      - id: "host-3"
-        name: "host-3"
-        options:
-          href: "/api/v1/alerts?match[]={host=~\"host-[3].*\"}"
-  - id: "monitoring"
-    name: "Monitoring"
-    class: "fa fa-chart-area"
-    nodes:
-      - id: "test"
-        name: "Test Zones"
-        nodes:
-          - id: "alpha"
-            name: "alpha"
-            options:
-              href: "/api/v1/alerts"
-          - id: "beta"
-            name: "beta"
-            options:
-              href: "/api/v1/alerts"
-  - id: "alerttrap"
-    name: "Alerttrap"
-    class: "fa fa-chart-area"
-    nodes:
-      - id: "history"
-        name: "History"
-        options:
-          href: "/api/v1/alerts"
-      - id: "k8s"
-        name: "Victoria Metrics K8S"
-        nodes:
-          - id: "targets"
-            name: "Targets"
-            options:
-              href: "/api/v1/alerts"
-          - id: "alerts"
-            name: "Alerts" 
-            options:
-              href: "/api/v1/alerts"
-  - id: "settings"
-    name: "Settings"
-    class: "fa fa-cogs"
-  - id: "users"
-    name: "Users"
-    class: "fa fa-user"
-    nodes:
-      - id: "alpha"
-        name: "alpha"
-        options:
-          href: "/api/v1/alerts"
-      - id: "beta"
-        name: "beta"
-        options:
-          href: "/api/v1/alerts"
+        href: "/api/v1/alerts"
+        tags: ["host"]
+  #- id: "netmap"
+  #  name: "Netmap"
+  #  class: "fa fa-cloud"
+  #  options:
+  #    href: "/api/v1/netmap/records"
+  #  nodes:
+  #    - id: "records"
+  #      name: "records"
+  #      options:
+  #        href: "/api/v1/netmap/records"
+  #- id: "sdiscovery"
+  #  name: "Service Discovery"
+  #  class: "fa fa-th-list"
+  #  nodes:
+  #    - id: "alpha"
+  #      name: "alpha"
+  #      options:
+  #        href: "/api/v1/alerts?test=test"
+  #    - id: "beta"
+  #      name: "beta"
+  #      options:
+  #        href: "/api/v1/alerts"
+  #- id: "kubernetes"
+  #  name: "Kubernetes"
+  #  class: "fa fa-th-large"
+  #  nodes:
+  #    - id: "host-1"
+  #      name: "host-1"
+  #      options:
+  #        href: "/api/v1/alerts?match[]={host=~\"host-[1].*\"}"
+  #    - id: "host-2"
+  #      name: "host-2"
+  #      options:
+  #        href: "/api/v1/alerts?match[]={host=~\"host-[2].*\"}"
+  #    - id: "host-3"
+  #      name: "host-3"
+  #      options:
+  #        href: "/api/v1/alerts?match[]={host=~\"host-[3].*\"}"
+  #- id: "monitoring"
+  #  name: "Monitoring"
+  #  class: "fa fa-chart-area"
+  #  nodes:
+  #    - id: "test"
+  #      name: "Test Zones"
+  #      nodes:
+  #        - id: "alpha"
+  #          name: "alpha"
+  #          options:
+  #            href: "/api/v1/alerts"
+  #        - id: "beta"
+  #          name: "beta"
+  #          options:
+  #            href: "/api/v1/alerts"
+  #- id: "alerttrap"
+  #  name: "Alerttrap"
+  #  class: "fa fa-chart-area"
+  #  nodes:
+  #    - id: "history"
+  #      name: "History"
+  #      options:
+  #        href: "/api/v1/alerts"
+  #    - id: "k8s"
+  #      name: "Victoria Metrics K8S"
+  #      nodes:
+  #        - id: "targets"
+  #          name: "Targets"
+  #          options:
+  #            href: "/api/v1/alerts"
+  #        - id: "alerts"
+  #          name: "Alerts" 
+  #          options:
+  #            href: "/api/v1/alerts"
+  #- id: "settings"
+  #  name: "Settings"
+  #  class: "fa fa-cogs"
+  #- id: "users"
+  #  name: "Users"
+  #  class: "fa fa-user"
+  #  nodes:
+  #    - id: "alpha"
+  #      name: "alpha"
+  #      options:
+  #        href: "/api/v1/alerts"
+  #    - id: "beta"
+  #      name: "beta"
+  #      options:
+  #        href: "/api/v1/alerts"
 

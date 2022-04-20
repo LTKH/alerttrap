@@ -3,6 +3,7 @@ package mysql
 import (
     "log"
     "time"
+    "fmt"
     "strconv"
     "encoding/json"
     "database/sql"
@@ -31,36 +32,43 @@ func (db *Client) Close() error {
 }
 
 func (db *Client) CreateTables() error {
-    _, err := db.client.Exec(
-      `create table if not exists alerts (
-        alert_id      varchar(50) not null,
-        group_id      varchar(50) not null,
-        state         varchar(10) not null,
-        active_at     bigint(20) default 0,
-        starts_at     bigint(20) default 0,
-        ends_at       bigint(20) default 0,
-        repeat        int default 1,
-        change_st     int default 0,
-        labels        json,
-        annotations   json,
-        generator_url varchar(1500),
+    _, err := db.client.Exec(fmt.Sprintf(`
+      create table if not exists alerts (
+        %[1]salert_id%[1]s      varchar(50) not null,
+        %[1]sgroup_id%[1]s      varchar(50) not null,
+        %[1]sstate%[1]s         varchar(10) not null,
+        %[1]sactive_at%[1]s     bigint(20) default 0,
+        %[1]sstarts_at%[1]s     bigint(20) default 0,
+        %[1]sends_at%[1]s       bigint(20) default 0,
+        %[1]srepeat%[1]s        int default 1,
+        %[1]schange_st%[1]s     int default 0,
+        %[1]slabels%[1]s        json,
+        %[1]sannotations%[1]s   json,
+        %[1]sgenerator_url%[1]s varchar(1500),
         unique key IDX_mon_alerts_alert_id (alert_id),
         key IDX_mon_alerts_ends_at (ends_at),
         key IDX_mon_alerts_group_id_ends_at (group_id,ends_at)
-      ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci;
-      create table if not exists users (
-        login         varchar(100) not null,
-        email         varchar(100),
-        name          varchar(150),
-        password      varchar(100) not null,
-        token         varchar(100) not null,
-        unique key IDX_mon_users_login (login)
-      ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci;`)
+      ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci
+    `, "`"))
     if err != nil {
         return err
     }
 
-      return nil
+    _, err = db.client.Exec(fmt.Sprintf(`
+      create table if not exists users (
+        %[1]slogin%[1]s         varchar(100) not null,
+        %[1]spassword%[1]s      varchar(100) not null,
+        %[1]sname%[1]s          varchar(150),
+        %[1]semail%[1]s         varchar(100),
+        %[1]stoken%[1]s         varchar(100) not null,
+        unique key IDX_mon_users_login (login)
+      ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci
+    `, "`"))
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func (db *Client) Healthy() error {

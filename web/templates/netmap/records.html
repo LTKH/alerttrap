@@ -1,0 +1,182 @@
+<h1 class="page-header mb-3 text-muted">Records</h1>
+
+<div class="row">
+
+    <div class="col-xl">
+
+        <div class="panel panel-inverse">
+            <!-- begin panel-heading -->
+            <div class="panel-heading bg-dark text-silver">
+                <h4 class="panel-title">Search</h4>
+                <div class="panel-heading-btn">
+                    <a href="javascript:;" class="btn btn-xs btn-icon btn-circle btn-warning" data-click="panel-collapse"><i class="fa fa-minus"></i></a>
+                </div>
+            </div>
+            <!-- end panel-heading -->
+            <!-- begin panel-body -->
+            <div class="panel-body text-silver" style="display:none;">
+                <div class="row row-space-30">
+                    <!-- begin col-4 -->
+                    <div class="col-xl-4">
+                        <div class="m-b-2 text-silver f-w-600 f-s-16">Source</div>
+                        <div class="form-group row m-b-15">
+                            <label class="col-form-label col-md-3">Name</label>
+                            <div class="col-md-9">
+                                <input id="src_name" type="text" class="form-control m-b-5" placeholder="Source Name">
+                                <small class="f-s-12 text-grey-darker">can use regular expressions</small>
+                            </div>
+                        </div>
+                        <div class="form-group row m-b-15">
+                            <label class="col-form-label col-md-3">IP</label>
+                            <div class="col-md-9">
+                                <input id="src_ip" type="text" class="form-control m-b-5" placeholder="Source IP">
+                                <small class="f-s-12 text-grey-darker">can use regular expressions</small>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end col-4 -->
+                    <!-- begin col-4 -->
+                    <div class="col-xl-4">
+                        <div class="m-b-2 text-silver f-w-600 f-s-16">Destination</div>
+                        <div class="form-group row m-b-15">
+                            <label class="col-form-label col-md-3">Name</label>
+                            <div class="col-md-9">
+                                <input id="dst_name" type="text" class="form-control m-b-5" placeholder="Destination Name">
+                                <small class="f-s-12 text-grey-darker">can use regular expressions</small>
+                            </div>
+                        </div>
+                        <div class="form-group row m-b-15">
+                            <label class="col-form-label col-md-3">IP</label>
+                            <div class="col-md-9">
+                                <input id="dst_ip" type="text" class="form-control m-b-5" placeholder="Destination IP">
+                                <small class="f-s-12 text-grey-darker">can use regular expressions</small>
+                            </div>
+                        </div>
+                        <!-- end row -->
+                    </div>
+                    <!-- end col-4 -->
+                    <!-- begin col-4 -->
+                    <div class="col-xl-4">
+                        <div class="m-b-2 text-silver f-w-600 f-s-16">Relation</div>
+                        <div class="form-group row m-b-15">
+                            <label class="col-form-label col-md-3">Port</label>
+                            <div class="col-md-9">
+                                <input id="port" type="text" class="form-control m-b-5" placeholder="Relation Port">
+                                <small class="f-s-12 text-grey-darker">&nbsp;</small>
+                            </div>
+                        </div>
+                        <div class="form-group row m-b-15">
+                            <label class="col-form-label col-md-3">Mode</label>
+                            <div class="col-md-9">
+                                <input id="mode" type="text" class="form-control m-b-5" placeholder="Relation Mode">
+                                <small class="f-s-12 text-grey-darker">&nbsp;</small>
+                            </div>
+                        </div>
+                        <!-- end row -->
+                    </div>
+                    <!-- end col-4 -->
+                </div>
+                <!-- end row -->
+                <div class="float-right">
+                    <button id="search" type="submit" class="btn btn-sm btn-primary m-r-5">Search</button>
+                </div>
+            </div>
+            <!-- end panel-body -->
+        </div>
+
+        <div class="card border-0 mb-3 overflow-hidden bg-dark text-silver">
+
+            <div class="card-body">
+                <div class="panel-body">
+                    <div id="data-table-default_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
+                        <!--div class="row">
+                            <div class="col-sm-12 col-md-6">
+                                <div class="dataTables_length" id="data-table-default_length"><label>Show <select name="data-table-default_length" aria-controls="data-table-default" class="custom-select custom-select-sm form-control form-control-sm"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label></div>
+                            </div>
+                            <div class="col-sm-12 col-md-6">
+                                <div id="data-table-default_filter" class="dataTables_filter"><label>Search:<input type="search" class="form-control form-control-sm" placeholder="" aria-controls="data-table-default"></label></div>
+                            </div>
+                        </div-->
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <table data-height="1000" data-pagination-parts="pageInfoShort" id="records" class="table table-responsive-sm table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th data-field="result">Status</th>
+                                            <th data-field="src_name">Source Name</th>
+                                            <th data-field="src_ip">Source IP</th>
+                                            <th data-field="dst_name">Destination Name</th>
+                                            <th data-field="dst_ip">Destination IP</th>
+                                            <th data-field="mode">Mode</th>
+                                            <th data-field="port">Port</th>
+                                            <th data-field="status">Status</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<script type="text/javascript" src="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
+<script type="text/javascript">
+
+    var data = {};
+
+    $('#records').bootstrapTable({
+        pagination: true,
+        search: true,
+        classes: "table table-responsive-sm table-sm",
+        pageSize: 100
+    });
+
+    $('#search').on('click', function(event) {
+        data = {};
+        $.each(['src_name','src_ip','dst_name','dst_ip','port','mode'], function(key, value) {
+            if ($('#'+value).val() != "") {
+                data[value] = $('#'+value).val();
+            }
+        });
+        update_records();
+    });
+
+    function update_records() {
+
+        var records = [];
+
+        $.ajax({
+            url: menu[window.location.pathname]['options']['href'],
+            data: data,
+            success: function(jsn) {
+                $.each(jsn.data, function(key, value) {
+                    var rs = (value['relation']['result'] == 0) ? 'ok' : 'firing';
+                    records.push({
+                        result:   '<label class="label label-' + rs + '">' + rs + '</label>',
+                        src_name: value['localAddr']['name'],
+                        src_ip:   value['localAddr']['ip'],
+                        dst_name: value['remoteAddr']['name'],
+                        dst_ip:   value['remoteAddr']['ip'],
+                        mode:     value['relation']['mode'],
+                        port:     value['relation']['port'],
+                        status:   value['relation']['status'],
+                    });
+                });
+
+                $('#records').bootstrapTable('load', records);
+            }
+
+
+        });
+    }
+
+    $(function() {
+        update_records();
+    });
+</script>

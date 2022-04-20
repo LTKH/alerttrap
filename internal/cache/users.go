@@ -7,16 +7,16 @@ import (
 
 type Users struct {
 	sync.RWMutex
-    items           map[string]User
+    items            map[string]User
 }
 
 type User struct {
-    Login           string                  `json:"login"`
-    Email           string                  `json:"email"`
-    Name            string                  `json:"name"`
-    Password        string                  `json:"-"`
-    Token           string                  `json:"token"`
-    EndsAt          int64                   `json:"-"`
+    Login            string             `yaml:"login"`
+    Email            string             `yaml:"email"`
+    Name             string             `yaml:"name"`
+    Password         string             `yaml:"password"`
+    Token            string             `yaml:"token"`
+    EndsAt           int64              `yaml:"endsAt"`
 }
 
 func NewCacheUsers() *Users {
@@ -82,8 +82,10 @@ func (u *Users) ExpiredItems() map[string]User {
     items := make(map[string]User)
 
     for k, v := range u.items {
-        if time.Now().UTC().Unix() > v.EndsAt + 3600 {
-            items[k] = v
+        if v.EndsAt > 0 {
+            if time.Now().UTC().Unix() > v.EndsAt + 3600 {
+                items[k] = v
+            }
         }
     }
 

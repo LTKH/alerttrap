@@ -1,0 +1,59 @@
+<!--div class="row">
+    <div data-netdata="web_log_nginx.response_statuses" data-dimensions="success" data-chart-library="gauge" data-title="Successful" data-units="requests/s" data-gauge-adjust="width" data-width="12%" data-before="0" data-after="-300" data-points="300" data-common-max="web_log_nginx.response_statuses"
+        data-colors="#66AA00" data-decimal-digits="0" role="application" class="netdata-container-gauge" style="width: 12%;">
+        <div id="gauge-web_log_nginx.response_statuses-246-chart" class="netdata-chart netdata-gauge-chart"><canvas class="gaugeChart" id="gauge-web_log_nginx.response_statuses-246-canvas" height="124" width="208" style="width: 104px; height: 62px;"></canvas><span class="gaugeChartLabel" style="font-size: 12px; top: 16px;">5</span><span class="gaugeChartTitle"
+                style="font-size: 6px; top: 0px;">Successful</span><span class="gaugeChartUnits" style="font-size: 5px;">requests/s</span><span class="gaugeChartMin" style="font-size: 9px;">0</span><span class="gaugeChartMax" style="font-size: 9px;">22</span></div>
+    </div>
+    <div data-netdata="web_log_nginx.response_statuses" data-dimensions="redirect" data-chart-library="gauge" data-title="Redirects" data-units="requests/s" data-gauge-adjust="width" data-width="12%" data-before="0" data-after="-300" data-points="300" data-common-max="web_log_nginx.response_statuses"
+        data-colors="#3366CC" data-decimal-digits="0" role="application" class="netdata-container-gauge" style="width: 12%;">
+        <div id="gauge-web_log_nginx.response_statuses-247-chart" class="netdata-chart netdata-gauge-chart"><canvas class="gaugeChart" id="gauge-web_log_nginx.response_statuses-247-canvas" height="124" width="208" style="width: 104px; height: 62px;"></canvas><span class="gaugeChartLabel" style="font-size: 12px; top: 16px;">0</span><span class="gaugeChartTitle"
+                style="font-size: 6px; top: 0px;">Redirects</span><span class="gaugeChartUnits" style="font-size: 5px;">requests/s</span><span class="gaugeChartMin" style="font-size: 9px;">0</span><span class="gaugeChartMax" style="font-size: 9px;">0</span></div>
+    </div>
+    <div data-netdata="web_log_nginx.response_statuses" data-dimensions="bad" data-chart-library="gauge" data-title="Bad Requests" data-units="requests/s" data-gauge-adjust="width" data-width="12%" data-before="0" data-after="-300" data-points="300" data-common-max="web_log_nginx.response_statuses"
+        data-colors="#D66300" data-decimal-digits="0" role="application" class="netdata-container-gauge" style="width: 12%;">
+        <div id="gauge-web_log_nginx.response_statuses-248-chart" class="netdata-chart netdata-gauge-chart"><canvas class="gaugeChart" id="gauge-web_log_nginx.response_statuses-248-canvas" height="124" width="208" style="width: 104px; height: 62px;"></canvas><span class="gaugeChartLabel" style="font-size: 12px; top: 16px;">0</span><span class="gaugeChartTitle"
+                style="font-size: 6px; top: 0px;">Bad Requests</span><span class="gaugeChartUnits" style="font-size: 5px;">requests/s</span><span class="gaugeChartMin" style="font-size: 9px;">0</span><span class="gaugeChartMax" style="font-size: 9px;">2</span></div>
+    </div>
+    <div data-netdata="web_log_nginx.response_statuses" data-dimensions="error" data-chart-library="gauge" data-title="Server Errors" data-units="requests/s" data-gauge-adjust="width" data-width="12%" data-before="0" data-after="-300" data-points="300" data-common-max="web_log_nginx.response_statuses"
+        data-colors="#FE3912" data-decimal-digits="0" role="application" class="netdata-container-gauge" style="width: 12%;">
+        <div id="gauge-web_log_nginx.response_statuses-249-chart" class="netdata-chart netdata-gauge-chart"><canvas class="gaugeChart" id="gauge-web_log_nginx.response_statuses-249-canvas" height="124" width="208" style="width: 104px; height: 62px;"></canvas><span class="gaugeChartLabel" style="font-size: 12px; top: 16px;">0</span><span class="gaugeChartTitle"
+                style="font-size: 6px; top: 0px;">Server Errors</span><span class="gaugeChartUnits" style="font-size: 5px;">requests/s</span><span class="gaugeChartMin" style="font-size: 9px;">0</span><span class="gaugeChartMax" style="font-size: 9px;">0</span></div>
+    </div>
+    <div data-netdata="web_log_nginx.response_time" data-dimensions="avg" data-chart-library="gauge" data-title="Average Response Time" data-units="milliseconds" data-gauge-adjust="width" data-width="12%" data-before="0" data-after="-300" data-points="300"
+        data-colors="#0099C6" data-decimal-digits="2" role="application" class="netdata-container-gauge" style="width: 12%;">
+        <div id="gauge-web_log_nginx.response_time-250-chart" class="netdata-chart netdata-gauge-chart"><canvas class="gaugeChart" id="gauge-web_log_nginx.response_time-250-canvas" height="124" width="208" style="width: 104px; height: 62px;"></canvas><span class="gaugeChartLabel" style="font-size: 12px; top: 16px;">0.3</span><span class="gaugeChartTitle"
+                style="font-size: 6px; top: 0px;">Average Response Time</span><span class="gaugeChartUnits" style="font-size: 5px;">milliseconds</span><span class="gaugeChartMin" style="font-size: 9px;">0.0</span><span class="gaugeChartMax" style="font-size: 9px;">4.3</span></div>
+    </div>
+</div-->
+
+<script type="text/javascript" src="/assets/plugins/gauge/gauge.min.js"></script>
+<script type="text/javascript">
+    /*
+        $(function() {
+            var opts = {
+                angle: 0.15, // The span of the gauge arc
+                lineWidth: 0.44, // The line thickness
+                radiusScale: 1, // Relative radius
+                pointer: {
+                    length: 0.6, // // Relative to gauge radius
+                    strokeWidth: 0.035, // The thickness
+                    color: '#000000' // Fill color
+                },
+                limitMax: false, // If false, max value increases automatically if value > maxValue
+                limitMin: false, // If true, the min value of the gauge will be fixed
+                colorStart: '#6FADCF', // Colors
+                colorStop: '#8FC0DA', // just experiment with them
+                strokeColor: '#E0E0E0', // to see which ones work best for you
+                generateGradient: true,
+                highDpiSupport: true, // High resolution support
+
+            };
+            //var target = document.getElementById('foo'); // your canvas element
+            var gauge = new Gauge($('#gauge-web_log_nginx.response_statuses-246-canvas')).setOptions(opts); // create sexy gauge!
+            gauge.maxValue = 3000; // set max gauge value
+            gauge.setMinValue(0); // Prefer setter over gauge.minValue = 0
+            gauge.animationSpeed = 32; // set animation speed (32 is default value)
+            gauge.set(1244); // set actual value
+        });
+    */
+</script>

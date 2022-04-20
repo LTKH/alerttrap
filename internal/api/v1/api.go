@@ -4,6 +4,7 @@ import (
     "io"
     "net/http"
     "log"
+    //"os"
     "fmt"
     "crypto/sha1"
     "encoding/hex"

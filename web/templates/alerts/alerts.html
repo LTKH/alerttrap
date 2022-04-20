@@ -1,0 +1,338 @@
+<ol class="breadcrumb float-xl-right">
+    <!--li class="breadcrumb-item"><a href="javascript:;">Home</a></li>
+    <li class="breadcrumb-item"><a href="javascript:;">Dashboard</a></li>
+    <li class="breadcrumb-item active">Dashboard v3</li-->
+</ol>
+
+<h1 class="page-header mb-3 text-muted">Dashboard v3</h1>
+
+<div class="row">
+
+    <div class="col-xl-3 col-md-6">
+        <div id="widget-firing" class="widget widget-stats bg-dark">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">ERRORS</div>
+                <div class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-xl-3 col-md-6">
+        <div id="widget-warning" class="widget widget-stats bg-dark">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">WARNINGS</div>
+                <div class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-xl-3 col-md-6">
+        <div id="widget-resolved" class="widget widget-stats bg-dark">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-check-square"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">RESOLVED</div>
+                <div class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-xl-3 col-md-6">
+        <div id="widget-unknown" class="widget widget-stats bg-dark">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-th-list"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">UNKNOWN</div>
+                <div class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-xl">
+
+        <div class="card border-0 mb-3 overflow-hidden bg-dark text-white">
+
+            <div class="card-body">
+                <div class="panel-body">
+                    <div id="data-table-default_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
+                        <!--div class="row">
+                            <div class="col-sm-12 col-md-6">
+                                <div class="dataTables_length" id="data-table-default_length"><label>Show <select name="data-table-default_length" aria-controls="data-table-default" class="custom-select custom-select-sm form-control form-control-sm"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label></div>
+                            </div>
+                            <div class="col-sm-12 col-md-6">
+                                <div id="data-table-default_filter" class="dataTables_filter"><label>Search:<input type="search" class="form-control form-control-sm" placeholder="" aria-controls="data-table-default"></label></div>
+                            </div>
+                        </div-->
+                        <div class="row">
+                            <div class="col-sm-12 text-nowrap">
+                                <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfoShort" id="alerts">
+                                    <thead>
+                                        <!--tr>
+                                            <th style="width:100px;" data-field="state">State</th>
+                                            <th style="width:80px;"  data-field="repeat">Repeat</th>
+                                            <th style="width:250px;" data-field="alertname">Alertname</th>
+                                            <th style="width:200px;" data-field="node">Node</th>
+                                            <th style="width:140px;" data-field="startsAt">StartsAt</th>
+                                            <th style="width:140px;" data-field="endsAt">EndsAt</th>
+                                            <th data-field="description">Description</th>
+                                        </tr-->
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!--div class="row">
+                            <div class="col-sm-12 col-md-5">
+                                <div class="dataTables_info" id="data-table-default_info" role="status" aria-live="polite">Showing 1 to 10 of 57 entries</div>
+                            </div>
+                            <div class="col-sm-12 col-md-7">
+                                <div class="dataTables_paginate paging_simple_numbers" id="data-table-default_paginate">
+                                    <ul class="pagination">
+                                        <li class="paginate_button page-item previous disabled" id="data-table-default_previous"><a href="#" aria-controls="data-table-default" data-dt-idx="0" tabindex="0" class="page-link">Previous</a></li>
+                                        <li class="paginate_button page-item active"><a href="#" aria-controls="data-table-default" data-dt-idx="1" tabindex="0" class="page-link">1</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="2" tabindex="0" class="page-link">2</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="3" tabindex="0" class="page-link">3</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="4" tabindex="0" class="page-link">4</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="5" tabindex="0" class="page-link">5</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="6" tabindex="0" class="page-link">6</a></li>
+                                        <li class="paginate_button page-item next" id="data-table-default_next"><a href="#" aria-controls="data-table-default" data-dt-idx="7" tabindex="0" class="page-link">Next</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div-->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Кнопка-триггер модального окна 
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">
+    Запустите демо модального окна
+</button>
+-->
+  
+<!-- Модальное окно -->
+<div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel">Alert information</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+            ...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                <!--button type="button" class="btn btn-primary">Сохранить изменения</button-->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Кнопка запуска модального окна 
+<button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal">
+    Launch demo modal
+  </button>
+
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+        </div>
+        <div class="modal-body">
+          test
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+-->  
+
+<script type="text/javascript" src="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
+<script type="text/javascript" src="/assets/js/jquery/jquery-dateformat.min.js"></script>
+<script type="text/javascript">
+
+    updates.update10 = function(){
+        var alerts = [];
+        var nAlerts = [];
+        var tags = {};
+        var resKey = window.location.pathname;
+
+        if (window.location.pathname in menu){
+            if ('tags' in menu[window.location.pathname].options) {
+                tags = menu[window.location.pathname].options.tags;
+                //console.log(tags);
+            }
+            if ('key' in menu[window.location.pathname].options) {
+                resKey = menu[window.location.pathname].options.key;
+            }
+        }
+
+        if (resKey in updates.results) {
+            if (typeof updates.results[resKey].data !== 'undefined') {
+                if (typeof updates.results[resKey].data.alerts !== 'undefined') {
+                    alerts = updates.results[resKey].data.alerts;
+                    alerts.sort(function(a, b) {
+                        if (a.repeat >= b.repeat){
+                            return 1;
+                        }
+                        return -1;
+                    });
+                    alerts.sort(function(a, b) {
+                        if (a.state+a.alertname+a.host >= b.state+b.alertname+a.host){
+                            return 1;
+                        }
+                        return -1;
+                    });
+                }
+            }
+        }
+
+        var levels = {};
+        levels.firing = 0;
+        levels.warning = 0;
+        levels.resolved = 0;
+        levels.unknown = 0;
+
+        $.each(alerts, function(key, value) {
+            if (value.state == 'resolved') {
+                return;
+            }
+
+            for (t in tags) {
+                if (t in value.labels){
+                    if (alerts[key].labels[t] != tags[t]){
+                        return;
+                    }
+                }
+            }
+
+            switch (value.state) {
+                case 'firing':
+                case 'critical':
+                case 'error':
+                    levels.firing ++; 
+                    break;
+                case 'warning':
+                    levels.warning ++;
+                    break;
+                case 'resolved':
+                    levels.resolved ++;
+                    break;
+                default:
+                    levels.unknown ++;
+            }
+
+            nAlerts.push({
+                state:       '<label class="label label-'+value.state+'">'+value.state+'</label>',
+                repeat:      value.repeat || 1,
+                alertname:   value.labels.alertname || 'unknown',
+                node:        '<span class="white-space:nowrap;">'+(value.labels.node || value.labels.host || '-')+'</span>',
+                startsAt:    $.format.date(value.startsAt, 'dd/MM/yyyy HH:mm:ss'),
+                endsAt:      $.format.date(value.endsAt, 'dd/MM/yyyy HH:mm:ss'),
+                description: value.annotations.description || '',
+            });
+
+        });
+
+        $.each(levels, function(key, value) {
+            var prc = 0;
+            if (nAlerts.length > 0) {
+                prc = Math.round(100 * levels[key] / nAlerts.length);
+            }
+            $('#widget-' + key + ' .progress-bar').attr('style', 'width: ' + prc + '%;');
+            $('#widget-' + key + ' .stats-desc').text('Percentage (' + prc + '%)');
+
+            $('#widget-' + key + ' .stats-number').text(value);
+            if (levels[key] > 0) {
+                $('#widget-' + key).attr('class', 'widget widget-stats bg-' + key);
+            } else {
+                $('#widget-' + key).attr('class', 'widget widget-stats bg-dark');
+            }
+        });
+        
+        //var currentPos = $('#alerts').position().top * -1 + 43;
+        $('#alerts').bootstrapTable('load', nAlerts);
+        //$('div[class="fixed-table-body"]').scrollTop(currentPos);
+    }
+
+    $(function() {
+        $('#myModal').on('shown.bs.modal', function () {
+            $('#myInput').focus()
+        });
+
+        $('#alerts').bootstrapTable({
+            pagination: true,
+            search: true,
+            classes: "table table-responsive-sd table-sd",
+            pageSize: 500,
+            height: 850,
+            columns: [
+                { title: "State", field: "state", width: 100 },
+                { title: "Repeat", field: "repeat", width: 80 },
+                { title: "Alertname", field: "alertname", width: 250 },
+                { title: "Node", field: "node", width: 200 },
+                { title: "StartsAt", field: "startsAt", width: 140 },
+                { title: "EndsAt", field: "endsAt", width: 140 },
+                { title: "Description", field: "description" }
+            ]
+        });
+
+        if (typeof menu[window.location.pathname] !== 'undefined'){
+            if (menu[window.location.pathname].href != ''){
+                updates.update10();
+            }
+        }
+
+        var keys = window.location.pathname.split('/');
+        for (var i = 0; i < keys.length; i++) {
+            if (i < keys.length -1) {
+                $('ol[class="breadcrumb float-xl-right"]').append('<li class="breadcrumb-item"><a href="/'+keys.slice(1, i+1).join('/')+'">'+keys[i]+'</a></li>');
+            } else {
+                $('ol[class="breadcrumb float-xl-right"]').append('<li class="breadcrumb-item active">'+keys[i]+'</li>');
+            }
+        }
+    });
+
+ 
+</script>

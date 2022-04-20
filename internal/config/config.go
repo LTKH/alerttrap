@@ -4,6 +4,7 @@ import (
     "path"
     "io/ioutil"
     "gopkg.in/yaml.v2"
+    "github.com/ltkh/alerttrap/internal/cache"
 )
 
 type Config struct {
@@ -20,6 +21,7 @@ type Global struct {
     Alerts_delete    int64              `yaml:"alerts_delete"`
     Sync_nodes       []string           `yaml:"sync_nodes"`
     DB               *DB                `yaml:"db"`
+    Users            *[]cache.User      `yaml:"users"`
     Ldap             *Ldap              `yaml:"ldap"`
     Monit            *Monit             `yaml:"monit"`
 }
@@ -50,6 +52,8 @@ type Node struct {
     Id               string             `yaml:"id" json:"id"`      
     Name             string             `yaml:"name" json:"name"`
     Path             string             `yaml:"path" json:"path"`
+    Href             string             `yaml:"href" json:"href"`
+    Tags             []string           `yaml:"tags" json:"tags"`
     Options          map[string]string  `yaml:"options" json:"options,omitempty"`
     Class            string             `yaml:"class" json:"class,omitempty"`
     Summary          string             `yaml:"summary" json:"summary,omitempty"`

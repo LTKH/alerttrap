@@ -1,0 +1,118 @@
+<h1 class="page-header mb-3 text-muted">Targets</h1>
+
+<div class="row">
+
+    <div class="col-xl">
+
+        <div class="card border-0 mb-3 overflow-hidden bg-dark text-white">
+
+            <div class="card-body">
+                <div class="panel-body">
+                    <div id="data-table-default_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
+                        <!--div class="row">
+                            <div class="col-sm-12 col-md-6">
+                                <div class="dataTables_length" id="data-table-default_length"><label>Show <select name="data-table-default_length" aria-controls="data-table-default" class="custom-select custom-select-sm form-control form-control-sm"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label></div>
+                            </div>
+                            <div class="col-sm-12 col-md-6">
+                                <div id="data-table-default_filter" class="dataTables_filter"><label>Search:<input type="search" class="form-control form-control-sm" placeholder="" aria-controls="data-table-default"></label></div>
+                            </div>
+                        </div-->
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <table data-height="700" data-pagination-parts="pageInfoShort" id="targets" class="table table-responsive-sm table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th data-field="scrapeUrl">Endpoint</th>
+                                            <th data-field="health">State</th>
+                                            <th data-field="job">Job</th>
+                                            <th data-field="lastScrape">Last Scrape</th>
+                                            <th data-field="lastScrapeDuration">Scrape Duration</th>
+                                            <th data-field="lastError">Error</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                        <!--div class="row">
+                            <div class="col-sm-12 col-md-5">
+                                <div class="dataTables_info" id="data-table-default_info" role="status" aria-live="polite">Showing 1 to 10 of 57 entries</div>
+                            </div>
+                            <div class="col-sm-12 col-md-7">
+                                <div class="dataTables_paginate paging_simple_numbers" id="data-table-default_paginate">
+                                    <ul class="pagination">
+                                        <li class="paginate_button page-item previous disabled" id="data-table-default_previous"><a href="#" aria-controls="data-table-default" data-dt-idx="0" tabindex="0" class="page-link">Previous</a></li>
+                                        <li class="paginate_button page-item active"><a href="#" aria-controls="data-table-default" data-dt-idx="1" tabindex="0" class="page-link">1</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="2" tabindex="0" class="page-link">2</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="3" tabindex="0" class="page-link">3</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="4" tabindex="0" class="page-link">4</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="5" tabindex="0" class="page-link">5</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="6" tabindex="0" class="page-link">6</a></li>
+                                        <li class="paginate_button page-item next" id="data-table-default_next"><a href="#" aria-controls="data-table-default" data-dt-idx="7" tabindex="0" class="page-link">Next</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div-->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<script type="text/javascript" src="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
+<script type="text/javascript">
+
+    updates.update10 = function(){
+
+        var targets = [];
+
+        if (typeof menu[window.location.pathname] !== 'undefined'){
+
+            $.ajax({
+                url: '/api/v1/targets',
+                beforeSend: function(request) {
+                    if ('headers' in menu[window.location.pathname].options) {
+                        for (var k in menu[window.location.pathname].options.headers) {
+                            request.setRequestHeader(k, menu[window.location.pathname].options.headers[k]);
+                        }
+                    }
+                },
+                success: function(jsn) {
+                    $.each(jsn.data.activeTargets, function(key, value) {
+                        var nowTime = new Date()
+                        var scrapeTime = new Date(value.lastScrape);
+                        targets.push({
+                            health:             '<label class="label label-'+value.health+'">'+value.health+'</label>',
+                            scrapeUrl:          '<a href="'+value.scrapeUrl+'" target="_blank">'+value.scrapeUrl+'</a>',
+                            lastError:          '<font color="red">'+value.lastError+'<font>',
+                            job:                value.discoveredLabels.job,
+                            lastScrape:         ((nowTime - scrapeTime) / 1000).toFixed(2) + 's ago',
+                            lastScrapeDuration: (value.lastScrapeDuration * 1000).toFixed(2) + 'ms',
+                        });
+
+                    });
+
+                    $('#targets').bootstrapTable({
+                        pagination: true,
+                        search: true,
+                        classes: "table table-responsive-sm table-sm",
+                        pageSize: 100
+                    });
+                    //$('#alerts').bootstrapTable('pageSize', 100);
+                    $('#targets').bootstrapTable('load', targets);
+                }
+
+
+            });
+
+        }
+
+    }
+
+    $(function() {
+        updates.update10();
+    });
+</script>
