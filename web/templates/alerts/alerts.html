@@ -235,10 +235,6 @@
         levels.unknown = 0;
 
         $.each(alerts, function(key, value) {
-            if (value.state == 'resolved') {
-                return;
-            }
-
             for (t in tags) {
                 if (!(t in value.labels)){
                     value.labels[t] = '---';
@@ -267,11 +263,11 @@
             nAlerts.push({
                 state:       '<label class="label label-'+value.state+'">'+value.state+'</label>',
                 repeat:      value.repeat || 1,
-                alertname:   value.labels.alertname || 'unknown',
+                alertname:   value.labels.alertname || '-',
                 node:        '<span class="white-space:nowrap;">'+(value.labels.node || value.labels.host || '-')+'</span>',
                 startsAt:    $.format.date(value.startsAt, 'dd/MM/yyyy HH:mm:ss'),
                 endsAt:      $.format.date(value.endsAt, 'dd/MM/yyyy HH:mm:ss'),
-                description: value.annotations.description || '',
+                description: value.annotations.description || '-',
             });
 
         });

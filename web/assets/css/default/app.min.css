@@ -32164,6 +32164,10 @@ hr {
     background: #00acac
 }
 
+.label.label-resolved {
+    background: #00acac
+}
+
 .label.label-info {
     background: #49b6d6
 }

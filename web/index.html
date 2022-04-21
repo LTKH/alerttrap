@@ -158,6 +158,8 @@
                                         $('li[id="'+key.replaceAll('/', '_')+'"] span:first').html(menu[key].levels.warning).attr('class', 'badge badge-warning');
                                     } else if (menu[key].levels.unknown > 0) {
                                         $('li[id="'+key.replaceAll('/', '_')+'"] span:first').html(menu[key].levels.unknown).attr('class', 'badge');
+                                    } else if (menu[key].levels.resolved > 0) {
+                                        $('li[id="'+key.replaceAll('/', '_')+'"] span:first').html(menu[key].levels.resolved).attr('class', 'badge');
                                     } else {
                                         $('li[id="'+key.replaceAll('/', '_')+'"] span:first').html('').attr('class', 'badge');
                                         if (typeof menu[key].href === 'undefined'){

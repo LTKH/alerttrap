@@ -102,7 +102,7 @@ func main() {
         var alerts Alerts
 		for k := 0; k < 1000; k++ {
 			for i := 0; i < 10; i++ {
-				st := []string{"critical", "warning", "error"}
+				st := []string{"critical", "warning", "error", "resolved"}
 				ri := rand.Intn(len(st))
                 if k == 0 {
                     alert := Alert{
