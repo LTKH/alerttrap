@@ -4,6 +4,7 @@ import (
     "io"
     "net/http"
     "log"
+    "sort"
     //"os"
     "fmt"
     "crypto/sha1"
@@ -47,6 +48,7 @@ type Alert struct {
     AlertId      string                    `json:"alertId"`
     GroupId      string                    `json:"groupId"`
     State        string                    `json:"state"`
+    Level        int                       `json:"-"`
     Status       string                    `json:"status,omitempty"`
     StartsAt     time.Time                 `json:"startsAt"`
     EndsAt       time.Time                 `json:"endsAt"`
@@ -216,6 +218,26 @@ func authentication(cfg *config.DB, r *http.Request) (bool, int, error) {
     return false, 401, errors.New("Unauthorized")
 }
 
+func getLevel(state string) int {
+    switch state {
+        case "critical":
+            return 7
+        case "firing":
+            return 6
+        case "error":
+            return 5
+        case "average":
+            return 4
+        case "warning","alerting","pending":
+            return 3
+        case "info":
+            return 2
+        case "resolved","normal","ok":
+            return 1
+    }
+    return 0
+}
+
 func New(conf *config.Config) (*Api, error) {
     //connection to data base
     //client, err := db.NewClient(conf.Global.DB)
@@ -329,6 +351,7 @@ func (api *Api) SetAlerts(data Alerts) {
             }
 
             alert.State          = value.State
+            alert.Level          = getLevel(value.State)
             alert.ActiveAt       = time.Now().UTC().Unix()
             alert.EndsAt         = ends_at
             alert.Annotations    = value.Annotations
@@ -346,6 +369,7 @@ func (api *Api) SetAlerts(data Alerts) {
             alert.AlertId        = alert_id
             alert.GroupId        = group_id
             alert.State          = value.State
+            alert.Level          = getLevel(value.State)
             alert.ActiveAt       = time.Now().UTC().Unix()
             alert.StartsAt       = starts_at
             alert.EndsAt         = ends_at
@@ -458,6 +482,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
             alert.AlertId      = a.AlertId
             alert.GroupId      = a.GroupId
             alert.State        = a.State
+            alert.Level        = a.Level
             alert.StartsAt     = time.Unix(a.StartsAt, 0)
             alert.EndsAt       = time.Unix(a.EndsAt, 0)
             alert.Repeat       = a.Repeat
@@ -473,17 +498,34 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
             }
             
             if len(alerts.AlertsArray) >= limit {
-                var warnings []string
-                if limit == api.Conf.Global.Alerts_limit {
-                    warnings = append(warnings, fmt.Sprintf("display limit exceeded - %d", limit))
-                }
-                w.Write(encodeResp(&Resp{Status:"success", Warnings:warnings, Data:alerts}))
-                return
+                continue
             }
         }
 
         if len(alerts.AlertsArray) == 0 {
             alerts.AlertsArray = make([]Alert, 0)
+        } else {
+            sort.Slice(alerts.AlertsArray, func(a, b int) bool {
+                if alerts.AlertsArray[a].Level > alerts.AlertsArray[b].Level {
+                    return true
+                }
+                if alerts.AlertsArray[a].Level < alerts.AlertsArray[b].Level {
+                    return false
+                }
+                if alerts.AlertsArray[a].Repeat < alerts.AlertsArray[b].Repeat {
+                    return true
+                }
+                if alerts.AlertsArray[a].Repeat > alerts.AlertsArray[b].Repeat {
+                    return false
+                }
+                return alerts.AlertsArray[a].GroupId >= alerts.AlertsArray[b].GroupId
+            })
+            if limit == api.Conf.Global.Alerts_limit {
+                var warnings []string
+                warnings = append(warnings, fmt.Sprintf("display limit exceeded - %d", limit))
+                w.Write(encodeResp(&Resp{Status:"success", Warnings:warnings, Data:alerts}))
+                return
+            }
         }
         
         w.Write(encodeResp(&Resp{Status:"success", Data:alerts}))

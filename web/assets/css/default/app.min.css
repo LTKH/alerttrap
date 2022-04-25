@@ -25199,7 +25199,7 @@ a:focus {
 
 .header .navbar-nav>li>a .label {
     position: absolute;
-    top: 8px;
+    top: 7px;
     right: 5px;
     display: block;
     background: #00acac;
@@ -32133,7 +32133,7 @@ hr {
 
 .label {
     display: inline;
-    padding: 3px 6px 4px;
+    padding: 4px 6px 4px;
     font-size: 75%;
     font-weight: 600;
     color: #fff;
@@ -50062,4 +50062,20 @@ body ul.wysihtml5-toolbar .glyphicon.glyphicon-picture:before {
 
 .width-600 {
     width: 600px!important
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+
+::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background: #2d353c!important;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .2)!important;
 }

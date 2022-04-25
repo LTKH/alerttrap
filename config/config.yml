@@ -39,8 +39,6 @@ menu:
     nodes:
       - id: "targets"
         name: "Targets"
-        options:
-          href: "/api/v1/alerts"
       - id: "alerts"
         name: "Alerts"
         href: "/api/v1/alerts"

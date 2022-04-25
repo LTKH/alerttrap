@@ -152,7 +152,7 @@
                 </button>
             </div>
             <div class="modal-body">
-            ...
+                <div class="container-fluid"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
@@ -192,6 +192,18 @@
 <script type="text/javascript" src="/assets/js/jquery/jquery-dateformat.min.js"></script>
 <script type="text/javascript">
 
+    function getAlert(resKey, id){
+        if ('key' in menu[resKey].options) {
+            resKey = menu[resKey].options.key;
+        }
+        for (var alert of updates.results[resKey].data.alerts) {
+            if (alert.alertId == id) {
+                return alert;
+            }
+        }
+        return {};
+    }
+
     updates.update10 = function(){
         var alerts = [];
         var nAlerts = [];
@@ -212,18 +224,6 @@
             if (typeof updates.results[resKey].data !== 'undefined') {
                 if (typeof updates.results[resKey].data.alerts !== 'undefined') {
                     alerts = updates.results[resKey].data.alerts;
-                    alerts.sort(function(a, b) {
-                        if (a.repeat >= b.repeat){
-                            return 1;
-                        }
-                        return -1;
-                    });
-                    alerts.sort(function(a, b) {
-                        if (a.state+a.alertname+a.host >= b.state+b.alertname+a.host){
-                            return 1;
-                        }
-                        return -1;
-                    });
                 }
             }
         }
@@ -261,6 +261,7 @@
             }
 
             nAlerts.push({
+                alertId:     value.alertId,
                 state:       '<label class="label label-'+value.state+'">'+value.state+'</label>',
                 repeat:      value.repeat || 1,
                 alertname:   value.labels.alertname || '-',
@@ -312,7 +313,18 @@
                 { title: "StartsAt", field: "startsAt", width: 140 },
                 { title: "EndsAt", field: "endsAt", width: 140 },
                 { title: "Description", field: "description" }
-            ]
+            ],
+            onClickRow: function (e) { 
+                var alert = getAlert(window.location.pathname, e.alertId)
+                $('div[class="container-fluid"]').empty();
+                $.each(alert.labels, function(key, value) {
+                    $('div[class="container-fluid"]').append('<div class="row"><div class="col-sm-2">'+key+'</div><div class="col-sm-10 ml-auto">'+value+'</div></div>');
+                });
+                $.each(alert.annotations, function(key, value) {
+                    $('div[class="container-fluid"]').append('<div class="row"><div class="col-sm-2">'+key+'</div><div class="col-sm-10 ml-auto">'+value+'</div></div>');
+                });
+                $('#myModal').modal('show');
+            }
         });
 
         if (typeof menu[window.location.pathname] !== 'undefined'){

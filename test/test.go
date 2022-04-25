@@ -104,36 +104,23 @@ func main() {
 			for i := 0; i < 10; i++ {
 				st := []string{"critical", "warning", "error", "resolved"}
 				ri := rand.Intn(len(st))
-                if k == 0 {
-                    alert := Alert{
-                        State:        st[ri],
-                        Labels:       map[string]interface{}{
-                            "alertname":   fmt.Sprintf("alertName-%d", i),
-                            "node":        fmt.Sprintf("host-%d.example.com", k),
-                            "tag":         fmt.Sprintf("%d", i),
-                        },
-                        Annotations:  map[string]interface{}{
-                            "description": "test message",
-                        },
-                        GeneratorURL: "",
-                    }
-                    alerts.AlertsArray = append(alerts.AlertsArray, alert)
-                } else {
-                    alert := Alert{
-                        State:        st[ri],
-                        Labels:       map[string]interface{}{
-                            "alertname":   fmt.Sprintf("alertName-%d", i),
-                            "host":        fmt.Sprintf("host-%d.example.com", k),
-                            "node":        fmt.Sprintf("host-%d.example.com", k),
-                            "tag":         fmt.Sprintf("%d", i),
-                        },
-                        Annotations:  map[string]interface{}{
-                            "description": "test message",
-                        },
-                        GeneratorURL: "",
-                    }
-                    alerts.AlertsArray = append(alerts.AlertsArray, alert)
-                }    
+                if rand.Intn(len(st)) > 1 {
+                    continue
+                }
+                alert := Alert{
+                    State:        st[ri],
+                    Labels:       map[string]interface{}{
+                        "alertname":   fmt.Sprintf("alertName-%d", i),
+                        "host":        fmt.Sprintf("host-%d.example.com", k),
+                        "node":        fmt.Sprintf("host-%d.example.com", k),
+                        "tag":         fmt.Sprintf("%d", i),
+                    },
+                    Annotations:  map[string]interface{}{
+                        "description": "test message",
+                    },
+                    GeneratorURL: "",
+                }
+                alerts.AlertsArray = append(alerts.AlertsArray, alert)  
 			}
 		}
 

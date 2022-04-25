@@ -15,6 +15,7 @@ type Alert struct {
     AlertId         string                  
     GroupId         string                  
     State           string 
+    Level           int
     ActiveAt        int64                
     StartsAt        int64                   
     EndsAt          int64                                     
