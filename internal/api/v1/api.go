@@ -4,12 +4,11 @@ import (
     "io"
     "net/http"
     "log"
-    "sort"
     //"os"
     "fmt"
     "crypto/sha1"
     "encoding/hex"
-    "regexp"
+    //"regexp"
     "time"
     "strconv"
     "errors"
@@ -25,7 +24,6 @@ import (
 var (
     CacheAlerts *cache.Alerts = cache.NewCacheAlerts()
     CacheUsers *cache.Users = cache.NewCacheUsers()
-    re_labels = regexp.MustCompile(`(?:([\w]+)([=!~><]{1,2})"([^"]*)")`)
 )
 
 type Api struct {
@@ -48,7 +46,6 @@ type Alert struct {
     AlertId      string                    `json:"alertId"`
     GroupId      string                    `json:"groupId"`
     State        string                    `json:"state"`
-    Level        int                       `json:"-"`
     Status       string                    `json:"status,omitempty"`
     StartsAt     time.Time                 `json:"startsAt"`
     EndsAt       time.Time                 `json:"endsAt"`
@@ -57,53 +54,6 @@ type Alert struct {
     Labels       map[string]interface{}    `json:"labels"`
     Annotations  map[string]interface{}    `json:"annotations"`
     GeneratorURL string                    `json:"generatorURL"`
-}
-
-// Matcher models the matching of a label.
-type Matcher struct {
-    Type  string
-    Name  string
-    Value string
-    re *regexp.Regexp
-}
-
-// NewMatcher returns a matcher object.
-func newMatcher(t, n, v string) (*Matcher, error) {
-
-    if t != "=" && t != "!=" && t != "=~" && t != "!~" {
-        return nil, errors.New(fmt.Sprintf("executing query: invalid comparison operator: %s", t))
-    }
-
-    m := &Matcher{
-        Type:  t,
-        Name:  n,
-        Value: v,
-    }
-    
-    if t == "=~" || t == "!~" {
-        re, err := regexp.Compile("^(?:" + v + ")$")
-        if err != nil {
-            return nil, err
-        }
-        m.re = re
-    }
-
-    return m, nil
-}
-
-// Matches returns whether the matcher matches the given string value.
-func (m *Matcher) matches(s string) bool {
-    switch m.Type {
-        case "=":
-            return s == m.Value
-        case "!=":
-            return s != m.Value
-        case "=~":
-            return m.re.MatchString(s)
-        case "!~":
-            return !m.re.MatchString(s)
-    }
-    return false
 }
 
 func encodeResp(resp *Resp) []byte {
@@ -120,24 +70,37 @@ func getHash(text string) string {
     return hex.EncodeToString(h.Sum(nil))
 }
 
-func parseMetricSelector(input string) (m []*Matcher, err error) {
-    var matchers []*Matcher
-
-    lbls := re_labels.FindAllStringSubmatch(input, -1)
-    for _, l := range lbls {
-
-        matcher, err := newMatcher(l[2], l[1], l[3])
-        if err != nil {
-            return nil, err
-        }
-
-        matchers = append(matchers, matcher)
+// Matches returns whether the matcher matches the given string value.
+func matches(m *config.Matcher, s string) bool {
+    switch m.Type {
+        case "=":
+            return s == m.Value
+        case "!=":
+            return s != m.Value
+        case "=~":
+            return m.Re.MatchString(s)
+        case "!~":
+            return !m.Re.MatchString(s)
     }
-
-    return matchers, nil
+    return false
 }
 
-func checkMatches(alert *cache.Alert, matchers [][]*Matcher) bool {
+func matchesA(mrs []*config.Matcher, a Alert) bool {
+    for _, m := range mrs {
+        if s, ok := a.Labels[m.Name]; ok {
+            if !matches(m, s.(string)) {
+                return false
+            }
+        } else {
+            if !matches(m, "") {
+                return false
+            }
+        }
+    }
+    return true
+}
+
+func checkMatches(alert *cache.Alert, matchers [][]*config.Matcher) bool {
     for _, mtch := range matchers {
         match := true
 
@@ -146,7 +109,7 @@ func checkMatches(alert *cache.Alert, matchers [][]*Matcher) bool {
             if val == nil {
                 val = ""
             }
-            if !m.matches(fmt.Sprintf("%v", val)) {
+            if matches(m, fmt.Sprintf("%v", val)) {
                 match = false
                 break
             }
@@ -216,26 +179,6 @@ func authentication(cfg *config.DB, r *http.Request) (bool, int, error) {
     }
 
     return false, 401, errors.New("Unauthorized")
-}
-
-func getLevel(state string) int {
-    switch state {
-        case "critical":
-            return 7
-        case "firing":
-            return 6
-        case "error":
-            return 5
-        case "average":
-            return 4
-        case "warning","alerting","pending":
-            return 3
-        case "info":
-            return 2
-        case "resolved","normal","ok":
-            return 1
-    }
-    return 0
 }
 
 func New(conf *config.Config) (*Api, error) {
@@ -316,6 +259,18 @@ func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
 func (api *Api) SetAlerts(data Alerts) {
     for _, value := range data.AlertsArray {
 
+        for _, ext := range api.Conf.ExtensionRules {
+            for _, mrs := range ext.Matchers {
+                if matchesA(mrs, value) {
+                    for _, lbs := range ext.Labels {
+                        for k, v := range lbs {
+                            value.Labels[k] = v
+                        }
+                    }
+                }
+            }
+        }
+
         labels, err := json.Marshal(value.Labels)
         if err != nil {
             log.Printf("[error] read alert %v", err)
@@ -351,7 +306,6 @@ func (api *Api) SetAlerts(data Alerts) {
             }
 
             alert.State          = value.State
-            alert.Level          = getLevel(value.State)
             alert.ActiveAt       = time.Now().UTC().Unix()
             alert.EndsAt         = ends_at
             alert.Annotations    = value.Annotations
@@ -369,7 +323,6 @@ func (api *Api) SetAlerts(data Alerts) {
             alert.AlertId        = alert_id
             alert.GroupId        = group_id
             alert.State          = value.State
-            alert.Level          = getLevel(value.State)
             alert.ActiveAt       = time.Now().UTC().Unix()
             alert.StartsAt       = starts_at
             alert.EndsAt         = ends_at
@@ -405,7 +358,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
         state       := make(map[string]int)
         strArgs     := make(map[string]string)
         intArgs     := make(map[string]int64)
-        var labels  [][]*Matcher
+        var labels  [][]*config.Matcher
 
         for k, v := range r.URL.Query() {
             switch k {
@@ -435,7 +388,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
                     }
                 case "match[]":
                     for _, s := range v {
-                        matchers, err := parseMetricSelector(s)
+                        matchers, err := config.ParseMetricSelector(s)
                         if err != nil {
                             w.WriteHeader(400)
                             w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
@@ -482,7 +435,6 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
             alert.AlertId      = a.AlertId
             alert.GroupId      = a.GroupId
             alert.State        = a.State
-            alert.Level        = a.Level
             alert.StartsAt     = time.Unix(a.StartsAt, 0)
             alert.EndsAt       = time.Unix(a.EndsAt, 0)
             alert.Repeat       = a.Repeat
@@ -505,21 +457,6 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
         if len(alerts.AlertsArray) == 0 {
             alerts.AlertsArray = make([]Alert, 0)
         } else {
-            sort.Slice(alerts.AlertsArray, func(a, b int) bool {
-                if alerts.AlertsArray[a].Level > alerts.AlertsArray[b].Level {
-                    return true
-                }
-                if alerts.AlertsArray[a].Level < alerts.AlertsArray[b].Level {
-                    return false
-                }
-                if alerts.AlertsArray[a].Repeat < alerts.AlertsArray[b].Repeat {
-                    return true
-                }
-                if alerts.AlertsArray[a].Repeat > alerts.AlertsArray[b].Repeat {
-                    return false
-                }
-                return alerts.AlertsArray[a].GroupId >= alerts.AlertsArray[b].GroupId
-            })
             if limit == api.Conf.Global.Alerts_limit {
                 var warnings []string
                 warnings = append(warnings, fmt.Sprintf("display limit exceeded - %d", limit))

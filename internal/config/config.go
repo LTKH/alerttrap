@@ -1,15 +1,24 @@
 package config
 
 import (
+    "fmt"
+    //"log"
     "path"
+    "errors"
+    "regexp"
     "io/ioutil"
     "gopkg.in/yaml.v2"
     "github.com/ltkh/alerttrap/internal/cache"
 )
 
+var (
+    ReLabels = regexp.MustCompile(`(?:([\w]+)([=!~><]{1,2})"([^"]*)")`)
+)
+
 type Config struct {
     Global           *Global            `yaml:"global"`
     Menu             []*Node            `yaml:"menu"`
+    ExtensionRules   []*ExtensionRule   `yaml:"extension_rules"`
 }
 
 type Global struct {
@@ -60,10 +69,65 @@ type Node struct {
     Nodes            []*Node            `yaml:"nodes" json:"nodes,omitempty"`
 }
 
-func path_nodes(p string, nodes []*Node) {
+type ExtensionRule struct {
+    SourceMatchers  []string            `yaml:"source_matchers"`
+    Labels          []map[string]string `yaml:"labels"`
+    Matchers        [][]*Matcher
+}
+
+// Matcher models the matching of a label.
+type Matcher struct {
+    Type  string
+    Name  string
+    Value string
+    Re *regexp.Regexp
+}
+
+// NewMatcher returns a matcher object.
+func newMatcher(t, n, v string) (*Matcher, error) {
+
+    if t != "=" && t != "!=" && t != "=~" && t != "!~" {
+        return nil, errors.New(fmt.Sprintf("executing query: invalid comparison operator: %s", t))
+    }
+
+    m := &Matcher{
+        Type:  t,
+        Name:  n,
+        Value: v,
+    }
+    
+    if t == "=~" || t == "!~" {
+        re, err := regexp.Compile("^(?:" + v + ")$")
+        if err != nil {
+            return nil, err
+        }
+        m.Re = re
+    }
+
+    return m, nil
+}
+
+func ParseMetricSelector(input string) (m []*Matcher, err error) {
+    var matchers []*Matcher
+
+    lbls := ReLabels.FindAllStringSubmatch(input, -1)
+    for _, l := range lbls {
+
+        matcher, err := newMatcher(l[2], l[1], l[3])
+        if err != nil {
+            return nil, err
+        }
+
+        matchers = append(matchers, matcher)
+    }
+
+    return matchers, nil
+}
+
+func pathNodes(p string, nodes []*Node) {
     for _, n := range nodes {
         n.Path = path.Join(p, n.Id)
-        path_nodes(n.Path, n.Nodes)
+        pathNodes(n.Path, n.Nodes)
     }
 }
 
@@ -80,7 +144,17 @@ func New(filename string) (*Config, error) {
         return cfg, err
     }
 
-    path_nodes("/", cfg.Menu)
+    pathNodes("/", cfg.Menu)
+
+    for _, ext := range cfg.ExtensionRules {
+        for _, sm := range ext.SourceMatchers {
+            m, err := ParseMetricSelector(sm)
+            if err != nil {
+                return cfg, err
+            }
+            ext.Matchers = append(ext.Matchers, m)
+        }
+    }
     
     return cfg, nil
 }

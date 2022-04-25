@@ -244,16 +244,23 @@
                 }
             }
 
+            var level = 0;
             switch (value.state) {
                 case 'firing':
                 case 'critical':
+                    level = 5;
+                    levels.firing ++; 
+                    break;
                 case 'error':
+                    level = 4;
                     levels.firing ++; 
                     break;
                 case 'warning':
+                    level = 2;
                     levels.warning ++;
                     break;
                 case 'resolved':
+                    level = 1;
                     levels.resolved ++;
                     break;
                 default:
@@ -261,6 +268,7 @@
             }
 
             nAlerts.push({
+                level:       level,
                 alertId:     value.alertId,
                 state:       '<label class="label label-'+value.state+'">'+value.state+'</label>',
                 repeat:      value.repeat || 1,
@@ -288,6 +296,18 @@
                 $('#widget-' + key).attr('class', 'widget widget-stats bg-dark');
             }
         });
+
+        nAlerts.sort(
+            function(a, b){
+                if (a.level != b.level) {
+                    return (a.level < b.level) ? 1 : -1;
+                }
+                if (a.repeat != b.repeat) {
+                    return (parseInt(a.repeat) > parseInt(b.repeat)) ? 1 : -1;
+                }
+                return (a.alertId >= b.alertId) ? 1 : -1;
+            }
+        );
         
         //var currentPos = $('#alerts').position().top * -1 + 43;
         $('#alerts').bootstrapTable('load', nAlerts);

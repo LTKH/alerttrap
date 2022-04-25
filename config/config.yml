@@ -42,7 +42,20 @@ menu:
       - id: "alerts"
         name: "Alerts"
         href: "/api/v1/alerts"
-        tags: ["host"]
+        tags: ["test","test1","host"]
+
+extension_rules:
+  - source_matchers: ['{host=~"host-2.*"}']
+    labels:
+      - test: "alert2" 
+  - source_matchers: ['{host=~"host-5.*"}']
+    labels:
+      - test: "alert5" 
+        test1: "alert5" 
+
+
+
+
   #- id: "netmap"
   #  name: "Netmap"
   #  class: "fa fa-cloud"
