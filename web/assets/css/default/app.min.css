@@ -11359,7 +11359,7 @@ section {
 
 body {
     margin: 0;
-    font-family: Roboto,Helvetica Neue,Verdana,Arial,sans-serif;
+    font-family: Roboto,Verdana,Helvetica Neue,Arial,sans-serif;
     font-size: 12px;
     font-weight: 400;
     line-height: 1.5;
@@ -25545,7 +25545,7 @@ a:focus {
 }
 
 .sidebar {
-    width: 400px;
+    width: 450px;
     position: absolute;
     left: 0;
     top: 0;
@@ -26158,7 +26158,7 @@ a:focus {
     top: 0;
     left: 0;
     bottom: 0;
-    width: 220px;
+    width: 450px;
     z-index: 1000
 }
 
@@ -26587,7 +26587,7 @@ a:focus {
 }
 
 .content {
-    margin-left: 400px;
+    margin-left: 450px;
     padding: 20px 30px
 }
 
