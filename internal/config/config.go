@@ -71,8 +71,8 @@ type Node struct {
 
 type ExtensionRule struct {
     SourceMatchers  []string            `yaml:"source_matchers"`
-    Labels          []map[string]string `yaml:"labels"`
-    Matchers        [][]*Matcher
+    Labels          map[string]string   `yaml:"labels"`
+    Matchers        [][]Matcher
 }
 
 // Matcher models the matching of a label.
@@ -84,22 +84,22 @@ type Matcher struct {
 }
 
 // NewMatcher returns a matcher object.
-func newMatcher(t, n, v string) (*Matcher, error) {
+func newMatcher(t, n, v string) (Matcher, error) {
 
-    if t != "=" && t != "!=" && t != "=~" && t != "!~" {
-        return nil, errors.New(fmt.Sprintf("executing query: invalid comparison operator: %s", t))
-    }
-
-    m := &Matcher{
+    m := Matcher{
         Type:  t,
         Name:  n,
         Value: v,
+    }
+
+    if t != "=" && t != "!=" && t != "=~" && t != "!~" {
+        return m, errors.New(fmt.Sprintf("executing query: invalid comparison operator: %s", t))
     }
     
     if t == "=~" || t == "!~" {
         re, err := regexp.Compile("^(?:" + v + ")$")
         if err != nil {
-            return nil, err
+            return m, err
         }
         m.Re = re
     }
@@ -107,8 +107,8 @@ func newMatcher(t, n, v string) (*Matcher, error) {
     return m, nil
 }
 
-func ParseMetricSelector(input string) (m []*Matcher, err error) {
-    var matchers []*Matcher
+func ParseMetricSelector(input string) (m []Matcher, err error) {
+    var matchers []Matcher
 
     lbls := ReLabels.FindAllStringSubmatch(input, -1)
     for _, l := range lbls {

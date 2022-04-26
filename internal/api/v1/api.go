@@ -71,7 +71,7 @@ func getHash(text string) string {
 }
 
 // Matches returns whether the matcher matches the given string value.
-func matches(m *config.Matcher, s string) bool {
+func matches(m config.Matcher, s string) bool {
     switch m.Type {
         case "=":
             return s == m.Value
@@ -85,33 +85,21 @@ func matches(m *config.Matcher, s string) bool {
     return false
 }
 
-func matchesA(mrs []*config.Matcher, a Alert) bool {
-    for _, m := range mrs {
-        if s, ok := a.Labels[m.Name]; ok {
-            if !matches(m, s.(string)) {
-                return false
-            }
-        } else {
-            if !matches(m, "") {
-                return false
-            }
-        }
-    }
-    return true
-}
-
-func checkMatches(alert *cache.Alert, matchers [][]*config.Matcher) bool {
+func checkMatches(labels map[string]interface{}, matchers [][]config.Matcher) bool {
     for _, mtch := range matchers {
         match := true
 
         for _, m := range mtch {
-            val := alert.Labels[m.Name]
-            if val == nil {
-                val = ""
-            }
-            if matches(m, fmt.Sprintf("%v", val)) {
-                match = false
-                break
+            if val, ok := labels[m.Name]; ok {
+                if !matches(m, fmt.Sprintf("%v", val)) {
+                    match = false
+                    break
+                }
+            } else {
+                if !matches(m, "") {
+                    match = false
+                    break
+                }
             }
         }
 
@@ -261,11 +249,10 @@ func (api *Api) SetAlerts(data Alerts) {
 
         for _, ext := range api.Conf.ExtensionRules {
             for _, mrs := range ext.Matchers {
-                if matchesA(mrs, value) {
-                    for _, lbs := range ext.Labels {
-                        for k, v := range lbs {
-                            value.Labels[k] = v
-                        }
+                matchers := [][]config.Matcher{ mrs }
+                if checkMatches(value.Labels, matchers) {
+                    for k, v := range ext.Labels {
+                        value.Labels[k] = v
                     }
                 }
             }
@@ -354,11 +341,11 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
         var alerts Alerts
 
         //query
-        limit       := api.Conf.Global.Alerts_limit
-        state       := make(map[string]int)
-        strArgs     := make(map[string]string)
-        intArgs     := make(map[string]int64)
-        var labels  [][]*config.Matcher
+        limit        := api.Conf.Global.Alerts_limit
+        state        := make(map[string]int)
+        strArgs      := make(map[string]string)
+        intArgs      := make(map[string]int64)
+        var matchers [][]config.Matcher
 
         for k, v := range r.URL.Query() {
             switch k {
@@ -388,13 +375,13 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
                     }
                 case "match[]":
                     for _, s := range v {
-                        matchers, err := config.ParseMetricSelector(s)
+                        mrs, err := config.ParseMetricSelector(s)
                         if err != nil {
                             w.WriteHeader(400)
                             w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
                             return
                         }
-                        labels = append(labels, matchers)
+                        matchers = append(matchers, mrs)
                     }
                 default:
                     w.WriteHeader(400)
@@ -426,7 +413,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
             if len(state) != 0 && state[a.State] == 0 {
                 continue
             }
-            if len(labels) != 0 && !checkMatches(&a, labels) {
+            if len(matchers) != 0 && !checkMatches(a.Labels, matchers) {
                 continue
             }
 

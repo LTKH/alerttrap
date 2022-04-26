@@ -192,11 +192,11 @@
 <script type="text/javascript" src="/assets/js/jquery/jquery-dateformat.min.js"></script>
 <script type="text/javascript">
 
-    function getAlert(resKey, id){
-        if ('key' in menu[resKey].options) {
-            resKey = menu[resKey].options.key;
+    function getAlert(path, id){
+        if ('key' in menu[path].options) {
+            path = menu[path].options.key;
         }
-        for (var alert of updates.results[resKey].data.alerts) {
+        for (var alert of updates.results[path].data.alerts) {
             if (alert.alertId == id) {
                 return alert;
             }
@@ -208,22 +208,22 @@
         var alerts = [];
         var nAlerts = [];
         var tags = {};
-        var resKey = window.location.pathname;
+        var path = decodeURIComponent(window.location.pathname);
 
-        if (window.location.pathname in menu){
-            if ('tags' in menu[window.location.pathname].options) {
-                tags = menu[window.location.pathname].options.tags;
+        if (path in menu){
+            if ('tags' in menu[path].options) {
+                tags = menu[path].options.tags;
                 //console.log(tags);
             }
-            if ('key' in menu[window.location.pathname].options) {
-                resKey = menu[window.location.pathname].options.key;
+            if ('key' in menu[path].options) {
+                path = menu[path].options.key;
             }
         }
 
-        if (resKey in updates.results) {
-            if (typeof updates.results[resKey].data !== 'undefined') {
-                if (typeof updates.results[resKey].data.alerts !== 'undefined') {
-                    alerts = updates.results[resKey].data.alerts;
+        if (path in updates.results) {
+            if (typeof updates.results[path].data !== 'undefined') {
+                if (typeof updates.results[path].data.alerts !== 'undefined') {
+                    alerts = updates.results[path].data.alerts;
                 }
             }
         }
@@ -315,6 +315,8 @@
     }
 
     $(function() {
+        var path = decodeURIComponent(window.location.pathname);
+
         $('#myModal').on('shown.bs.modal', function () {
             $('#myInput').focus()
         });
@@ -335,7 +337,7 @@
                 { title: "Description", field: "description" }
             ],
             onClickRow: function (e) { 
-                var alert = getAlert(window.location.pathname, e.alertId)
+                var alert = getAlert(path, e.alertId)
                 $('div[class="container-fluid"]').empty();
                 $.each(alert.labels, function(key, value) {
                     $('div[class="container-fluid"]').append('<div class="row"><div class="col-sm-2">'+key+'</div><div class="col-sm-10 ml-auto">'+value+'</div></div>');
@@ -347,13 +349,13 @@
             }
         });
 
-        if (typeof menu[window.location.pathname] !== 'undefined'){
-            if (menu[window.location.pathname].href != ''){
+        if (typeof menu[path] !== 'undefined'){
+            if (menu[path].href != ''){
                 updates.update10();
             }
         }
 
-        var keys = window.location.pathname.split('/');
+        var keys = path.split('/');
         for (var i = 0; i < keys.length; i++) {
             if (i < keys.length -1) {
                 $('ol[class="breadcrumb float-xl-right"]').append('<li class="breadcrumb-item"><a href="/'+keys.slice(1, i+1).join('/')+'">'+keys[i]+'</a></li>');

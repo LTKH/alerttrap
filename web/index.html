@@ -265,9 +265,10 @@
         $.ajax({
             url: '/api/v1/menu',
             success: function(jsn) {
+                var path = decodeURIComponent(window.location.pathname);
                 $('#menu').treeControl({ action: 'create', data: jsn.data });
-                loadPage(window.location.pathname);
-                newObjects(window.location.pathname.replace(/^(\/[^/]+).*/, '$1'));
+                loadPage(path);
+                newObjects(path.replace(/^(\/[^/]+).*/, '$1'));
             }
         });
     });
