@@ -6,7 +6,10 @@ RUN go build -o /bin/alerttrap alerttrap.go
 
 FROM alpine:3.15.0
 
-RUN apk update && apk add --no-cache bash
+ADD https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.34-r0/glibc-2.34-r0.apk /tmp
+RUN apk update && \
+    apk add --no-cache bash && \
+    apk add --allow-untrusted /tmp/*.apk && rm -f /tmp/*.apk
 
 EXPOSE 8000
 WORKDIR /data
@@ -17,4 +20,4 @@ COPY config/config.yml /etc/alerttrap.yml
 COPY web /data/web
 
 ENTRYPOINT ["/bin/alerttrap"]
-CMD ["-web-dir=/data/web -config=/etc/alerttrap.yml"]
+CMD ["-web-dir=/data/web","-config=/etc/alerttrap.yml"]
