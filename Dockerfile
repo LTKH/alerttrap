@@ -8,12 +8,13 @@ FROM alpine:3.15.0
 
 RUN apk update && apk add --no-cache bash
 
-EXPOSE 8100
+EXPOSE 8000
 WORKDIR /data
 VOLUME ["/data"]
 
 COPY --from=builder /bin/alerttrap /bin/alerttrap
 COPY config/config.yml /etc/alerttrap.yml
+COPY web /data/web
 
 ENTRYPOINT ["/bin/alerttrap"]
-CMD ["-config=/etc/alerttrap.yml"]
+CMD ["-web-dir=/data/web -config=/etc/alerttrap.yml"]
