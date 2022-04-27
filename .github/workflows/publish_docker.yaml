@@ -7,7 +7,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  VERSION: latest
 
 jobs:
   build-and-push-image:
@@ -38,5 +37,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ltkh/alerttrap:latest
           labels: ${{ steps.meta.outputs.labels }}
