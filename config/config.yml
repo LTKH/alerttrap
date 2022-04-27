@@ -12,7 +12,7 @@ global:
     #client:         "mysql"
     #conn_string:    "root:test@(172.17.0.1)/alerttrap?parseTime=true"
     client:         "sqlite3"
-    conn_string:    "/data/dbase.db"
+    conn_string:    "/tmp/dbase.db"
     history_days:   7
 
   ldap:
@@ -37,21 +37,19 @@ menu:
     name: "Victoria Metrics"
     class: "fa fa-chart-bar"
     nodes:
-      - id: "targets"
-        name: "Targets"
-      - id: "alerts"
-        name: "Alerts"
-        href: "/api/v1/alerts"
-        tags: ["test","test1","host"]
+  - id: "kubernetes"
+    name: "Kubernetes"
+    href: "/api/v1/alerts"
+    tags: ["cluster","node","namespace","pod"]
 
-extension_rules:
-  - source_matchers: ['{host=~"host-2.*"}']
-    labels:
-      test: "alert2" 
-  - source_matchers: ['{host=~"host-5.*"}']
-    labels:
-      test: "alert5" 
-      test1: "тестовый раздел" 
+#extension_rules:
+#  - source_matchers: ['{host=~"host-2.*"}']
+#    labels:
+#      test: "alert2" 
+#  - source_matchers: ['{host=~"host-5.*"}']
+#    labels:
+#      test: "alert5" 
+#      test1: "тестовый раздел" 
 
 
 
