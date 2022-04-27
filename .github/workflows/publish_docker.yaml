@@ -37,5 +37,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: ltkh/alerttrap:latest
+          tags: ghcr.io/ltkh/alerttrap:latest
           labels: ${{ steps.meta.outputs.labels }}
