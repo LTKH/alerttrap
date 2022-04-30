@@ -8,16 +8,29 @@ import (
     "os/signal"
     "syscall"
     "flag"
+    "strings"
     "gopkg.in/natefinch/lumberjack.v2"
+    "github.com/prometheus/client_golang/prometheus"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
     "github.com/ltkh/alerttrap/internal/db"
     "github.com/ltkh/alerttrap/internal/api/v1"
     "github.com/ltkh/alerttrap/internal/config"
-    "github.com/ltkh/alerttrap/internal/monitor"
+)
+
+var (
+    cntAlerts = prometheus.NewGaugeVec(
+        prometheus.GaugeOpts{
+            Namespace: "alerttrap",
+            Name:      "cnt_alerts",
+            Help:      "",
+        },
+        []string{"state","alertname"},
+    )
 )
 
 func main() {
 
-    //command-line flag parsing
+    // Command-line flag parsing
     cfFile          := flag.String("config", "config/config.yml", "config file")
     webDir          := flag.String("web-dir", "web", "site directory")
     lgFile          := flag.String("logfile", "", "log file")
@@ -38,13 +51,13 @@ func main() {
         })
     }
 
-    //loading configuration file
+    // Loading configuration file
     cfg, err := config.New(*cfFile)
     if err != nil {
         log.Fatalf("[error] %v", err)
     }
 
-    //connection to data base
+    // Connection to data base
     client, err := db.NewClient(cfg.Global.DB) 
     if err != nil {
         log.Fatalf("[error] connect to db: %v", err)
@@ -53,7 +66,7 @@ func main() {
     if err != nil {
         log.Fatalf("[error] create tables: %v", err)
     }
-    //loading alerts
+    // Loading alerts
     alerts, err := client.LoadAlerts()
     if err != nil {
         log.Fatalf("[error] loading alerts: %v", err)
@@ -62,16 +75,36 @@ func main() {
         v1.CacheAlerts.Set(alert.GroupId, alert)
     }
     log.Printf("[info] loaded alerts from dbase (%d)", len(alerts))
-    //close connection
+    // Close connection
     client.Close()
 
-    //creating api
+    // Creating api
     apiV1, err := v1.New(cfg)
     if err != nil {
         log.Fatalf("[error] %v", err)
     }
 
-    //enabled listen port
+    // Creating monitoring
+    prometheus.MustRegister(cntAlerts)
+    go func() {
+        for {
+            lmap := map[string]int{}
+            for _, a := range v1.CacheAlerts.Items() { 
+                alertname := "---"
+                if val, ok := a.Labels["alertname"]; ok {
+                    alertname = val.(string)
+                }
+                lmap[a.State+"|"+alertname] ++
+            }
+            for key, val := range lmap {
+                spl := strings.Split(key, "|")
+                cntAlerts.With(prometheus.Labels{ "state": spl[0], "alertname": spl[1] }).Set(float64(val))
+            }
+            time.Sleep(60 * time.Second)
+        }
+    }()
+
+    // Enabled listen port
     http.HandleFunc("/-/healthy", apiV1.ApiHealthy)
     http.HandleFunc("/api/v1/sync", apiV1.ApiSync)
     http.HandleFunc("/api/v1/auth", apiV1.ApiAuth)
@@ -85,6 +118,7 @@ func main() {
             http.ServeFile(w, r, *webDir+"/index.html")
         }
     })
+    http.Handle("/metrics", promhttp.Handler())
 
     go func(cfg *config.Global){
         if cfg.Cert_file != "" && cfg.Cert_key != "" {
@@ -98,18 +132,15 @@ func main() {
         }
     }(cfg.Global)
 
-    //opening monitoring port
-    monitor.Start(cfg.Global.Monit.Listen)
-
-    //program completion signal processing
+    // Program completion signal processing
     c := make(chan os.Signal, 2)
     signal.Notify(c, os.Interrupt, syscall.SIGTERM)
     go func() {
         <- c
         log.Print("[info] stoping application")
-        //saving cache items
+        // Saving cache items
         if items := v1.CacheAlerts.Items(); len(items) != 0 {
-            //connection to data base
+            // Connection to data base
             client, err := db.NewClient(cfg.Global.DB) 
             if err != nil {
                 log.Fatalf("[error] connect to db: %v", err)
@@ -125,14 +156,14 @@ func main() {
 
     log.Print("[info] alertstrap started -_^")
 
-    //delete old alerts
+    // Delete old alerts
     go func(cfg *config.DB){
         for {
             client, err := db.NewClient(cfg) 
             if err != nil {
                 log.Printf("[error] connect to db: %v", err)
             }
-            //cleaning old alerts
+            // Cleaning old alerts
             cnt, err := client.DeleteOldAlerts()
             if err != nil {
                 log.Printf("[error] %v", err)
@@ -147,15 +178,15 @@ func main() {
         }
     }(cfg.Global.DB)
 
-    //daemon mode
+    // Daemon mode
     for {
 
-        //mark alerts as resolved
+        // Mark alerts as resolved
         if keys := v1.CacheAlerts.ResolvedItems(); len(keys) != 0 {
             log.Printf("[info] alerts are marked as allowed (%d)", len(keys))
         }
 
-        //cleaning cache alerts
+        // Cleaning cache alerts
         if items := v1.CacheAlerts.ExpiredItems(); len(items) != 0 {
             client, err := db.NewClient(cfg.Global.DB)
             if err != nil {
