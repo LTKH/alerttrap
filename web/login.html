@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>WebNel | Login</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+    <meta content="" name="description" />
+    <meta content="" name="author" />
+
+    <link href="/assets/css/vendor.min.css" rel="stylesheet" />
+    <link href="/assets/css/default/app.min.css" rel="stylesheet" />
+    <link href="/assets/plugins/gritter/css/jquery.gritter.css" rel="stylesheet" />
+
+</head>
+<!--body class='pace-top' style="background-color: #1a2229;"-->
+<body class='pace-top'>
+
+    <!--div id="loader" class="app-loader">
+        <span class="spinner"></span>
+    </div-->
+
+
+    <div id="app" class="app">
+
+        <div class="login login-v1">
+
+            <div class="login-container">
+
+                <!--div class="login-header">
+                    <div class="brand">
+                        <div class="d-flex align-items-center">
+                            <span class="logo"></span> <b>Color</b> Admin
+                        </div>
+                        <small>Bootstrap 5 Responsive Admin Template</small>
+                    </div>
+                    <div class="icon">
+                        <i class="fa fa-lock"></i>
+                    </div>
+                </div-->
+
+
+                <div class="login-body">
+
+                    <div class="login-content fs-13px">
+                        <form id="loginForm" action="/api/v1/login" method="POST">
+                            <div class="form-floating mb-20px">
+                                <input type="text" class="form-control fs-13px h-45px" id="username" name="username" placeholder="Username" />
+                                <label for="username" class="d-flex align-items-center py-0">Username</label>
+                            </div>
+                            <div class="form-floating mb-20px">
+                                <input type="password" class="form-control fs-13px h-45px" id="password" name="password" placeholder="Password" />
+                                <label for="password" class="d-flex align-items-center py-0">Password</label>
+                            </div>
+
+                            <div class="login-buttons">
+                                <button type="submit" class="btn h-45px btn-info d-block w-100 btn-lg">Log in</button>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+<script type="text/javascript" src="/assets/js/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="/assets/js/jquery/jquery-cookie.min.js"></script>
+<script src="/assets/plugins/gritter/js/jquery.gritter.js"></script>
+<script>
+    $("#loginForm").submit(function(e) {
+
+        e.preventDefault(); // avoid to execute the actual submit of the form.
+        $.ajax({
+            type: "POST",
+            url: "/api/v1/login",
+            data: $(this).serialize(), // serializes the form's elements.
+            success: function(json) {
+                $.cookie('login', json.data.login);
+                $.cookie('token', json.data.token);
+                window.location.replace("/");
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                $.gritter.add({
+                    title: 'Authorisation error!',
+                    text: XMLHttpRequest.responseJSON.error,
+                    image: '/assets/img/others/warning.png',
+                    //sticky: true,
+                    time: 10000,
+                    class_name: 'my-sticky-class'
+                });
+            }
+        });
+    });
+</script>
+
+</html>

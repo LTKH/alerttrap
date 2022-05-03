@@ -17,7 +17,7 @@ type Client struct {
 }
 
 func NewClient(conf *config.DB) (*Client, error) {
-    conn, err := sql.Open("sqlite3", conf.Conn_string)
+    conn, err := sql.Open("sqlite3", conf.ConnString)
     if err != nil {
         return nil, err
     }
@@ -327,7 +327,7 @@ func (db *Client) DeleteOldAlerts() (int64, error) {
     }
     defer stmt.Close()
 
-    res, err := stmt.Exec(time.Now().UTC().Unix(), db.config.History_days)
+    res, err := stmt.Exec(time.Now().UTC().Unix(), db.config.HistoryDays)
     if err != nil {
         return 0, err
     }

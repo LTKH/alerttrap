@@ -105,6 +105,7 @@ func main() {
     }()
 
     // Enabled listen port
+    http.Handle("/metrics", promhttp.Handler())
     http.HandleFunc("/-/healthy", apiV1.ApiHealthy)
     http.HandleFunc("/api/v1/sync", apiV1.ApiSync)
     http.HandleFunc("/api/v1/auth", apiV1.ApiAuth)
@@ -118,11 +119,10 @@ func main() {
             http.ServeFile(w, r, *webDir+"/index.html")
         }
     })
-    http.Handle("/metrics", promhttp.Handler())
 
     go func(cfg *config.Global){
-        if cfg.Cert_file != "" && cfg.Cert_key != "" {
-            if err := http.ListenAndServeTLS(cfg.Listen, cfg.Cert_file, cfg.Cert_key, nil); err != nil {
+        if cfg.CertFile != "" && cfg.CertKey != "" {
+            if err := http.ListenAndServeTLS(cfg.Listen, cfg.CertFile, cfg.CertKey, nil); err != nil {
                 log.Fatalf("[error] %v", err)
             }
         } else {
@@ -138,13 +138,13 @@ func main() {
     go func() {
         <- c
         log.Print("[info] stoping application")
-        // Saving cache items
         if items := v1.CacheAlerts.Items(); len(items) != 0 {
             // Connection to data base
             client, err := db.NewClient(cfg.Global.DB) 
             if err != nil {
                 log.Fatalf("[error] connect to db: %v", err)
             }
+            // Saving cache items
             if err := client.SaveAlerts(items); err != nil {
                 log.Printf("[error] %v", err)
             }
@@ -159,6 +159,7 @@ func main() {
     // Delete old alerts
     go func(cfg *config.DB){
         for {
+            // Connection to data base
             client, err := db.NewClient(cfg) 
             if err != nil {
                 log.Printf("[error] connect to db: %v", err)

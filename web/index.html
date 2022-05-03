@@ -14,6 +14,9 @@
     <link href="/assets/plugins/bootstrap-treeview/dist/bootstrap-treeview.min.css" rel="stylesheet" />
 </head>
 
+<script type="text/javascript" src="/assets/js/jquery/jquery.min.js"></script>
+<script>$.post('/api/v1/auth', function() {}).fail(function() { window.location.replace("/login.html"); })</script>
+
 <body style="background-color: #1a2229;">
 
     <!--div id="page-loader" class="fade show">
@@ -27,7 +30,7 @@
         <div id="header" class="header navbar-dark">
 
             <div class="navbar-header">
-                <a href="index.html" class="navbar-brand"><i class="fa fa-th"></i>&nbsp;WebNel</a>
+                <a href="/" class="navbar-brand"><i class="fa fa-th"></i>&nbsp;WebNel</a>
                 <button type="button" class="navbar-toggle" data-click="sidebar-toggled">
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
@@ -67,7 +70,6 @@
 
 </body>
 
-<script type="text/javascript" src="/assets/js/jquery/jquery.min.js"></script>
 <script type="text/javascript" src="/assets/js/app.min.js"></script>
 <script type="text/javascript" src="/assets/js/theme/default.min.js"></script>
 
@@ -175,7 +177,9 @@
                         }
                     },
                     error: function(XMLHttpRequest, textStatus, errorThrown) { 
-                        //alert("Status: " + textStatus); alert("Error: " + errorThrown); 
+                        if(XMLHttpRequest.status == 401){
+                            window.location.replace("/login.html");
+                        }
                         updates.results[nkey].status = 'error';
                     }
                 });
@@ -239,6 +243,11 @@
                 url: template,
                 success: function(html) {
                     $("#content").html(html);
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                    if(XMLHttpRequest.status == 401){
+                        window.location.replace("/login.html");
+                    }
                 }
             });
         }
@@ -273,7 +282,5 @@
         });
     });
 </script>
-
-</body>
 
 </html>

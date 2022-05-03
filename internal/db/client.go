@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/ltkh/alerttrap/internal/config"
     "github.com/ltkh/alerttrap/internal/cache"
-	"github.com/ltkh/alerttrap/internal/db/mysql"
+	//"github.com/ltkh/alerttrap/internal/db/mysql"
     "github.com/ltkh/alerttrap/internal/db/sqlite3"	
 )
 
@@ -24,8 +24,8 @@ type DbClient interface {
 
 func NewClient(config *config.DB) (DbClient, error) {
 	switch config.Client {
-	    case "mysql":
-            return mysql.NewClient(config)
+	    //case "mysql":
+        //    return mysql.NewClient(config)
 		case "sqlite3":
             return sqlite3.NewClient(config)
 	}

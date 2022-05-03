@@ -11,12 +11,12 @@ type Users struct {
 }
 
 type User struct {
-    Login            string             `yaml:"login"`
-    Email            string             `yaml:"email"`
-    Name             string             `yaml:"name"`
-    Password         string             `yaml:"password"`
-    Token            string             `yaml:"token"`
-    EndsAt           int64              `yaml:"endsAt"`
+    Login            string             `yaml:"login" json:"login"`
+    Email            string             `yaml:"email" json:"email"`
+    Name             string             `yaml:"name" json:"name"`
+    Password         string             `yaml:"password" json:"-"`
+    Token            string             `yaml:"token" json:"token"`
+    EndsAt           int64              `yaml:"endsAt" json:"-"`
 }
 
 func NewCacheUsers() *Users {

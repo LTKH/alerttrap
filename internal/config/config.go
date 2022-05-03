@@ -8,7 +8,7 @@ import (
     "regexp"
     "io/ioutil"
     "gopkg.in/yaml.v2"
-    "github.com/ltkh/alerttrap/internal/cache"
+    //"github.com/ltkh/alerttrap/internal/cache"
 )
 
 var (
@@ -23,37 +23,41 @@ type Config struct {
 
 type Global struct {
     Listen           string             `yaml:"listen_address"`
-    Cert_file        string             `yaml:"cert_file"`
-    Cert_key         string             `yaml:"cert_key"`
-    Alerts_limit     int                `yaml:"alerts_limit"`
-    Alerts_resolve   int64              `yaml:"alerts_resolve"`
-    Alerts_delete    int64              `yaml:"alerts_delete"`
-    Sync_nodes       []string           `yaml:"sync_nodes"`
+    CertFile         string             `yaml:"cert_file"`
+    CertKey          string             `yaml:"cert_key"`
+    AlertsLimit      int                `yaml:"alerts_limit"`
+    AlertsResolve    int64              `yaml:"alerts_resolve"`
+    AlertsDelete     int64              `yaml:"alerts_delete"`
+    SyncNodes        []string           `yaml:"sync_nodes"`
     DB               *DB                `yaml:"db"`
-    Users            *[]cache.User      `yaml:"users"`
-    Ldap             *Ldap              `yaml:"ldap"`
-    Monit            *Monit             `yaml:"monit"`
+    Security         *Security          `yaml:"security"`
+    Auth             *Auth              `yaml:"auth"`
 }
 
-type Monit struct {
-    Listen           string             `yaml:"listen_address"`
+type Auth struct {
+    Ldap             *Ldap              `yaml:"ldap"`
+}
+
+type Security struct {
+    AdminUser        string             `yaml:"admin_user"`
+    AdminPassword    string             `yaml:"admin_password"`
 }
 
 type DB struct {
     Client           string             `yaml:"client"`
-    Conn_string      string             `yaml:"conn_string"`
-    History_days     int                `yaml:"history_days"`
+    ConnString       string             `yaml:"conn_string"`
+    HistoryDays      int                `yaml:"history_days"`
 }
 
 type Ldap struct {
-    Search_base      string             `yaml:"search_base"`
+    SearchBase       string             `yaml:"search_base"`
     Host             string             `yaml:"host"`
     Port             int                `yaml:"port"`
-    Use_ssl          bool               `yaml:"use_ssl"`
-    Bind_dn          string             `yaml:"bind_dn"`
-    Bind_user        string             `yaml:"bind_user"`
-    Bind_pass        string             `yaml:"bind_pass"`
-    User_filter      string             `yaml:"user_filter"`
+    UseSsl           bool               `yaml:"use_ssl"`
+    BindDn           string             `yaml:"bind_dn"`
+    BindUser         string             `yaml:"bind_user"`
+    BindPass         string             `yaml:"bind_pass"`
+    UserFilter       string             `yaml:"user_filter"`
     Attributes       map[string]string  `yaml:"attributes"`
 }
 

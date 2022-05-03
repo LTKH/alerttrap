@@ -15,22 +15,24 @@ global:
     conn_string:    "/tmp/dbase.db"
     history_days:   7
 
-  ldap:
-    search_base:    "dc=example,dc=com"
-    host:           "localhost"
-    port:           389
-    use_ssl:        false
-    bind_dn:        "%s"
-    bind_user:      ""
-    bind_pass:      ""
-    user_filter:    "(uid=%s)"
-    attributes:     
-      name:         "givenName"
-      username:     "sAMAccountName"
-      email:        "mail" 
+  security:
+    admin_user:     "admin"
+    admin_password: "admin"
 
-  monit:
-    listen_address: ":5000"
+  auth:
+    ldap:
+      search_base:    "dc=example,dc=com"
+      host:           "localhost"
+      port:           389
+      use_ssl:        false
+      bind_dn:        "%s"
+      bind_user:      ""
+      bind_pass:      ""
+      user_filter:    "(uid=%s)"
+      attributes:     
+        name:         "givenName"
+        username:     "sAMAccountName"
+        email:        "mail" 
 
 menu:
   - id: "vmetrics"

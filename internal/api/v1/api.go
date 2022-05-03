@@ -112,6 +112,7 @@ func checkMatches(labels map[string]interface{}, matchers [][]config.Matcher) bo
 }
 
 func authentication(cfg *config.DB, r *http.Request) (bool, int, error) {
+
     //connection to data base
     client, err := db.NewClient(cfg) 
     if err != nil {
@@ -282,7 +283,7 @@ func (api *Api) SetAlerts(data Alerts) {
             starts_at  = time.Now().UTC().Unix()
         } 
         if ends_at < 0 {
-            ends_at    = time.Now().UTC().Unix() + api.Conf.Global.Alerts_resolve
+            ends_at    = time.Now().UTC().Unix() + api.Conf.Global.AlertsResolve
         } 
 
         alert, found := CacheAlerts.Get(group_id)
@@ -329,19 +330,18 @@ func (api *Api) SetAlerts(data Alerts) {
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
 
-    //ok, code, err := authentication(api.Client, api.Conf.Global.DB, r)
-    //if !ok {
-    //    w.WriteHeader(code)
-    //    w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-    //    return
-    //}
-
     if r.Method == "GET" {
+
+        ok, code, err := authentication(api.Conf.Global.DB, r)
+        if !ok {
+            w.WriteHeader(code)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
 
         var alerts Alerts
 
-        //query
-        limit        := api.Conf.Global.Alerts_limit
+        limit        := api.Conf.Global.AlertsLimit
         state        := make(map[string]int)
         strArgs      := make(map[string]string)
         intArgs      := make(map[string]int64)
@@ -444,7 +444,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
         if len(alerts.AlertsArray) == 0 {
             alerts.AlertsArray = make([]Alert, 0)
         } else {
-            if limit == api.Conf.Global.Alerts_limit {
+            if limit == api.Conf.Global.AlertsLimit {
                 var warnings []string
                 warnings = append(warnings, fmt.Sprintf("display limit exceeded - %d", limit))
                 w.Write(encodeResp(&Resp{Status:"success", Warnings:warnings, Data:alerts}))
@@ -453,6 +453,36 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
         }
         
         w.Write(encodeResp(&Resp{Status:"success", Data:alerts}))
+        return
+    }
+
+    if r.Method == "DELETE" {
+
+        ok, code, err := authentication(api.Conf.Global.DB, r)
+        if !ok {
+            w.WriteHeader(code)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        if r.URL.Query()["group_id"] != nil {
+            
+            _, found := CacheAlerts.Get(r.URL.Query()["group_id"][0])
+            if found {
+                CacheAlerts.Delete(r.URL.Query()["group_id"][0])
+                w.WriteHeader(200)
+                w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
+                return
+            }
+
+            w.WriteHeader(400)
+            w.Write(encodeResp(&Resp{Status:"error", Error:"Alert Not Found", Data:make(map[string]string, 0)}))
+            return
+
+        }
+
+        w.WriteHeader(400)
+        w.Write(encodeResp(&Resp{Status:"error", Error:"group_id required", Data:make(map[string]string, 0)}))
         return
     }
 
@@ -481,29 +511,6 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    if r.Method == "DELETE" {
-
-        if r.URL.Query()["group_id"] != nil {
-            
-            _, found := CacheAlerts.Get(r.URL.Query()["group_id"][0])
-            if found {
-                CacheAlerts.Delete(r.URL.Query()["group_id"][0])
-                w.WriteHeader(200)
-                w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
-                return
-            }
-
-            w.WriteHeader(400)
-            w.Write(encodeResp(&Resp{Status:"error", Error:"Alert Not Found", Data:make(map[string]string, 0)}))
-            return
-
-        }
-
-        w.WriteHeader(400)
-        w.Write(encodeResp(&Resp{Status:"error", Error:"group_id required", Data:make(map[string]string, 0)}))
-        return
-    }
-
     w.WriteHeader(405)
     w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed", Data:make(map[string]string, 0)}))
 }
@@ -519,7 +526,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
     }
 
     r.ParseForm()
-    username := r.Form.Get("login")
+    username := r.Form.Get("username")
     password := r.Form.Get("password")
 
     if username == "" || password == "" {
@@ -528,64 +535,81 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    if api.Conf.Global.Ldap.Bind_user == "" && api.Conf.Global.Ldap.Bind_pass == "" {
-        api.Conf.Global.Ldap.Bind_user = username
-        api.Conf.Global.Ldap.Bind_pass = password
-    }
+    if username == api.Conf.Global.Security.AdminUser && password == api.Conf.Global.Security.AdminPassword {
+        user := cache.User{
+            Login:    username,
+            Password: getHash(password),
+            Token:    getHash(string(time.Now().UTC().Unix())),
+            Name:     username,
+        }
+        CacheUsers.Set(username, user)
 
-    var attributes []string
-    for _, val := range api.Conf.Global.Ldap.Attributes {
-        attributes = append(attributes, val)
-    }
-
-    clnt := &ldap.LDAPClient{
-        Base:         api.Conf.Global.Ldap.Search_base,
-        Host:         api.Conf.Global.Ldap.Host,
-        Port:         api.Conf.Global.Ldap.Port,
-        UseSSL:       api.Conf.Global.Ldap.Use_ssl,
-        BindDN:       fmt.Sprintf(api.Conf.Global.Ldap.Bind_dn, api.Conf.Global.Ldap.Bind_user),
-        BindPassword: api.Conf.Global.Ldap.Bind_pass,
-        UserFilter:   api.Conf.Global.Ldap.User_filter,
-        Attributes:   attributes,
-    }
-    defer clnt.Close()
-
-    ok, usr, err := clnt.Authenticate(username, password)
-    if !ok {
-        log.Printf("[error] user authenticating %s: %+v", username, err)
-        w.WriteHeader(403)
-        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+        w.WriteHeader(200)
+        w.Write(encodeResp(&Resp{Status:"success", Data:user}))
         return
     }
 
-    var user cache.User
-    user.Login = username
-    user.Password = getHash(password)
-    user.Token = getHash(string(time.Now().UTC().Unix()))
-    if api.Conf.Global.Ldap.Attributes["name"] != "" {
-        user.Name = usr[api.Conf.Global.Ldap.Attributes["name"]]
-    }
-    if api.Conf.Global.Ldap.Attributes["email"] != "" {
-        user.Email = usr[api.Conf.Global.Ldap.Attributes["email"]]
-    }
-    
-    CacheUsers.Set(username, user)
+    if api.Conf.Global.Auth.Ldap.Host != "" {
 
-    client, err := db.NewClient(api.Conf.Global.DB)
-    if err != nil {
-        log.Printf("[error] connect to db: %v", err)
-        w.WriteHeader(500)
-        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-    }
-    if err := client.SaveUser(user); err != nil {
-        log.Printf("[error] saving user %s: %+v", username, err)
-        w.WriteHeader(500)
-        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-    }
-    client.Close()
+        if api.Conf.Global.Auth.Ldap.BindUser == "" && api.Conf.Global.Auth.Ldap.BindPass == "" {
+            api.Conf.Global.Auth.Ldap.BindUser = username
+            api.Conf.Global.Auth.Ldap.BindPass = password
+        }
 
-    w.WriteHeader(200)
-    w.Write(encodeResp(&Resp{Status:"success", Data:user}))
-    return
+        var attributes []string
+        for _, val := range api.Conf.Global.Auth.Ldap.Attributes {
+            attributes = append(attributes, val)
+        }
+
+        clnt := &ldap.LDAPClient{
+            Base:         api.Conf.Global.Auth.Ldap.SearchBase,
+            Host:         api.Conf.Global.Auth.Ldap.Host,
+            Port:         api.Conf.Global.Auth.Ldap.Port,
+            UseSSL:       api.Conf.Global.Auth.Ldap.UseSsl,
+            BindDN:       fmt.Sprintf(api.Conf.Global.Auth.Ldap.BindDn, api.Conf.Global.Auth.Ldap.BindUser),
+            BindPassword: api.Conf.Global.Auth.Ldap.BindPass,
+            UserFilter:   api.Conf.Global.Auth.Ldap.UserFilter,
+            Attributes:   attributes,
+        }
+        defer clnt.Close()
+
+        ok, usr, err := clnt.Authenticate(username, password)
+        if !ok {
+            log.Printf("[error] user authenticating %s: %+v", username, err)
+            w.WriteHeader(403)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        var user cache.User
+        user.Login = username
+        user.Password = getHash(password)
+        user.Token = getHash(string(time.Now().UTC().Unix()))
+        if api.Conf.Global.Auth.Ldap.Attributes["name"] != "" {
+            user.Name = usr[api.Conf.Global.Auth.Ldap.Attributes["name"]]
+        }
+        if api.Conf.Global.Auth.Ldap.Attributes["email"] != "" {
+            user.Email = usr[api.Conf.Global.Auth.Ldap.Attributes["email"]]
+        }
+        
+        CacheUsers.Set(username, user)
+
+        client, err := db.NewClient(api.Conf.Global.DB)
+        if err != nil {
+            log.Printf("[error] connect to db: %v", err)
+        }
+        if err := client.SaveUser(user); err != nil {
+            log.Printf("[error] saving user %s: %+v", username, err)
+        }
+        client.Close()
+
+        w.WriteHeader(200)
+        w.Write(encodeResp(&Resp{Status:"success", Data:user}))
+        return
+
+    }
+
+    w.WriteHeader(401)
+    w.Write(encodeResp(&Resp{Status:"error", Error:"Unauthorized", Data:make(map[string]string, 0)}))
 
 }
