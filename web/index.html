@@ -14,9 +14,6 @@
     <link href="/assets/plugins/bootstrap-treeview/dist/bootstrap-treeview.min.css" rel="stylesheet" />
 </head>
 
-<script type="text/javascript" src="/assets/js/jquery/jquery.min.js"></script>
-<script>$.post('/api/v1/auth', function() {}).fail(function() { window.location.replace("/login.html"); })</script>
-
 <body style="background-color: #1a2229;">
 
     <!--div id="page-loader" class="fade show">
@@ -49,8 +46,31 @@
                 </li>
             </ul-->
 
+            <ul class="navbar-nav navbar-right">
+                <!--li class="navbar-form">
+                    <form action="" method="POST" name="search">
+                        <div class="form-group">
+                            <input type="text" class="form-control form-control-sm" placeholder="Enter keyword" />
+                            <button type="submit" class="btn btn-search"><i class="fa fa-search"></i></button>
+                        </div>
+                    </form>
+                </li-->
+                <li class="navbar-form" style="padding: 5px 20px;">
+                    <div class="navbar-item navbar-user dropdown">
+                        <a href="#" class="navbar-link dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="/assets/img/users/user.png" alt="">
+                            <span>
+                                <span id="loginSpan" class="d-none d-md-inline"></span>
+                                <b class="caret"></b>
+                            </span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end me-1">
+                            <a id="logOut" href="javascript:;" class="dropdown-item">Log Out</a>
+                        </div>
+                    </div>
+                </li>
+            </ul>
         </div>
-
 
         <div id="sidebar" class="sidebar">
 
@@ -61,7 +81,6 @@
         </div>
         <div class="sidebar-bg"></div>
 
-
         <div id="content" class="content"></div>
 
         <a href="javascript:;" class="btn btn-icon btn-circle btn-success btn-scroll-to-top fade" data-click="scroll-top"><i class="fa fa-angle-up"></i></a>
@@ -70,6 +89,10 @@
 
 </body>
 
+<script type="text/javascript" src="/assets/js/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="/assets/js/jquery/jquery-cookie.min.js"></script>
+
+<script type="text/javascript" src="/assets/js/vendor.min.js"></script>
 <script type="text/javascript" src="/assets/js/app.min.js"></script>
 <script type="text/javascript" src="/assets/js/theme/default.min.js"></script>
 
@@ -190,15 +213,11 @@
 
     updates = new Updates();
 
-    function getTemplate(url){
-        for (i = 0; i < templates.length; i++) {
-            var re = new RegExp(templates[i].url);
-            if (re.test(url)) {
-                return templates[i].tmpl;
-            }
+    setInterval(function() {
+        if (typeof updates.update5 !== 'undefined') {
+            updates.update5();
         }
-        return '';
-    }
+    }, 5000);
 
     setInterval(function() {
         for (k in updates.results) {
@@ -211,18 +230,6 @@
     }, 10000);
 
     setInterval(function() {
-        if (typeof updates.update5 !== 'undefined') {
-            updates.update5();
-        }
-    }, 5000);
-
-    //setInterval(function() {
-    //    if (typeof updates.update10 !== 'undefined') {
-    //        updates.update10();
-    //    }
-    //}, 10000);
-
-    setInterval(function() {
         if (typeof updates.update30 !== 'undefined') {
             updates.update30();
         }
@@ -233,6 +240,16 @@
             updates.update60();
         }
     }, 60000);
+
+    function getTemplate(url){
+        for (i = 0; i < templates.length; i++) {
+            var re = new RegExp(templates[i].url);
+            if (re.test(url)) {
+                return templates[i].tmpl;
+            }
+        }
+        return '';
+    }
 
     function loadPage(url) {
         history.pushState('', 'WebNel', url);
@@ -271,6 +288,12 @@
     }
 
     $(function() {
+        $.post('/api/v1/auth', function(json) {
+            $("#loginSpan").html(json.data.name);
+        }).fail(function() { 
+            window.location.replace("/login.html"); 
+        });
+
         $.ajax({
             url: '/api/v1/menu',
             success: function(jsn) {
@@ -280,6 +303,13 @@
                 newObjects(path.replace(/^(\/[^/]+).*/, '$1'));
             }
         });
+    });
+
+    $('#logOut').click(function(e) {
+        
+        //$.removeCookie('login');
+        //$.removeCookie('token');
+        window.location.replace("/login.html");
     });
 </script>
 

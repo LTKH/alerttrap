@@ -111,12 +111,12 @@ func checkMatches(labels map[string]interface{}, matchers [][]config.Matcher) bo
     return false
 }
 
-func authentication(cfg *config.DB, r *http.Request) (bool, int, error) {
+func authentication(cfg *config.DB, r *http.Request) (string, int, error) {
 
     //connection to data base
     client, err := db.NewClient(cfg) 
     if err != nil {
-        return false, 500, errors.New("Internal Server Error")
+        return "", 500, errors.New("Internal Server Error")
     }
     defer client.Close()
 
@@ -125,27 +125,27 @@ func authentication(cfg *config.DB, r *http.Request) (bool, int, error) {
         user, ok := CacheUsers.Get(login)
         if ok { 
             if user.Password == getHash(password) {
-                return true, 204, nil
+                return login, 204, nil
             }
-            return false, 403, errors.New("Forbidden")
+            return login, 403, errors.New("Forbidden")
         }
         usr, err := client.LoadUser(login)
         if err == nil {
             CacheUsers.Set(login, usr)
             if usr.Password == getHash(password) {
-                return true, 204, nil
+                return login, 204, nil
             }
         }
-        return false, 403, errors.New("Forbidden")
+        return login, 403, errors.New("Forbidden")
     }
 
     lg, err := r.Cookie("login")
     if err != nil {
-        return false, 401, errors.New("Unauthorized")
+        return "", 401, errors.New("Unauthorized")
     }
     tk, err := r.Cookie("token")
     if err != nil {
-        return false, 401, errors.New("Unauthorized")
+        return "", 401, errors.New("Unauthorized")
     }
 
     if lg.Value != "" && tk.Value != "" {
@@ -155,19 +155,19 @@ func authentication(cfg *config.DB, r *http.Request) (bool, int, error) {
             if err == nil {
                 CacheUsers.Set(lg.Value, usr)
                 if usr.Token == tk.Value {
-                    return true, 204, nil
+                    return lg.Value, 204, nil
                 }
             }
-            return false, 403, errors.New("Forbidden")
+            return lg.Value, 403, errors.New("Forbidden")
         } else {
             if user.Token == tk.Value {
-                return true, 204, nil
+                return lg.Value, 204, nil
             }
-            return false, 403, errors.New("Forbidden")
+            return lg.Value, 403, errors.New("Forbidden")
         }
     }
 
-    return false, 401, errors.New("Unauthorized")
+    return "", 401, errors.New("Unauthorized")
 }
 
 func New(conf *config.Config) (*Api, error) {
@@ -208,12 +208,22 @@ func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
-    ok, code, err := authentication(api.Conf.Global.DB, r)
-    if !ok {
+    w.Header().Set("Content-Type", "application/json")
+
+    login, code, err := authentication(api.Conf.Global.DB, r)
+    if err != nil {
         w.WriteHeader(code)
         w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
         return
     }
+
+    user, ok := CacheUsers.Get(login)
+    if ok { 
+        w.WriteHeader(200)
+        w.Write(encodeResp(&Resp{Status:"success", Data:user}))
+        return
+    }
+
     w.WriteHeader(code)
     w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
 }
@@ -242,7 +252,6 @@ func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
         w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
         return
     }
-
 }
 
 func (api *Api) SetAlerts(data Alerts) {
@@ -332,8 +341,8 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
     if r.Method == "GET" {
 
-        ok, code, err := authentication(api.Conf.Global.DB, r)
-        if !ok {
+        _, code, err := authentication(api.Conf.Global.DB, r)
+        if err != nil {
             w.WriteHeader(code)
             w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
             return
@@ -458,8 +467,8 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
     if r.Method == "DELETE" {
 
-        ok, code, err := authentication(api.Conf.Global.DB, r)
-        if !ok {
+        _, code, err := authentication(api.Conf.Global.DB, r)
+        if err != nil {
             w.WriteHeader(code)
             w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
             return
