@@ -3,19 +3,20 @@ package v1
 import (
     "io"
     "net/http"
+    "net/http/httputil"
     "log"
-    //"os"
     "fmt"
+    "os"
     "crypto/sha1"
     "encoding/hex"
-    //"regexp"
+    "net/url"
     "time"
+    "sync"
     "strconv"
     "errors"
     "strings"
     "io/ioutil"
     "encoding/json"
-    "github.com/ltkh/alerttrap/internal/db"
     "github.com/ltkh/alerttrap/internal/cache"
     "github.com/ltkh/alerttrap/internal/config"
     "github.com/ltkh/alerttrap/internal/ldap"
@@ -24,6 +25,8 @@ import (
 var (
     CacheAlerts *cache.Alerts = cache.NewCacheAlerts()
     CacheUsers *cache.Users = cache.NewCacheUsers()
+    reverseProxy *httputil.ReverseProxy
+	reverseProxyOnce sync.Once
 )
 
 type Api struct {
@@ -54,6 +57,37 @@ type Alert struct {
     Labels       map[string]interface{}    `json:"labels"`
     Annotations  map[string]interface{}    `json:"annotations"`
     GeneratorURL string                    `json:"generatorURL"`
+}
+
+func initReverseProxy() {
+    reverseProxy = &httputil.ReverseProxy{
+        Director: func(r *http.Request) {
+            targetURL := r.Header.Get("X-Custom-Proxy")
+            target, err := url.Parse(targetURL)
+            if err != nil {
+                log.Fatalf("[error] unexpected error when parsing targetURL=%q: %s", targetURL, err)
+            }
+            r.URL = target
+        },
+        Transport: func() *http.Transport {
+            tr := http.DefaultTransport.(*http.Transport).Clone()
+            tr.DisableCompression = true
+            tr.ForceAttemptHTTP2 = false
+            tr.MaxIdleConnsPerHost = 100
+            if tr.MaxIdleConns != 0 && tr.MaxIdleConns < tr.MaxIdleConnsPerHost {
+                tr.MaxIdleConns = tr.MaxIdleConnsPerHost
+            }
+            return tr
+        }(),
+        FlushInterval: time.Second,
+        //ErrorLog:      logger.StdErrorLogger(),
+        //ErrorLog:      log.New(new(bytes.Buffer), "", 0),
+    }
+}
+
+func getReverseProxy() *httputil.ReverseProxy {
+    reverseProxyOnce.Do(initReverseProxy)
+    return reverseProxy
 }
 
 func encodeResp(resp *Resp) []byte {
@@ -113,26 +147,11 @@ func checkMatches(labels map[string]interface{}, matchers [][]config.Matcher) bo
 
 func authentication(cfg *config.DB, r *http.Request) (string, int, error) {
 
-    //connection to data base
-    client, err := db.NewClient(cfg) 
-    if err != nil {
-        return "", 500, errors.New("Internal Server Error")
-    }
-    defer client.Close()
-
     login, password, ok := r.BasicAuth()
     if ok {
         user, ok := CacheUsers.Get(login)
         if ok { 
             if user.Password == getHash(password) {
-                return login, 204, nil
-            }
-            return login, 403, errors.New("Forbidden")
-        }
-        usr, err := client.LoadUser(login)
-        if err == nil {
-            CacheUsers.Set(login, usr)
-            if usr.Password == getHash(password) {
                 return login, 204, nil
             }
         }
@@ -147,24 +166,14 @@ func authentication(cfg *config.DB, r *http.Request) (string, int, error) {
     if err != nil {
         return "", 401, errors.New("Unauthorized")
     }
-
     if lg.Value != "" && tk.Value != "" {
         user, ok := CacheUsers.Get(lg.Value)
-        if !ok { 
-            usr, err := client.LoadUser(lg.Value)
-            if err == nil {
-                CacheUsers.Set(lg.Value, usr)
-                if usr.Token == tk.Value {
-                    return lg.Value, 204, nil
-                }
-            }
-            return lg.Value, 403, errors.New("Forbidden")
-        } else {
+        if ok { 
             if user.Token == tk.Value {
                 return lg.Value, 204, nil
             }
-            return lg.Value, 403, errors.New("Forbidden")
         }
+        return lg.Value, 403, errors.New("Forbidden")
     }
 
     return "", 401, errors.New("Unauthorized")
@@ -186,6 +195,17 @@ func New(conf *config.Config) (*Api, error) {
     //    CacheUsers.Set(user.Login, user)
     //}
     //log.Printf("[info] loaded users from dbase (%d)", len(users))
+
+    if conf.Global.Security.AdminUser != "" && conf.Global.Security.AdminPassword != "" {
+        user := cache.User{
+            Login:    conf.Global.Security.AdminUser,
+            Password: getHash(conf.Global.Security.AdminPassword),
+            Token:    getHash(string(time.Now().UTC().Unix())),
+            Name:     conf.Global.Security.AdminUser,
+            EndsAt:   0,
+        }
+        CacheUsers.Set(conf.Global.Security.AdminUser, user)
+    }
     
     return &Api{ Conf: conf }, nil
 }
@@ -251,6 +271,21 @@ func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
         w.WriteHeader(400)
         w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
         return
+    }
+}
+
+func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
+    targetURL := r.Header.Get("X-Custom-Proxy")
+    if targetURL != "" {
+        r.Header.Set("X-Custom-Proxy", targetURL)
+        getReverseProxy().ServeHTTP(w, r)
+        return
+    }
+
+    if _, err := os.Stat(api.Conf.Global.WebDir+r.URL.Path); err == nil {
+        http.ServeFile(w, r, api.Conf.Global.WebDir+r.URL.Path)
+    } else {
+        http.ServeFile(w, r, api.Conf.Global.WebDir+"/index.html")
     }
 }
 
@@ -534,7 +569,6 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    r.ParseForm()
     username := r.Form.Get("username")
     password := r.Form.Get("password")
 
@@ -544,21 +578,16 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    if username == api.Conf.Global.Security.AdminUser && password == api.Conf.Global.Security.AdminPassword {
-        user := cache.User{
-            Login:    username,
-            Password: getHash(password),
-            Token:    getHash(string(time.Now().UTC().Unix())),
-            Name:     username,
+    user, found := CacheUsers.Get(username)
+    if found {
+        if getHash(password) == user.Password {
+            w.WriteHeader(200)
+            w.Write(encodeResp(&Resp{Status:"success", Data:user}))
+            return
         }
-        CacheUsers.Set(username, user)
-
-        w.WriteHeader(200)
-        w.Write(encodeResp(&Resp{Status:"success", Data:user}))
-        return
     }
 
-    if api.Conf.Global.Auth.Ldap.Host != "" {
+    if api.Conf.Global.Auth.Ldap.Enabled {
 
         if api.Conf.Global.Auth.Ldap.BindUser == "" && api.Conf.Global.Auth.Ldap.BindPass == "" {
             api.Conf.Global.Auth.Ldap.BindUser = username
@@ -586,7 +615,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         if !ok {
             log.Printf("[error] user authenticating %s: %+v", username, err)
             w.WriteHeader(403)
-            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            w.Write(encodeResp(&Resp{Status:"error", Error:"See application log for more details", Data:make(map[string]string, 0)}))
             return
         }
 
@@ -603,22 +632,14 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         
         CacheUsers.Set(username, user)
 
-        client, err := db.NewClient(api.Conf.Global.DB)
-        if err != nil {
-            log.Printf("[error] connect to db: %v", err)
-        }
-        if err := client.SaveUser(user); err != nil {
-            log.Printf("[error] saving user %s: %+v", username, err)
-        }
-        client.Close()
-
         w.WriteHeader(200)
         w.Write(encodeResp(&Resp{Status:"success", Data:user}))
         return
 
     }
 
-    w.WriteHeader(401)
-    w.Write(encodeResp(&Resp{Status:"error", Error:"Unauthorized", Data:make(map[string]string, 0)}))
+    log.Printf("[error] user authenticating %s", username)
+    w.WriteHeader(403)
+    w.Write(encodeResp(&Resp{Status:"error", Error:"Invalid username or password", Data:make(map[string]string, 0)}))
 
 }

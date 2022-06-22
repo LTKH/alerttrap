@@ -32,7 +32,6 @@ func main() {
 
     // Command-line flag parsing
     cfFile         := flag.String("config", "config/config.yml", "config file")
-    webDir         := flag.String("web-dir", "web", "site directory")
     lgFile         := flag.String("logfile", "", "log file")
     logMaxSize     := flag.Int("log.max-size", 1, "log max size") 
     logMaxBackups  := flag.Int("log.max-backups", 3, "log max backups")
@@ -112,13 +111,7 @@ func main() {
     http.HandleFunc("/api/v1/menu", apiV1.ApiMenu)
     http.HandleFunc("/api/v1/login", apiV1.ApiLogin)
     http.HandleFunc("/api/v1/alerts", apiV1.ApiAlerts)
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        if _, err := os.Stat(*webDir+r.URL.Path); err == nil {
-            http.ServeFile(w, r, *webDir+r.URL.Path)
-        } else {
-            http.ServeFile(w, r, *webDir+"/index.html")
-        }
-    })
+    http.HandleFunc("/", apiV1.ApiIndex)
 
     go func(cfg *config.Global){
         if cfg.CertFile != "" && cfg.CertKey != "" {

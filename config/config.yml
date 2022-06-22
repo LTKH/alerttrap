@@ -5,8 +5,7 @@ global:
   alerts_limit:     5000
   alerts_resolve:   180
   alerts_delete:    600
-  #sync_nodes: 
-  #  - "http://127.0.0.1:8000"
+  web_dir:          "web"
   
   db:
     #client:         "mysql"
@@ -21,6 +20,7 @@ global:
 
   auth:
     ldap:
+      enabled:        false
       search_base:    "dc=example,dc=com"
       host:           "localhost"
       port:           389
@@ -43,6 +43,13 @@ menu:
     name: "Kubernetes"
     href: "/api/v1/alerts"
     tags: ["cluster","node","namespace","pod"]
+  - id: "netmap"
+    name: "Netmap"
+    class: "fa fa-sitemap"
+    options:
+      href: "/api/v1/netmap/records"
+      proxy: "http://localhost:8082"
+
 
 #extension_rules:
 #  - source_matchers: ['{host=~"host-2.*"}']

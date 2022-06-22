@@ -1,5 +1,4 @@
 var templates = [
-    { 'url': '^/netalert.*', 'tmpl': '/templates/netmap/records.html' },
     { 'url': '^/netmap.*', 'tmpl': '/templates/netmap/records.html' },
     { 'url': '^/alerts.*', 'tmpl': '/templates/alerts/alerts.html' },
     { 'url': '^/kubernetes.*', 'tmpl': '/templates/alerts/alerts.html' },

@@ -2,13 +2,11 @@ package config
 
 import (
     "fmt"
-    //"log"
     "path"
     "errors"
     "regexp"
     "io/ioutil"
     "gopkg.in/yaml.v2"
-    //"github.com/ltkh/alerttrap/internal/cache"
 )
 
 var (
@@ -32,6 +30,7 @@ type Global struct {
     DB               *DB                `yaml:"db"`
     Security         *Security          `yaml:"security"`
     Auth             *Auth              `yaml:"auth"`
+    WebDir           string             `yaml:"web_dir"`
 }
 
 type Auth struct {
@@ -50,6 +49,7 @@ type DB struct {
 }
 
 type Ldap struct {
+    Enabled          bool               `yaml:"enabled"`
     SearchBase       string             `yaml:"search_base"`
     Host             string             `yaml:"host"`
     Port             int                `yaml:"port"`

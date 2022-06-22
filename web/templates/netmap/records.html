@@ -154,6 +154,9 @@
         $.ajax({
             url: menu[window.location.pathname]['options']['href'],
             data: data,
+            beforeSend: function(request) {
+                request.setRequestHeader("X-Custom-Proxy", menu[window.location.pathname]['options']['proxy']);
+            },
             success: function(jsn) {
                 $.each(jsn.data, function(key, value) {
                     var rs = (value['relation']['result'] == 0) ? 'ok' : 'firing';
