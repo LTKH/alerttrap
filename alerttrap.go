@@ -31,8 +31,10 @@ var (
 func main() {
 
     // Command-line flag parsing
-    cfFile         := flag.String("config", "config/config.yml", "config file")
-    lgFile         := flag.String("logfile", "", "log file")
+    lsAddress      := flag.String("web.listen-address", ":8000", "listen address")
+    webDir         := flag.String("web.dir", "web", "web directory")
+    cfFile         := flag.String("config.file", "config/config.yml", "config file")
+    lgFile         := flag.String("log.file", "", "log file")
     logMaxSize     := flag.Int("log.max-size", 1, "log max size") 
     logMaxBackups  := flag.Int("log.max-backups", 3, "log max backups")
     logMaxAge      := flag.Int("log.max-age", 10, "log max age")
@@ -54,6 +56,9 @@ func main() {
     cfg, err := config.New(*cfFile)
     if err != nil {
         log.Fatalf("[error] %v", err)
+    }
+    if cfg.Global.WebDir == "" {
+        cfg.Global.WebDir = *webDir
     }
 
     // Connection to data base
@@ -115,11 +120,11 @@ func main() {
 
     go func(cfg *config.Global){
         if cfg.CertFile != "" && cfg.CertKey != "" {
-            if err := http.ListenAndServeTLS(cfg.Listen, cfg.CertFile, cfg.CertKey, nil); err != nil {
+            if err := http.ListenAndServeTLS(*lsAddress, cfg.CertFile, cfg.CertKey, nil); err != nil {
                 log.Fatalf("[error] %v", err)
             }
         } else {
-            if err := http.ListenAndServe(cfg.Listen, nil); err != nil {
+            if err := http.ListenAndServe(*lsAddress, nil); err != nil {
                 log.Fatalf("[error] %v", err)
             }
         }

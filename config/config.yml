@@ -1,5 +1,4 @@
 global:
-  listen_address:   ":8000"
   cert_file:        ""
   cert_key:         ""
   alerts_limit:     5000
@@ -48,7 +47,7 @@ menu:
     class: "fa fa-sitemap"
     options:
       href: "/api/v1/netmap/records"
-      proxy: "http://localhost:8082"
+      host: "http://localhost:8082"
 
 
 #extension_rules:

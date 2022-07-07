@@ -62,7 +62,7 @@ type Alert struct {
 func initReverseProxy() {
     reverseProxy = &httputil.ReverseProxy{
         Director: func(r *http.Request) {
-            targetURL := r.Header.Get("X-Custom-Proxy")
+            targetURL := r.Header.Get("proxy-target-url")
             target, err := url.Parse(targetURL)
             if err != nil {
                 log.Fatalf("[error] unexpected error when parsing targetURL=%q: %s", targetURL, err)
@@ -250,7 +250,7 @@ func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
 
 func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
-    w.Write(encodeResp(&Resp{Status:"success", Data:api.Conf.Menu}))
+    w.Write(encodeResp(&Resp{Status:"error", Data:api.Conf.Menu}))
 }
 
 func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
@@ -275,9 +275,8 @@ func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
-    targetURL := r.Header.Get("X-Custom-Proxy")
-    if targetURL != "" {
-        r.Header.Set("X-Custom-Proxy", targetURL)
+    if r.Header.Get("X-Custom-URL") != "" {
+        r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL")+r.URL.Path)
         getReverseProxy().ServeHTTP(w, r)
         return
     }

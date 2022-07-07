@@ -20,4 +20,4 @@ COPY config/config.yml /etc/alerttrap.yml
 COPY web /data/web
 
 ENTRYPOINT ["/bin/alerttrap"]
-CMD ["-web-dir=/data/web","-config=/etc/alerttrap.yml"]
+CMD ["-web.dir=/data/web","-config.file=/etc/alerttrap.yml"]

@@ -101,7 +101,7 @@
                             <div class="col-sm-12">
                                 <table data-height="1000" data-pagination-parts="pageInfoShort" id="records" class="table table-responsive-sm table-sm">
                                     <thead>
-                                        <tr>
+                                        <!--tr>
                                             <th data-field="result">Status</th>
                                             <th data-field="src_name">Source Name</th>
                                             <th data-field="src_ip">Source IP</th>
@@ -110,7 +110,7 @@
                                             <th data-field="mode">Mode</th>
                                             <th data-field="port">Port</th>
                                             <th data-field="status">Status</th>
-                                        </tr>
+                                        </tr-->
                                     </thead>
                                 </table>
                             </div>
@@ -130,12 +130,32 @@
 
     var data = {};
 
+    /*
     $('#records').bootstrapTable({
         pagination: true,
         search: true,
         classes: "table table-responsive-sm table-sm",
         pageSize: 100
     });
+    */
+
+    $('#records').bootstrapTable({
+            pagination: true,
+            search: true,
+            classes: "table table-responsive-sd table-sd",
+            pageSize: 500,
+            height: 850,
+            columns: [
+                { title: "Status", field: "result", width: 100 },
+                { title: "Source Name", field: "src_name", width: 250 },
+                { title: "Source IP", field: "src_ip", width: 200 },
+                { title: "Destination Name", field: "dst_name", width: 250 },
+                { title: "Destination IP", field: "dst_ip", width: 200 },
+                { title: "Mode", field: "mode", width: 100 },
+                { title: "Port", field: "port", width: 100 },
+                { title: "Status", field: "status" }
+            ]
+        });
 
     $('#search').on('click', function(event) {
         data = {};
@@ -144,23 +164,24 @@
                 data[value] = $('#'+value).val();
             }
         });
-        update_records();
+        updates.update30();
     });
 
-    function update_records() {
+    updates.update30 = function(){
 
         var records = [];
 
         $.ajax({
-            url: menu[window.location.pathname]['options']['href'],
+            url: "/api/v1/netmap/records",
             data: data,
             beforeSend: function(request) {
-                request.setRequestHeader("X-Custom-Proxy", menu[window.location.pathname]['options']['proxy']);
+                request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['host']);
             },
             success: function(jsn) {
                 $.each(jsn.data, function(key, value) {
                     var rs = (value['relation']['result'] == 0) ? 'ok' : 'firing';
                     records.push({
+                        id:       value['id'],
                         result:   '<label class="label label-' + rs + '">' + rs + '</label>',
                         src_name: value['localAddr']['name'],
                         src_ip:   value['localAddr']['ip'],
@@ -172,6 +193,15 @@
                     });
                 });
 
+                records.sort(
+                    function(a, b){
+                        if (a.result != b.result) {
+                            return (a.result < b.result) ? 1 : -1;
+                        }
+                        return (a.id >= b.id) ? 1 : -1;
+                    }
+                );
+
                 $('#records').bootstrapTable('load', records);
             }
 
@@ -180,6 +210,6 @@
     }
 
     $(function() {
-        update_records();
+        updates.update30();
     });
 </script>
