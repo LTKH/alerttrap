@@ -180,11 +180,6 @@ func main() {
     // Daemon mode
     for {
 
-        // Mark alerts as resolved
-        if keys := v1.CacheAlerts.ResolvedItems(); len(keys) != 0 {
-            log.Printf("[info] alerts are marked as allowed (%d)", len(keys))
-        }
-
         // Cleaning cache alerts
         if items := v1.CacheAlerts.ExpiredItems(); len(items) != 0 {
             client, err := db.NewClient(cfg.Global.DB)

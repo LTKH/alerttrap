@@ -111,21 +111,3 @@ func (a *Alerts) ExpiredItems() map[string]Alert {
 
     return items
 }
-
-func (a *Alerts) ResolvedItems() []string {
-    a.Lock()
-    defer a.Unlock()
-
-    var keys []string
-
-    for k, v := range a.items {
-        if v.State != "resolved" && time.Now().UTC().Unix() > v.EndsAt {
-            v.State = "resolved"
-            v.ChangeSt = v.ChangeSt + 1
-            a.items[k] = v
-            keys = append(keys, k)
-        }
-    }
-
-    return keys
-}
