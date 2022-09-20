@@ -72,13 +72,9 @@
         if (typeof menu[window.location.pathname] !== 'undefined'){
 
             $.ajax({
-                url: '/api/v1/targets',
+                url: "/api/v1/targets",
                 beforeSend: function(request) {
-                    if ('headers' in menu[window.location.pathname].options) {
-                        for (var k in menu[window.location.pathname].options.headers) {
-                            request.setRequestHeader(k, menu[window.location.pathname].options.headers[k]);
-                        }
-                    }
+                    request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['host']);
                 },
                 success: function(jsn) {
                     $.each(jsn.data.activeTargets, function(key, value) {
