@@ -110,10 +110,11 @@
                 $.ajax({
                     url: menu[nkey].href,
                     beforeSend: function(request) {
-                        if ('headers' in menu[nkey].options) {
-                            for (var k in menu[nkey].options.headers) {
-                                request.setRequestHeader(k, menu[nkey].options.headers[k]);
-                            }
+                        if ('host' in menu[nkey].options) {
+                            request.setRequestHeader("X-Custom-URL", menu[nkey]['options']['host']);
+                            //for (var k in menu[nkey].options.headers) {
+                            //    request.setRequestHeader(k, menu[nkey].options.headers[k]);
+                            //}
                         }
                     },
                     success: function(jsn) {

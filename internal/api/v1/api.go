@@ -371,6 +371,12 @@ func (api *Api) SetAlerts(data Alerts) {
 }
 
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
+    if r.Header.Get("X-Custom-URL") != "" {
+        r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL")+r.URL.Path)
+        getReverseProxy().ServeHTTP(w, r)
+        return
+    }
+
     w.Header().Set("Content-Type", "application/json")
 
     if r.Method == "GET" {

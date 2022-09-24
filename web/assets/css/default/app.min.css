@@ -32180,6 +32180,10 @@ hr {
     background: #f59c1a
 }
 
+.label.label-pending {
+    background: #f59c1a
+}
+
 .label.label-danger {
     background: #ff5b57
 }
