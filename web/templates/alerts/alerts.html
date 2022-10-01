@@ -224,10 +224,12 @@
                     level = 4;
                     levels.firing ++; 
                     break;
+                case 'alerting':
                 case 'warning':
                     level = 2;
                     levels.warning ++;
                     break;
+                case 'ok':
                 case 'resolved':
                     level = 1;
                     levels.resolved ++;
@@ -327,8 +329,13 @@
                     labels.push({ label: '<label class="label label-muted">'+key+'</label>', value: value });
                 });
                 $.each(alert.annotations, function(key, value) {
-                    labels.push({ label: '<label class="label label-aqua">'+key+'</label>', value: value });
+                    if (value != ""){
+                        labels.push({ label: '<label class="label label-aqua">'+key+'</label>', value: value });
+                    }
                 });
+                if (alert.generatorURL) {
+                    labels.push({ label: '<label class="label label-aqua">generatorURL</label>', value: '<a href="'+alert.generatorURL+'" target="_blank" style="color: #fff;">'+alert.generatorURL+'</a>' });
+                }
                 
                 $('#labels').bootstrapTable('load', labels);
                 $('#myModal').modal('show');
