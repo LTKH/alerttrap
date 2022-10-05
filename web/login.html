@@ -81,7 +81,7 @@
             success: function(json) {
                 $.cookie('login', json.data.login);
                 $.cookie('token', json.data.token);
-                window.location.replace("/");
+                window.location.replace(document.referrer || "/");
             },
             error: function(XMLHttpRequest, textStatus, errorThrown) { 
                 $.gritter.add({
