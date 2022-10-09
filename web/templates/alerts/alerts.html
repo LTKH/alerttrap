@@ -226,6 +226,7 @@
                     break;
                 case 'alerting':
                 case 'warning':
+                case 'pending':
                     level = 2;
                     levels.warning ++;
                     break;
@@ -280,9 +281,9 @@
             }
         );
         
-        //var currentPos = $('#alerts').position().top * -1 + 43;
+        var currentPos = $('#alerts').position().top < 0 ? $('#alerts').position().top * -1 + 43 : 0;
         $('#alerts').bootstrapTable('load', nAlerts);
-        //$('div[class="fixed-table-body"]').scrollTop(currentPos);
+        $('div[class="fixed-table-body"]').scrollTop(currentPos);
     }
 
     $(function() {
