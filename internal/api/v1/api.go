@@ -211,13 +211,8 @@ func New(conf *config.Config) (*Api, error) {
 }
 
 func (api *Api) ApiWS(w http.ResponseWriter, r *http.Request) {
-    if r.Header.Get("Sec-WebSocket-Protocol") != "" {
-        r.Header.Set("proxy-target-url", r.Header.Get("Sec-WebSocket-Protocol")+r.URL.Path)
-        getReverseProxy().ServeHTTP(w, r)
-        return
-    }
-
-    w.WriteHeader(204)
+    r.Header.Set("proxy-target-url", "ws://mtesting.default.svc.cluster.local:8065"+r.URL.Path)
+    getReverseProxy().ServeHTTP(w, r)
     return
 }
 
