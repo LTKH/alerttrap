@@ -175,7 +175,7 @@
             url: "/api/v1/netmap/records",
             data: data,
             beforeSend: function(request) {
-                request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['host']);
+                request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['X-Custom-URL']);
             },
             success: function(jsn) {
                 $.each(jsn.data, function(key, value) {

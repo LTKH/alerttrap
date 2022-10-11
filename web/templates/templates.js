@@ -6,7 +6,7 @@ var templates = [
     { 'url': '^/vmetrics/targets', 'tmpl': '/templates/vmetrics/targets.html' },
     { 'url': '^/vmetrics/alerts', 'tmpl': '/templates/alerts/alerts.html' },
     { 'url': '^/vmetrics/testing', 'tmpl': '/templates/vmetrics/testing.html' },
-    { 'url': '^/alertmanager', 'tmpl': '/templates/alerts/alerts.html' },
+    { 'url': '^/alertmanager/alerts', 'tmpl': '/templates/alertmanager/alerts.html' },
     { 'url': '^/prometheus/[^/]+/targets', 'tmpl': '/templates/vmetrics/targets.html' },
     { 'url': '^/prometheus/[^/]+/alerts', 'tmpl': '/templates/vmetrics/alerts.html' },
 ];

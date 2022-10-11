@@ -9,7 +9,7 @@
 <div class="row">
 
     <div class="col-xl-3 col-md-6">
-        <div id="widget-secondary" class="widget widget-stats bg-dark">
+        <div id="widget-test-secondary" class="widget widget-stats bg-dark">
             <div class="stats-icon stats-icon-lg"><i class="fas fa-th-list"></i></div>
             <div class="stats-content">
                 <div class="stats-title">TOTAL</div>
@@ -23,7 +23,7 @@
     </div>
 
     <div class="col-xl-3 col-md-6">
-        <div id="widget-resolved" class="widget widget-stats bg-dark">
+        <div id="widget-test-resolved" class="widget widget-stats bg-dark">
             <div class="stats-icon stats-icon-lg"><i class="fas fa-check-square"></i></div>
             <div class="stats-content">
                 <div class="stats-title">SUCCESS</div>
@@ -37,7 +37,7 @@
     </div>
 
     <div class="col-xl-3 col-md-6">
-        <div id="widget-firing" class="widget widget-stats bg-dark">
+        <div id="widget-test-firing" class="widget widget-stats bg-dark">
             <div class="stats-icon stats-icon-lg"><i class="fas fa-exclamation-circle"></i></div>
             <div class="stats-content">
                 <div class="stats-title">ERRORS</div>
@@ -52,7 +52,7 @@
 
 
     <div class="col-xl-3 col-md-6">
-        <div id="widget-warning" class="widget widget-stats bg-dark">
+        <div id="widget-test-warning" class="widget widget-stats bg-dark">
             <div class="stats-icon stats-icon-lg"><i class="fas fa-exclamation-triangle"></i></div>
             <div class="stats-content">
                 <div class="stats-title">SPEED</div>
@@ -149,11 +149,11 @@
 
 <script>
     function updateWidget(name, number) {
-        $('#widget-'+name+' .stats-number').text(number);
+        $('#widget-test-'+name+' .stats-number').text(number);
         if (number > 0) {
-            $('#widget-'+name).attr('class', 'widget widget-stats bg-'+name);
+            $('#widget-test-'+name).attr('class', 'widget widget-stats bg-'+name);
         } else {
-            $('#widget-'+name).attr('class', 'widget widget-stats bg-dark');
+            $('#widget-test-'+name).attr('class', 'widget widget-stats bg-dark');
         }
     }
 
@@ -200,7 +200,7 @@
                 $.ajax({
                     url: "/api/v1/stop",
                     beforeSend: function(request) {
-                        request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['host01']);
+                        request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['X-Custom-URL']);
                     },
                     success: function(jsn) {
                         //$('#start').text('Start');
@@ -223,7 +223,7 @@
                     contentType: "application/json; charset=utf-8",
                     dataType: "json",
                     beforeSend: function(request) {
-                        request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['host01']);
+                        request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['X-Custom-URL']);
                     },
                     success: function(jsn) {
                         //$('#start').text('Stop');

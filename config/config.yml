@@ -36,35 +36,46 @@ global:
 menu:
   - id: "kubernetes"
     name: "Kubernetes"
-    class: "fa fa-th-large"
+    class: "fa fa-cubes"
     nodes:
       - id: "alerts"
         name: "Alerts"
         href: "/api/v1/alerts"
         tags: ["alertgroup","pod"]
+
   - id: "vmetrics"
     name: "VMetrics"
-    class: "fa fa-th-large"
+    class: "fa fa-chart-area"
     nodes:
       - id: "targets"
         name: "Targets"
         options:
-          host: "http://localhost:8429"
+          X-Custom-URL: "http://localhost:8429"
       - id: "alerts"
         name: "Alerts"
         href: "/api/v1/alerts"
         options:         
-          host: "http://localhost:8880"
+          X-Custom-URL: "http://localhost:8880"
       - id: "testing"
         name: "Testing"
         options:         
-          host01: "http://localhost:8065"
-          host02: "ws://localhost:8065"
+          X-Custom-URL: "http://localhost:8065"
+
+  - id: "alertmanager"
+    name: "Alertmanager"
+    class: "fa fa-th-large"
+    nodes:
+      - id: "alerts"
+        name: "Alerts"
+        href: "/api/v1/alerts"
+        options:         
+          X-Custom-URL: "http://localhost:9093"
+          
   - id: "netmap"
     name: "Netmap"
     class: "fa fa-sitemap"
     options:
-      host: "http://localhost:8082"
+      X-Custom-URL: "http://localhost:8082"
 
 
 #extension_rules:

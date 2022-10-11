@@ -19,17 +19,9 @@
                         </div-->
                         <div class="row">
                             <div class="col-sm-12">
-                                <table data-height="700" data-pagination-parts="pageInfoShort" id="targets" class="table table-responsive-sm table-sm">
-                                    <thead>
-                                        <!--tr>
-                                            <th data-field="scrapeUrl">Endpoint</th>
-                                            <th data-field="health">State</th>
-                                            <th data-field="job">Job</th>
-                                            <th data-field="lastScrape">Last Scrape</th>
-                                            <th data-field="lastScrapeDuration">Scrape Duration</th>
-                                            <th data-field="lastError">Error</th>
-                                        </tr-->
-                                    </thead>
+                                <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfoShort" id="targets">
+                                    <thead></thead>
+                                    <tbody></tbody>
                                 </table>
                             </div>
                         </div>
@@ -43,25 +35,54 @@
     </div>
 
 </div>
+
+<!-- Модальное окно -->
+<div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel">Information</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table data-pagination-parts="pageInfoShort" id="labels"></table> 
+                <!--div class="container-fluid"></div-->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                <!--button type="button" class="btn btn-primary">Сохранить изменения</button-->
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript" src="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
 <script type="text/javascript">
 
-    updates.update10 = function(){
+    updates.targets = [];
 
-        var targets = [];
+    updates.update10 = function(){
 
         if (typeof menu[window.location.pathname] !== 'undefined'){
 
             $.ajax({
                 url: "/api/v1/targets",
                 beforeSend: function(request) {
-                    request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['host']);
+                    request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['X-Custom-URL']);
                 },
                 success: function(jsn) {
+                    updates.targets = jsn.data.activeTargets;
+
+                    var nTargets = [];
+
                     $.each(jsn.data.activeTargets, function(key, value) {
                         var nowTime = new Date()
                         var scrapeTime = new Date(value.lastScrape);
-                        targets.push({
+
+                        nTargets.push({
+                            id:                 key,
                             state:              '<label class="label label-'+value.health+'">'+value.health+'</label>',
                             scrapeUrl:          value.scrapeUrl,
                             lastError:          '<font color="red">'+value.lastError+'<font>',
@@ -72,7 +93,7 @@
 
                     });
 
-                    $('#targets').bootstrapTable('load', targets);
+                    $('#targets').bootstrapTable('load', nTargets);
                 }
 
 
@@ -83,6 +104,10 @@
     }
 
     $(function() {
+        $('#myModal button').on('click', function () {
+            $('#myModal').modal('hide');
+        });
+
         $('#targets').bootstrapTable({
             pagination: true,
             search: true,
@@ -96,6 +121,36 @@
                 { title: "Duration", field: "lastScrapeDuration", width: 100 },
                 { title: "Error", field: "lastError" }
             ],
+            onClickRow: function (e) { 
+                var target = updates.targets[e.id];
+                var labels = [];
+
+                $('div[class="container-fluid"]').empty();
+                $.each(target.labels, function(key, value) {
+                    labels.push({ label: '<label class="label label-muted">'+key+'</label>', value: value });
+                });
+                $.each(target.annotations, function(key, value) {
+                    if (value != ""){
+                        labels.push({ label: '<label class="label label-aqua">'+key+'</label>', value: value });
+                    }
+                });
+                if (target.generatorURL) {
+                    labels.push({ label: '<label class="label label-aqua">generatorURL</label>', value: '<a href="'+target.generatorURL+'" target="_blank" style="color: #fff;">'+target.generatorURL+'</a>' });
+                }
+                
+                $('#labels').bootstrapTable('load', labels);
+                $('#myModal').modal('show');
+            }
+        });
+
+        $('#labels').bootstrapTable({
+            pagination: false,
+            search: false,
+            classes: "table table-responsive-sd table-sd",
+            columns: [
+                { title: "Label", field: "label", width: 200 },
+                { title: "Value", field: "value" }
+            ]
         });
 
         updates.update10();
