@@ -158,15 +158,14 @@
     }
 
     function connectSocket() {
-        ws = new WebSocket('ws://localhost:8081/api/v1/ws');
+        ws = new WebSocket('ws://localhost:8065/api/v1/ws');
 
         ws.onopen = function() {
-            //console.log('Connected')
+            $('#start').prop('disabled', false);
         };
 
         ws.onmessage = function(evt) {
             var json = $.parseJSON(evt.data);
-            //console.log(json.data);
 
             updateWidget('secondary', json.data.requestTotal);
             updateWidget('resolved', json.data.requestSuccess);
@@ -183,6 +182,7 @@
         };
 
         ws.onclose = function(e) {
+            $('#start').prop('disabled', true);
             setTimeout(function() {
                 connectSocket();
             }, 1000);

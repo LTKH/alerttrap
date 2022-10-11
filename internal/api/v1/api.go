@@ -210,12 +210,6 @@ func New(conf *config.Config) (*Api, error) {
     return &Api{ Conf: conf }, nil
 }
 
-func (api *Api) ApiWS(w http.ResponseWriter, r *http.Request) {
-    r.Header.Set("proxy-target-url", "ws://mtesting.default.svc.cluster.local:8065"+r.URL.Path)
-    getReverseProxy().ServeHTTP(w, r)
-    return
-}
-
 func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
     //var alerts []string
 
