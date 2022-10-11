@@ -158,7 +158,7 @@
     }
 
     function connectSocket() {
-        ws = new WebSocket(menu[window.location.pathname]['options']['host02']+'/api/v1/ws');
+        ws = new WebSocket('ws://localhost/api/v1/ws', menu[window.location.pathname]['options']['host02']);
 
         ws.onopen = function() {
             //console.log('Connected')

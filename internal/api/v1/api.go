@@ -210,6 +210,17 @@ func New(conf *config.Config) (*Api, error) {
     return &Api{ Conf: conf }, nil
 }
 
+func (api *Api) ApiWS(w http.ResponseWriter, r *http.Request) {
+    if r.Header.Get("Sec-WebSocket-Protocol") != "" {
+        r.Header.Set("proxy-target-url", r.Header.Get("Sec-WebSocket-Protocol")+r.URL.Path)
+        getReverseProxy().ServeHTTP(w, r)
+        return
+    }
+
+    w.WriteHeader(204)
+    return
+}
+
 func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
     //var alerts []string
 
