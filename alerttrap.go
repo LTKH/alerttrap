@@ -31,7 +31,7 @@ var (
 func main() {
 
     // Command-line flag parsing
-    lsAddress      := flag.String("web.listen-address", ":8000", "listen address")
+    lsAddress      := flag.String("web.listen-address", ":8081", "listen address")
     webDir         := flag.String("web.dir", "web", "web directory")
     cfFile         := flag.String("config.file", "config/config.yml", "config file")
     lgFile         := flag.String("log.file", "", "log file")

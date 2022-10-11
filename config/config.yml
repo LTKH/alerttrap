@@ -55,6 +55,11 @@ menu:
         href: "/api/v1/alerts"
         options:         
           host: "http://localhost:8880"
+      - id: "testing"
+        name: "Testing"
+        options:         
+          host01: "http://localhost:8065"
+          host02: "ws://localhost:8065"
   - id: "netmap"
     name: "Netmap"
     class: "fa fa-sitemap"

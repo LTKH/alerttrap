@@ -1,0 +1,239 @@
+<ol class="breadcrumb float-xl-right">
+    <!--li class="breadcrumb-item"><a href="javascript:;">Home</a></li>
+    <li class="breadcrumb-item"><a href="javascript:;">Dashboard</a></li>
+    <li class="breadcrumb-item active">Dashboard v3</li-->
+</ol>
+
+<h1 class="page-header mb-3 text-muted">Dashboard v3</h1>
+
+<div class="row">
+
+    <div class="col-xl-3 col-md-6">
+        <div id="widget-secondary" class="widget widget-stats bg-dark">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-th-list"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">TOTAL</div>
+                <div class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div id="widget-resolved" class="widget widget-stats bg-dark">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-check-square"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">SUCCESS</div>
+                <div class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div id="widget-firing" class="widget widget-stats bg-dark">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">ERRORS</div>
+                <div class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-xl-3 col-md-6">
+        <div id="widget-warning" class="widget widget-stats bg-dark">
+            <div class="stats-icon stats-icon-lg"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stats-content">
+                <div class="stats-title">SPEED</div>
+                <div class="stats-number">0</div>
+                <div class="stats-progress progress">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <div class="stats-desc"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-xl">
+
+        <div class="panel panel-inverse">
+            <!-- begin panel-heading -->
+            <div class="panel-heading bg-dark text-silver">
+                <h4 class="panel-title">Launch parameters</h4>
+                <div class="panel-heading-btn">
+                    <a href="javascript:;" class="btn btn-xs btn-icon btn-circle btn-warning" data-click="panel-collapse"><i class="fa fa-minus"></i></a>
+                </div>
+            </div>
+            <!-- end panel-heading -->
+            <!-- begin panel-body -->
+            <div class="panel-body text-silver">
+                <div class="row">
+                    <!-- begin col-4 -->
+                    <div class="col">
+                        <div class="form-group row">
+                            <label class="col-form-label col-md-2">RemoteWrite URL</label>
+                            <div class="col-md-9">
+                                <input id="writeUrl" type="text" class="form-control m-b-5" value="http://vminsert.default.svc.cluster.local:8480/insert/0/influx/write">
+                                <small class="f-s-12 text-grey-darker">Remote write compatible storage</small>
+                            </div>
+                        </div>
+                        <div class="form-group row m-b-15">
+                            <label class="col-form-label col-md-2">Threads</label>
+                            <div class="col-md-9">
+                                <input id="threads" type="text" class="form-control m-b-5" value="200">
+                                <small class="f-s-12 text-grey-darker">Number of threads</small>
+                            </div>
+                        </div>
+                        <div class="form-group row m-b-15">
+                            <label class="col-form-label col-md-2">Interval</label>
+                            <div class="col-md-9">
+                                <input id="interval" type="text" class="form-control m-b-5" value="10">
+                                <small class="f-s-12 text-grey-darker">How often a new metrics packet will be sent</small>
+                            </div>
+                        </div>
+                        <div class="form-group row m-b-15">
+                            <label class="col-form-label col-md-2">Packet size</label>
+                            <div class="col-md-9">
+                                <input id="packetSize" type="text" class="form-control m-b-5" value="500">
+                                <small class="f-s-12 text-grey-darker">Application will send metrics to output in batch of at most packet_size metrics</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- end row -->
+                <div class="float-right">
+                    <button id="start" type="submit" class="btn btn-sm btn-primary m-r-5">Start</button>
+                </div>
+            </div>
+            <!-- end panel-body -->
+        </div>
+
+        <!--div class="card border-0 mb-3 overflow-hidden bg-dark text-silver">
+
+            <div class="card-body">
+                <div class="panel-body">
+                    <div id="data-table-default_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <table data-height="1000" data-pagination-parts="pageInfoShort" id="records" class="table table-responsive-sm table-sm">
+                                    <thead>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div-->
+
+    </div>
+
+</div>
+
+<script>
+    function updateWidget(name, number) {
+        $('#widget-'+name+' .stats-number').text(number);
+        if (number > 0) {
+            $('#widget-'+name).attr('class', 'widget widget-stats bg-'+name);
+        } else {
+            $('#widget-'+name).attr('class', 'widget widget-stats bg-dark');
+        }
+    }
+
+    function connectSocket() {
+        ws = new WebSocket(menu[window.location.pathname]['options']['host02']+'/api/v1/ws');
+
+        ws.onopen = function() {
+            //console.log('Connected')
+        };
+
+        ws.onmessage = function(evt) {
+            var json = $.parseJSON(evt.data);
+            //console.log(json.data);
+
+            updateWidget('secondary', json.data.requestTotal);
+            updateWidget('resolved', json.data.requestSuccess);
+            updateWidget('firing', json.data.requestErrors);
+            updateWidget('warning', json.data.requestSpeed * json.data.packetSize);
+
+            if (json.data.threads > 0) {
+                $('#start').text('Stop');
+                $('#start').attr('class', 'btn btn-secondary btn-sm btn-primary m-r-5');
+            } else {
+                $('#start').text('Start');
+                $('#start').attr('class', 'btn btn-sm btn-primary m-r-5');
+            }
+        };
+
+        ws.onclose = function(e) {
+            setTimeout(function() {
+                connectSocket();
+            }, 1000);
+        };
+    }
+
+    $(function() {
+        
+        connectSocket();
+
+        $('#start').on('click', function(event) {
+            $('#start').prop('disabled', true);
+
+            if ($('#start').text() == 'Stop') {
+                $.ajax({
+                    url: "/api/v1/stop",
+                    beforeSend: function(request) {
+                        request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['host01']);
+                    },
+                    success: function(jsn) {
+                        //$('#start').text('Start');
+                        //$('#start').attr('class', 'btn btn-sm btn-primary m-r-5');
+                    }
+                }).always (function(xhr, textStatus, errorThrown){
+                    $('#start').prop('disabled', false);
+                });
+            } else {
+                data = {};
+                data['writeUrl'] = $('#writeUrl').val();
+                data['threads'] = parseInt($('#threads').val());
+                data['interval'] = parseInt($('#interval').val());
+                data['packetSize'] = parseInt($('#packetSize').val());
+
+                $.ajax({
+                    url: "/api/v1/start",
+                    method: 'post',
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    beforeSend: function(request) {
+                        request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['host01']);
+                    },
+                    success: function(jsn) {
+                        //$('#start').text('Stop');
+                        //$('#start').attr('class', 'btn btn-secondary btn-sm btn-primary m-r-5');
+                    }
+                }).always (function(xhr, textStatus, errorThrown){
+                    $('#start').prop('disabled', false);
+                });
+            }
+
+        });
+    });
+</script>
