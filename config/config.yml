@@ -67,16 +67,17 @@ menu:
     nodes:
       - id: "alerts"
         name: "Alerts"
-        href: "/api/v1/alerts"
         options:         
           X-Custom-URL: "http://localhost:9093"
           
   - id: "netmap"
     name: "Netmap"
     class: "fa fa-sitemap"
-    options:
-      X-Custom-URL: "http://localhost:8082"
-
+    nodes:
+      - id: "records"
+        name: "Records"
+        options:
+          X-Custom-URL: "http://localhost:8082"
 
 #extension_rules:
 #  - source_matchers: ['{host=~"host-2.*"}']

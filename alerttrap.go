@@ -130,30 +130,6 @@ func main() {
         }
     }(cfg.Global)
 
-    // Program completion signal processing
-    c := make(chan os.Signal, 2)
-    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-    go func() {
-        <- c
-        log.Print("[info] stoping application")
-        if items := v1.CacheAlerts.Items(); len(items) != 0 {
-            // Connection to data base
-            client, err := db.NewClient(cfg.Global.DB) 
-            if err != nil {
-                log.Fatalf("[error] connect to db: %v", err)
-            }
-            // Saving cache items
-            if err := client.SaveAlerts(items); err != nil {
-                log.Printf("[error] %v", err)
-            }
-            client.Close()
-        }
-        log.Print("[info] alertstrap stopped")
-        os.Exit(0)
-    }()
-
-    log.Print("[info] alertstrap started -_^")
-
     // Delete old alerts
     go func(cfg *config.DB){
         for {
@@ -176,6 +152,48 @@ func main() {
             time.Sleep(24 * time.Hour)
         }
     }(cfg.Global.DB)
+
+    // Program signal processing
+    c := make(chan os.Signal, 1)
+    signal.Notify(c, os.Interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+    go func(){
+        for {
+            s := <-c
+            switch s {
+                case syscall.SIGHUP:
+                    // Loading configuration file
+                    cfg, err = config.New(*cfFile)
+                    if err != nil {
+                        log.Printf("[error] %v", err)
+                    } else {
+                        _, err := v1.New(cfg)
+                        if err != nil {
+                            log.Fatalf("[error] %v", err)
+                        } else {
+                            log.Print("[info] reload happened")
+                        }
+                    } 
+                default:
+                    log.Print("[info] application stoping")
+                    if items := v1.CacheAlerts.Items(); len(items) != 0 {
+                        // Connection to data base
+                        client, err := db.NewClient(cfg.Global.DB) 
+                        if err != nil {
+                            log.Fatalf("[error] connect to db: %v", err)
+                        }
+                        // Saving cache items
+                        if err := client.SaveAlerts(items); err != nil {
+                            log.Printf("[error] %v", err)
+                        }
+                        client.Close()
+                    }
+                    log.Print("[info] alerttrap stopped")
+                    os.Exit(0)
+            }
+        }
+    }()
+
+    log.Print("[info] alerttrap started -_^")
 
     // Daemon mode
     for {

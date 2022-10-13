@@ -27,7 +27,13 @@ var (
     CacheUsers *cache.Users = cache.NewCacheUsers()
     reverseProxy *httputil.ReverseProxy
 	reverseProxyOnce sync.Once
+    ConfigMenu = &Menu{}
 )
+
+type Menu struct {
+    sync.RWMutex
+    items        []*config.Node            `yaml:"menu"`
+}
 
 type Api struct {
     Conf         *config.Config
@@ -179,22 +185,20 @@ func authentication(cfg *config.DB, r *http.Request) (string, int, error) {
     return "", 401, errors.New("Unauthorized")
 }
 
+func (m *Menu) Set(menu []*config.Node) error {
+    m.Lock()
+    defer m.Unlock()
+    m.items = menu
+    return nil
+}
+
+func (m *Menu) Get() ([]*config.Node, error) {
+    m.RLock()
+    defer m.RUnlock()
+    return m.items, nil
+}
+
 func New(conf *config.Config) (*Api, error) {
-    //connection to data base
-    //client, err := db.NewClient(conf.Global.DB)
-    //if err != nil {
-    //    return nil, err
-    //}
-    //log.Print("[info] connected to dbase")
-    //loading users
-    //users, err := client.LoadUsers()
-    //if err != nil {
-    //    return nil, err
-    //}
-    //for _, user := range users {
-    //    CacheUsers.Set(user.Login, user)
-    //}
-    //log.Printf("[info] loaded users from dbase (%d)", len(users))
 
     if conf.Global.Security.AdminUser != "" && conf.Global.Security.AdminPassword != "" {
         user := cache.User{
@@ -206,6 +210,8 @@ func New(conf *config.Config) (*Api, error) {
         }
         CacheUsers.Set(conf.Global.Security.AdminUser, user)
     }
+
+    ConfigMenu.Set(conf.Menu)
     
     return &Api{ Conf: conf }, nil
 }
@@ -250,7 +256,8 @@ func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
 
 func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
-    w.Write(encodeResp(&Resp{Status:"error", Data:api.Conf.Menu}))
+    menu, _ := ConfigMenu.Get()
+    w.Write(encodeResp(&Resp{Status:"error", Data:menu}))
 }
 
 func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
