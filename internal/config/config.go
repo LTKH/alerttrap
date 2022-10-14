@@ -48,33 +48,33 @@ type DB struct {
 }
 
 type Ldap struct {
-    Enabled          bool               `yaml:"enabled"`
-    SearchBase       string             `yaml:"search_base"`
-    Host             string             `yaml:"host"`
-    Port             int                `yaml:"port"`
-    UseSsl           bool               `yaml:"use_ssl"`
-    BindDn           string             `yaml:"bind_dn"`
-    BindUser         string             `yaml:"bind_user"`
-    BindPass         string             `yaml:"bind_pass"`
-    UserFilter       string             `yaml:"user_filter"`
-    Attributes       map[string]string  `yaml:"attributes"`
+    Enabled          bool                    `yaml:"enabled"`
+    SearchBase       string                  `yaml:"search_base"`
+    Host             string                  `yaml:"host"`
+    Port             int                     `yaml:"port"`
+    UseSsl           bool                    `yaml:"use_ssl"`
+    BindDn           string                  `yaml:"bind_dn"`
+    BindUser         string                  `yaml:"bind_user"`
+    BindPass         string                  `yaml:"bind_pass"`
+    UserFilter       string                  `yaml:"user_filter"`
+    Attributes       map[string]string       `yaml:"attributes"`
 }
 
 type Node struct {   
-    Id               string             `yaml:"id" json:"id"`      
-    Name             string             `yaml:"name" json:"name"`
-    Path             string             `yaml:"path" json:"path"`
-    Href             string             `yaml:"href" json:"href"`
-    Tags             []string           `yaml:"tags" json:"tags"`
-    Options          map[string]string  `yaml:"options" json:"options,omitempty"`
-    Class            string             `yaml:"class" json:"class,omitempty"`
-    Summary          string             `yaml:"summary" json:"summary,omitempty"`
-    Nodes            []*Node            `yaml:"nodes" json:"nodes,omitempty"`
+    Id               string                  `yaml:"id" json:"id"`      
+    Name             string                  `yaml:"name" json:"name"`
+    Path             string                  `yaml:"path" json:"path"`
+    Href             string                  `yaml:"href" json:"href"`
+    Tags             []string                `yaml:"tags" json:"tags"`
+    Options          map[string]interface{}  `yaml:"options" json:"options,omitempty"`
+    Class            string                  `yaml:"class" json:"class,omitempty"`
+    Summary          string                  `yaml:"summary" json:"summary,omitempty"`
+    Nodes            []*Node                 `yaml:"nodes" json:"nodes,omitempty"`
 }
 
 type ExtensionRule struct {
-    SourceMatchers  []string            `yaml:"source_matchers"`
-    Labels          map[string]string   `yaml:"labels"`
+    SourceMatchers  []string                 `yaml:"source_matchers"`
+    Labels          map[string]string        `yaml:"labels"`
     Matchers        [][]Matcher
 }
 

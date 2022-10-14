@@ -68,7 +68,7 @@ menu:
       - id: "alerts"
         name: "Alerts"
         options:         
-          X-Custom-URL: "http://localhost:9093"
+          X-Custom-URL: ["http://localhost:9093"]
           
   - id: "netmap"
     name: "Netmap"

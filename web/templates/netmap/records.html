@@ -129,6 +129,7 @@
 <script type="text/javascript">
 
     var data = {};
+    data.timestamp = 0;
 
     /*
     $('#records').bootstrapTable({
@@ -143,7 +144,7 @@
             pagination: true,
             search: true,
             classes: "table table-responsive-sd table-sd",
-            pageSize: 500,
+            pageSize: 3000,
             height: 850,
             columns: [
                 { title: "Status", field: "result", width: 100 },
@@ -153,6 +154,7 @@
                 { title: "Destination IP", field: "dst_ip", width: 200 },
                 { title: "Mode", field: "mode", width: 100 },
                 { title: "Port", field: "port", width: 100 },
+                { title: "Active Time", field: "active_time" },
                 { title: "Status", field: "status" }
             ]
         });
@@ -174,29 +176,46 @@
         $.ajax({
             url: "/api/v1/netmap/records",
             data: data,
+            method: 'get',
             beforeSend: function(request) {
                 request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['X-Custom-URL']);
             },
             success: function(jsn) {
+                var ts = 0;
+
                 $.each(jsn.data, function(key, value) {
+
+                    if (value.options.active_time > ts) {
+                        ts = value.options.active_time;
+                    }
+
+                    //if (value.options.active_time < data.timestamp) {
+                    //    return;
+                    //}
+
                     var rs = (value['relation']['result'] == 0) ? 'ok' : 'firing';
+
                     records.push({
-                        id:       value['id'],
-                        result:   '<label class="label label-' + rs + '">' + rs + '</label>',
-                        src_name: value['localAddr']['name'],
-                        src_ip:   value['localAddr']['ip'],
-                        dst_name: value['remoteAddr']['name'],
-                        dst_ip:   value['remoteAddr']['ip'],
-                        mode:     value['relation']['mode'],
-                        port:     value['relation']['port'],
-                        status:   value['relation']['status'],
+                        id:          value['id'],
+                        result:      '<label class="label label-' + rs + '">' + rs + '</label>',
+                        src_name:    value['localAddr']['name'],
+                        src_ip:      value['localAddr']['ip'],
+                        dst_name:    value['remoteAddr']['name'],
+                        dst_ip:      value['remoteAddr']['ip'],
+                        mode:        value['relation']['mode'],
+                        port:        value['relation']['port'],
+                        status:      value['options']['status'] || '-',
+                        active_time: value['options']['active_time'] || 0,
                     });
+
                 });
+
+                data.timestamp = ts;
 
                 records.sort(
                     function(a, b){
-                        if (a.result != b.result) {
-                            return (a.result < b.result) ? 1 : -1;
+                        if (a.active_time != b.active_time) {
+                            return (a.active_time < b.active_time) ? 1 : -1;
                         }
                         return (a.id >= b.id) ? 1 : -1;
                     }
@@ -204,7 +223,6 @@
 
                 $('#records').bootstrapTable('load', records);
             }
-
 
         });
     }

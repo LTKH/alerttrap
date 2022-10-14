@@ -256,6 +256,11 @@
         history.pushState('', 'WebNel', url);
         var template = getTemplate(url);
 
+        updates.update5  = function(){};
+        updates.update10 = function(){};
+        updates.update30 = function(){};
+        updates.update60 = function(){};
+
         if (template != ''){
             $.ajax({
                 url: template,

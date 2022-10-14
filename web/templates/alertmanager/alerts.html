@@ -4,7 +4,7 @@
     <li class="breadcrumb-item active">Dashboard v3</li-->
 </ol>
 
-<h1 class="page-header mb-3 text-muted">Dashboard v3</h1>
+<h1 class="page-header mb-3 text-muted">Alertmanager (alerts)</h1>
 
 <div class="row">
 
@@ -17,6 +17,9 @@
                     <div id="data-table-default_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
                         <div class="row">
                             <div class="col-sm-12 text-nowrap">
+                                <div id="toolbar" style="width: 200px">
+                                    <select id="proxy" class="custom-select-sm form-control"></select>
+                                </div>
                                 <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfoShort" id="alerts">
                                     <thead></thead>
                                     <tbody></tbody>
@@ -68,8 +71,9 @@
 
             $.ajax({
                 url: "/api/v1/alerts",
+                method: 'GET',
                 beforeSend: function(request) {
-                    request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['X-Custom-URL']);
+                    request.setRequestHeader("X-Custom-URL", $("#proxy option:selected").text());
                 },
                 success: function(jsn) {
                     updates.alerts = jsn.data;
@@ -81,9 +85,10 @@
 
                         nAlerts.push({
                             alertId:    key,
-                            state:      '<label class="label label-muted">'+value.status.state+'</label>',
+                            state:      '<label class="label label-'+((value.status.state == "active") ? "firing" : "muted")+'">'+value.status.state+'</label>',
                             alertgroup: value.labels.alertgroup || '-',
                             alertname:  value.labels.alertname || '-',
+                            node:       value.labels.host || value.labels.node || '-',
                             startsAt:   $.format.date(value.startsAt || value.activeAt, 'dd/MM/yyyy HH:mm:ss') || '-',
                             endsAt:     $.format.date(value.endsAt, 'dd/MM/yyyy HH:mm:ss') || '-',
                             summary:    value.annotations.summary || '-',
@@ -92,6 +97,9 @@
 
                     nAlerts.sort(
                         function(a, b){
+                            if (a.node != b.node) {
+                                return (a.node > b.node) ? 1 : -1;
+                            }
                             if (a.alertgroup != b.alertgroup) {
                                 return (a.alertgroup < b.alertgroup) ? 1 : -1;
                             }
@@ -121,12 +129,13 @@
             pagination: true,
             search: true,
             classes: "table table-responsive-sd table-sd",
-            pageSize: 500,
+            pageSize: 1000,
             height: 850,
             columns: [
                 { title: "State", field: "state", width: 100 },
-                { title: "AlertGroup", field: "alertgroup", width: 250 },
                 { title: "AlertName", field: "alertname", width: 250 },
+                { title: "Node", field: "node", width: 200 },
+                { title: "AlertGroup", field: "alertgroup", width: 200 },
                 { title: "StartsAt", field: "startsAt", width: 140 },
                 { title: "EndsAt", field: "endsAt", width: 140 },
                 { title: "Summary", field: "summary" }
@@ -161,6 +170,17 @@
                 { title: "Label", field: "label", width: 200 },
                 { title: "Value", field: "value" }
             ]
+        });
+
+        if (typeof menu[window.location.pathname] !== 'undefined'){
+            $.each(menu[window.location.pathname]['options']['X-Custom-URL'], function(key, value) {
+                $('#proxy').append($('<option>', { value: key, text: value }));
+            });
+        }
+
+        $('#proxy').change(function() {
+            updates.update10 = function(){};
+            updates.update10();
         });
 
         updates.update10();
