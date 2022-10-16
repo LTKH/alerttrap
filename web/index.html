@@ -214,10 +214,13 @@
 
     updates = new Updates();
 
+    updates.update5  = function(){};
+    updates.update10 = function(){};
+    updates.update30 = function(){};
+    updates.update60 = function(){};
+
     setInterval(function() {
-        if (typeof updates.update5 !== 'undefined') {
-            updates.update5();
-        }
+        updates.update5();
     }, 5000);
 
     setInterval(function() {
@@ -228,18 +231,15 @@
                 updates.upload(k);
             }
         }
+        updates.update10();
     }, 10000);
 
     setInterval(function() {
-        if (typeof updates.update30 !== 'undefined') {
-            updates.update30();
-        }
+        updates.update30();
     }, 30000);
 
     setInterval(function() {
-        if (typeof updates.update60 !== 'undefined') {
-            updates.update60();
-        }
+        updates.update60();
     }, 60000);
 
     function getTemplate(url){

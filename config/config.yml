@@ -68,7 +68,7 @@ menu:
       - id: "alerts"
         name: "Alerts"
         options:         
-          X-Custom-URL: ["http://localhost:9093"]
+          X-Custom-URL: ["http://localhost:9093","http://localhost:9094"]
           
   - id: "netmap"
     name: "Netmap"
@@ -77,7 +77,7 @@ menu:
       - id: "records"
         name: "Records"
         options:
-          X-Custom-URL: "http://localhost:8082"
+          X-Custom-URL: ["http://localhost:8082"]
 
 #extension_rules:
 #  - source_matchers: ['{host=~"host-2.*"}']

@@ -71,8 +71,11 @@ func initReverseProxy() {
             targetURL := r.Header.Get("proxy-target-url")
             target, err := url.Parse(targetURL)
             if err != nil {
-                log.Fatalf("[error] unexpected error when parsing targetURL=%q: %s", targetURL, err)
+                log.Printf("[error] unexpected error when parsing targetURL=%q: %s", targetURL, err)
+                return
             }
+            target.Path = r.URL.Path
+            target.RawQuery = r.URL.RawQuery
             r.URL = target
         },
         Transport: func() *http.Transport {
@@ -283,7 +286,7 @@ func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
 
 func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
     if r.Header.Get("X-Custom-URL") != "" {
-        r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL")+r.URL.Path)
+        r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL"))
         getReverseProxy().ServeHTTP(w, r)
         return
     }
@@ -379,7 +382,7 @@ func (api *Api) SetAlerts(data Alerts) {
 
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
     if r.Header.Get("X-Custom-URL") != "" {
-        r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL")+r.URL.Path)
+        r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL"))
         getReverseProxy().ServeHTTP(w, r)
         return
     }

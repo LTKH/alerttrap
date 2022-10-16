@@ -99,6 +99,9 @@
                         </div-->
                         <div class="row">
                             <div class="col-sm-12">
+                                <div id="toolbar" class="float-left" style="width: 400px; margin-top: 10px;">
+                                    <select id="urls" class="custom-select-sm form-control"></select>
+                                </div>
                                 <table data-height="1000" data-pagination-parts="pageInfoShort" id="records" class="table table-responsive-sm table-sm">
                                     <thead>
                                         <!--tr>
@@ -128,19 +131,67 @@
 <script type="text/javascript" src="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
 <script type="text/javascript">
 
-    var data = {};
-    data.timestamp = 0;
+    //var data = {};
+    //data.timestamp = 0; 
 
-    /*
-    $('#records').bootstrapTable({
-        pagination: true,
-        search: true,
-        classes: "table table-responsive-sm table-sm",
-        pageSize: 100
-    });
-    */
+    function loadRecords(url, data) {
+        var records = [];
 
-    $('#records').bootstrapTable({
+        $.ajax({
+            url: "/api/v1/netmap/records",
+            data: data,
+            method: 'GET',
+            beforeSend: function(request) {
+                request.setRequestHeader("X-Custom-URL", url);
+            },
+        }).done(function(jsn) {
+            //var ts = 0;
+
+            $.each(jsn.data, function(key, value) {
+
+                //if (value.options.active_time > ts) {
+                //    ts = value.options.active_time;
+                //}
+
+                //if (value.options.active_time < data.timestamp) {
+                //    return;
+                //}
+
+                var rs = (value['relation']['result'] == 0) ? 'ok' : 'firing';
+
+                records.push({
+                    id:          value['id'],
+                    result:      '<label class="label label-' + rs + '">' + rs + '</label>',
+                    src_name:    value['localAddr']['name'],
+                    src_ip:      value['localAddr']['ip'],
+                    dst_name:    value['remoteAddr']['name'],
+                    dst_ip:      value['remoteAddr']['ip'],
+                    mode:        value['relation']['mode'],
+                    port:        value['relation']['port'],
+                    status:      value['options']['status'] || '-',
+                    active_time: value['options']['active_time'] || 0,
+                });
+
+            });
+
+            //data.timestamp = ts;
+
+            records.sort(
+                function(a, b){
+                    if (a.active_time != b.active_time) {
+                        return (a.active_time < b.active_time) ? 1 : -1;
+                    }
+                    return (a.id >= b.id) ? 1 : -1;
+                }
+            );
+
+            $('#records').bootstrapTable('load', records);
+
+        });
+    }
+
+    $(function() {
+        $('#records').bootstrapTable({
             pagination: true,
             search: true,
             classes: "table table-responsive-sd table-sd",
@@ -159,75 +210,28 @@
             ]
         });
 
-    $('#search').on('click', function(event) {
-        data = {};
-        $.each(['src_name','src_ip','dst_name','dst_ip','port','mode'], function(key, value) {
-            if ($('#'+value).val() != "") {
-                data[value] = $('#'+value).val();
-            }
+        $('#search').on('click', function(event) {
+            data = {};
+            $.each(['src_name','src_ip','dst_name','dst_ip','port','mode'], function(key, value) {
+                if ($('#'+value).val() != "") {
+                    data[value] = $('#'+value).val();
+                }
+            });
+            $('#records').bootstrapTable('load', []);
+            loadRecords($("#urls option:selected").text(), data);
         });
-        updates.update30();
-    });
 
-    updates.update30 = function(){
+        if (typeof menu[window.location.pathname] !== 'undefined'){
+            $.each(menu[window.location.pathname]['options']['X-Custom-URL'], function(key, value) {
+                $('#urls').append($('<option>', { value: key, text: value }));
+            });
+        }
 
-        var records = [];
-
-        $.ajax({
-            url: "/api/v1/netmap/records",
-            data: data,
-            method: 'get',
-            beforeSend: function(request) {
-                request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['X-Custom-URL']);
-            },
-            success: function(jsn) {
-                var ts = 0;
-
-                $.each(jsn.data, function(key, value) {
-
-                    if (value.options.active_time > ts) {
-                        ts = value.options.active_time;
-                    }
-
-                    //if (value.options.active_time < data.timestamp) {
-                    //    return;
-                    //}
-
-                    var rs = (value['relation']['result'] == 0) ? 'ok' : 'firing';
-
-                    records.push({
-                        id:          value['id'],
-                        result:      '<label class="label label-' + rs + '">' + rs + '</label>',
-                        src_name:    value['localAddr']['name'],
-                        src_ip:      value['localAddr']['ip'],
-                        dst_name:    value['remoteAddr']['name'],
-                        dst_ip:      value['remoteAddr']['ip'],
-                        mode:        value['relation']['mode'],
-                        port:        value['relation']['port'],
-                        status:      value['options']['status'] || '-',
-                        active_time: value['options']['active_time'] || 0,
-                    });
-
-                });
-
-                data.timestamp = ts;
-
-                records.sort(
-                    function(a, b){
-                        if (a.active_time != b.active_time) {
-                            return (a.active_time < b.active_time) ? 1 : -1;
-                        }
-                        return (a.id >= b.id) ? 1 : -1;
-                    }
-                );
-
-                $('#records').bootstrapTable('load', records);
-            }
-
+        $('#urls').change(function() {
+            $('#records').bootstrapTable('load', []);
+            loadRecords($("#urls option:selected").text(), {});
         });
-    }
 
-    $(function() {
-        updates.update30();
+        loadRecords($("#urls option:selected").text(), {});
     });
 </script>

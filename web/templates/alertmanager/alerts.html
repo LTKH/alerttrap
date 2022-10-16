@@ -17,8 +17,8 @@
                     <div id="data-table-default_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
                         <div class="row">
                             <div class="col-sm-12 text-nowrap">
-                                <div id="toolbar" style="width: 200px">
-                                    <select id="proxy" class="custom-select-sm form-control"></select>
+                                <div id="toolbar" class="float-left" style="width: 400px; margin-top: 10px;">
+                                    <select id="urls" class="custom-select-sm form-control"></select>
                                 </div>
                                 <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfoShort" id="alerts">
                                     <thead></thead>
@@ -63,61 +63,62 @@
 <script type="text/javascript" src="/assets/js/jquery/jquery-dateformat.min.js"></script>
 <script type="text/javascript">
 
+    function loadAlerts(url) {
+
+        $.ajax({
+            url: "/api/v1/alerts",
+            method: 'GET',
+            beforeSend: function(request) {
+                request.setRequestHeader("X-Custom-URL", url);
+            },
+            success: function(jsn) {
+                updates.alerts = jsn.data;
+
+                var nAlerts = [];
+
+                for (var key in updates.alerts) {
+                    var value = updates.alerts[key];
+
+                    nAlerts.push({
+                        alertId:    key,
+                        state:      '<label class="label label-'+((value.status.state == "active") ? "firing" : "muted")+'">'+value.status.state+'</label>',
+                        alertgroup: value.labels.alertgroup || '-',
+                        alertname:  value.labels.alertname || '-',
+                        node:       value.labels.host || value.labels.node || '-',
+                        startsAt:   $.format.date(value.startsAt || value.activeAt, 'dd/MM/yyyy HH:mm:ss') || '-',
+                        endsAt:     $.format.date(value.endsAt, 'dd/MM/yyyy HH:mm:ss') || '-',
+                        summary:    value.annotations.summary || '-',
+                    });
+                }
+
+                nAlerts.sort(
+                    function(a, b){
+                        if (a.node != b.node) {
+                            return (a.node > b.node) ? 1 : -1;
+                        }
+                        if (a.alertgroup != b.alertgroup) {
+                            return (a.alertgroup < b.alertgroup) ? 1 : -1;
+                        }
+                        if (a.alertname != b.alertname) {
+                            return (a.alertname < b.alertname) ? 1 : -1;
+                        }
+                        return 1;
+                    }
+                );
+
+                $('#alerts').bootstrapTable('load', nAlerts);
+            }
+
+
+        });
+    }
+
     updates.alerts = [];   
 
     updates.update10 = function(){
-
         if (typeof menu[window.location.pathname] !== 'undefined'){
-
-            $.ajax({
-                url: "/api/v1/alerts",
-                method: 'GET',
-                beforeSend: function(request) {
-                    request.setRequestHeader("X-Custom-URL", $("#proxy option:selected").text());
-                },
-                success: function(jsn) {
-                    updates.alerts = jsn.data;
-
-                    var nAlerts = [];
-
-                    for (var key in updates.alerts) {
-                        var value = updates.alerts[key];
-
-                        nAlerts.push({
-                            alertId:    key,
-                            state:      '<label class="label label-'+((value.status.state == "active") ? "firing" : "muted")+'">'+value.status.state+'</label>',
-                            alertgroup: value.labels.alertgroup || '-',
-                            alertname:  value.labels.alertname || '-',
-                            node:       value.labels.host || value.labels.node || '-',
-                            startsAt:   $.format.date(value.startsAt || value.activeAt, 'dd/MM/yyyy HH:mm:ss') || '-',
-                            endsAt:     $.format.date(value.endsAt, 'dd/MM/yyyy HH:mm:ss') || '-',
-                            summary:    value.annotations.summary || '-',
-                        });
-                    }
-
-                    nAlerts.sort(
-                        function(a, b){
-                            if (a.node != b.node) {
-                                return (a.node > b.node) ? 1 : -1;
-                            }
-                            if (a.alertgroup != b.alertgroup) {
-                                return (a.alertgroup < b.alertgroup) ? 1 : -1;
-                            }
-                            if (a.alertname != b.alertname) {
-                                return (a.alertname < b.alertname) ? 1 : -1;
-                            }
-                            return 1;
-                        }
-                    );
-
-                    $('#alerts').bootstrapTable('load', nAlerts);
-                }
-
-
-            });
-
+            loadAlerts($("#urls option:selected").text());
         }
-
     }
 
     $(function() {
@@ -174,13 +175,13 @@
 
         if (typeof menu[window.location.pathname] !== 'undefined'){
             $.each(menu[window.location.pathname]['options']['X-Custom-URL'], function(key, value) {
-                $('#proxy').append($('<option>', { value: key, text: value }));
+                $('#urls').append($('<option>', { value: key, text: value }));
             });
         }
 
-        $('#proxy').change(function() {
-            updates.update10 = function(){};
-            updates.update10();
+        $('#urls').change(function() {
+            $('#alerts').bootstrapTable('load', []);
+            loadAlerts($("#urls option:selected").text());
         });
 
         updates.update10();
