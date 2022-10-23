@@ -1,21 +1,20 @@
 global:
-  cert_file:        ""
-  cert_key:         ""
-  alerts_limit:     5000
-  alerts_resolve:   180
-  alerts_delete:    600
-  web_dir:          "web"
+  cert_file:          ""
+  cert_key:           ""
+  alerts_limit:       5000
+  alerts_delete:      600
+  web_dir:            "web"
   
   db:
-    #client:         "mysql"
-    #conn_string:    "root:test@(172.17.0.1)/alerttrap?parseTime=true"
-    client:         "sqlite3"
-    conn_string:    "/tmp/dbase.db"
-    history_days:   7
+    #client:           "mysql"
+    #conn_string:      "root:test@(172.17.0.1)/alerttrap?parseTime=true"
+    client:           "sqlite3"
+    conn_string:      "/tmp/dbase.db"
+    history_days:     7
 
   security:
-    admin_user:     "admin"
-    admin_password: "admin"
+    admin_user:       "admin"
+    admin_password:   "admin"
 
   auth:
     ldap:
@@ -56,10 +55,10 @@ menu:
         href: "/api/v1/alerts"
         options:         
           X-Custom-URL: "http://localhost:8880"
-      - id: "testing"
-        name: "Testing"
-        options:         
-          X-Custom-URL: "http://localhost:8065"
+      #- id: "testing"
+      #  name: "Testing"
+      #  options:         
+      #    X-Custom-URL: "http://localhost:8065"
 
   - id: "alertmanager"
     name: "Alertmanager"
@@ -78,6 +77,40 @@ menu:
         name: "Records"
         options:
           X-Custom-URL: ["http://localhost:8082"]
+      - id: "manage"
+        name: "Manage"
+        options:
+          X-Custom-URL: ["http://localhost:8082"]
+
+  - id: "etcdkeeper"
+    name: "Etcdkeeper"
+    class: "fas fa-cog fa-fw"
+
+templates:
+  - url_matcher: "^/kubernetes/alerts.*"
+    target_page: "/templates/alerts/alerts.html"
+  - url_matcher: "^/vmetrics/targets"
+    target_page: "/templates/vmetrics/targets.html"
+  - url_matcher: "^/vmetrics/alerts"
+    target_page: "/templates/alerts/alerts.html"
+  - url_matcher: "^/alertmanager/alerts"
+    target_page: "/templates/alertmanager/alerts.html"
+  - url_matcher: "^/netmap/records.*"
+    target_page: "/templates/netmap/records.html"
+  - url_matcher: "^/netmap/manage.*"
+    target_page: "/templates/netmap/manage.html"
+  - url_matcher: "^/alerts.*"
+    target_page: "/templates/alerts/alerts.html"
+  - url_matcher: "^/monitoring.*"
+    target_page: "/templates/alerts/alerts.html"
+  - url_matcher: "^/vmetrics/testing"
+    target_page: "/templates/vmetrics/testing.html"
+  - url_matcher: "^/prometheus/[^/]+/targets"
+    target_page: "/templates/vmetrics/targets.html"
+  - url_matcher: "^/prometheus/[^/]+/alerts"
+    target_page: "/templates/vmetrics/alerts.html"
+  - url_matcher: "^/.*"
+    target_page: "/templates/main.html"
 
 #extension_rules:
 #  - source_matchers: ['{host=~"host-2.*"}']
@@ -87,95 +120,4 @@ menu:
 #    labels:
 #      test: "alert5" 
 #      test1: "тестовый раздел" 
-
-
-
-
-  #- id: "netmap"
-  #  name: "Netmap"
-  #  class: "fa fa-cloud"
-  #  options:
-  #    href: "/api/v1/netmap/records"
-  #  nodes:
-  #    - id: "records"
-  #      name: "records"
-  #      options:
-  #        href: "/api/v1/netmap/records"
-  #- id: "sdiscovery"
-  #  name: "Service Discovery"
-  #  class: "fa fa-th-list"
-  #  nodes:
-  #    - id: "alpha"
-  #      name: "alpha"
-  #      options:
-  #        href: "/api/v1/alerts?test=test"
-  #    - id: "beta"
-  #      name: "beta"
-  #      options:
-  #        href: "/api/v1/alerts"
-  #- id: "kubernetes"
-  #  name: "Kubernetes"
-  #  class: "fa fa-th-large"
-  #  nodes:
-  #    - id: "host-1"
-  #      name: "host-1"
-  #      options:
-  #        href: "/api/v1/alerts?match[]={host=~\"host-[1].*\"}"
-  #    - id: "host-2"
-  #      name: "host-2"
-  #      options:
-  #        href: "/api/v1/alerts?match[]={host=~\"host-[2].*\"}"
-  #    - id: "host-3"
-  #      name: "host-3"
-  #      options:
-  #        href: "/api/v1/alerts?match[]={host=~\"host-[3].*\"}"
-  #- id: "monitoring"
-  #  name: "Monitoring"
-  #  class: "fa fa-chart-area"
-  #  nodes:
-  #    - id: "test"
-  #      name: "Test Zones"
-  #      nodes:
-  #        - id: "alpha"
-  #          name: "alpha"
-  #          options:
-  #            href: "/api/v1/alerts"
-  #        - id: "beta"
-  #          name: "beta"
-  #          options:
-  #            href: "/api/v1/alerts"
-  #- id: "alerttrap"
-  #  name: "Alerttrap"
-  #  class: "fa fa-chart-area"
-  #  nodes:
-  #    - id: "history"
-  #      name: "History"
-  #      options:
-  #        href: "/api/v1/alerts"
-  #    - id: "k8s"
-  #      name: "Victoria Metrics K8S"
-  #      nodes:
-  #        - id: "targets"
-  #          name: "Targets"
-  #          options:
-  #            href: "/api/v1/alerts"
-  #        - id: "alerts"
-  #          name: "Alerts" 
-  #          options:
-  #            href: "/api/v1/alerts"
-  #- id: "settings"
-  #  name: "Settings"
-  #  class: "fa fa-cogs"
-  #- id: "users"
-  #  name: "Users"
-  #  class: "fa fa-user"
-  #  nodes:
-  #    - id: "alpha"
-  #      name: "alpha"
-  #      options:
-  #        href: "/api/v1/alerts"
-  #    - id: "beta"
-  #      name: "beta"
-  #      options:
-  #        href: "/api/v1/alerts"
 

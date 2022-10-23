@@ -4,7 +4,7 @@
     <li class="breadcrumb-item active">Dashboard v3</li-->
 </ol>
 
-<h1 class="page-header mb-3 text-muted">Dashboard v3</h1>
+<h1 class="page-header mb-3 text-muted">Alerts</h1>
 
 <div class="row">
 
@@ -88,20 +88,9 @@
                         </div-->
                         <div class="row">
                             <div class="col-sm-12 text-nowrap">
-                                <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfoShort" id="alerts">
-                                    <thead>
-                                        <!--tr>
-                                            <th style="width:100px;" data-field="state">State</th>
-                                            <th style="width:80px;"  data-field="repeat">Repeat</th>
-                                            <th style="width:250px;" data-field="alertname">Alertname</th>
-                                            <th style="width:200px;" data-field="node">Node</th>
-                                            <th style="width:140px;" data-field="startsAt">StartsAt</th>
-                                            <th style="width:140px;" data-field="endsAt">EndsAt</th>
-                                            <th data-field="summary">Summary</th>
-                                        </tr-->
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
+                                <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfo" id="alerts">
+                                    <thead></thead>
+                                    <tbody></tbody>
                                 </table>
                             </div>
                         </div>
@@ -262,7 +251,7 @@
             $('#widget-' + key + ' .stats-desc').text('Percentage (' + prc + '%)');
 
             $('#widget-' + key + ' .stats-number').text(value);
-            if (levels[key] > 0) {
+            if (levels[key] > 0 && key != "unknown") {
                 $('#widget-' + key).attr('class', 'widget widget-stats bg-' + key);
             } else {
                 $('#widget-' + key).attr('class', 'widget widget-stats bg-dark');
@@ -311,8 +300,8 @@
             pagination: true,
             search: true,
             classes: "table table-responsive-sd table-sd",
-            pageSize: 500,
-            height: 850,
+            pageSize: 1000,
+            height: 770,
             columns: [
                 { title: "State", field: "state", width: 100 },
                 { title: "Repeat", field: "repeat", width: 80 },

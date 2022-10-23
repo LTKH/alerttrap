@@ -14,37 +14,43 @@ var (
 )
 
 type Config struct {
-    Global           *Global            `yaml:"global"`
-    Menu             []*Node            `yaml:"menu"`
-    ExtensionRules   []*ExtensionRule   `yaml:"extension_rules"`
+    Global           *Global                 `yaml:"global"`
+    Menu             []*Node                 `yaml:"menu"`
+    Templates        []*Tmpl                 `yaml:"templates"`
+    ExtensionRules   []*ExtensionRule        `yaml:"extension_rules"`
+}
+
+type Tmpl struct {
+    UrlMatcher   string                      `yaml:"url_matcher" json:"url_matcher"`
+    TargetPage   string                      `yaml:"target_page" json:"target_page"`
 }
 
 type Global struct {
-    CertFile         string             `yaml:"cert_file"`
-    CertKey          string             `yaml:"cert_key"`
-    AlertsLimit      int                `yaml:"alerts_limit"`
-    AlertsResolve    int64              `yaml:"alerts_resolve"`
-    AlertsDelete     int64              `yaml:"alerts_delete"`
-    SyncNodes        []string           `yaml:"sync_nodes"`
-    DB               *DB                `yaml:"db"`
-    Security         *Security          `yaml:"security"`
-    Auth             *Auth              `yaml:"auth"`
-    WebDir           string             `yaml:"web_dir"`
+    CertFile         string                  `yaml:"cert_file"`
+    CertKey          string                  `yaml:"cert_key"`
+    AlertsLimit      int                     `yaml:"alerts_limit"`
+    AlertsResolve    int64                   `yaml:"alerts_resolve"`
+    AlertsDelete     int64                   `yaml:"alerts_delete"`
+    SyncNodes        []string                `yaml:"sync_nodes"`
+    DB               *DB                     `yaml:"db"`
+    Security         *Security               `yaml:"security"`
+    Auth             *Auth                   `yaml:"auth"`
+    WebDir           string                  `yaml:"web_dir"`
 }
 
 type Auth struct {
-    Ldap             *Ldap              `yaml:"ldap"`
+    Ldap             *Ldap                   `yaml:"ldap"`
 }
 
 type Security struct {
-    AdminUser        string             `yaml:"admin_user"`
-    AdminPassword    string             `yaml:"admin_password"`
+    AdminUser        string                  `yaml:"admin_user"`
+    AdminPassword    string                  `yaml:"admin_password"`
 }
 
 type DB struct {
-    Client           string             `yaml:"client"`
-    ConnString       string             `yaml:"conn_string"`
-    HistoryDays      int                `yaml:"history_days"`
+    Client           string                  `yaml:"client"`
+    ConnString       string                  `yaml:"conn_string"`
+    HistoryDays      int                     `yaml:"history_days"`
 }
 
 type Ldap struct {

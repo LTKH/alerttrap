@@ -28,15 +28,21 @@ var (
     reverseProxy *httputil.ReverseProxy
 	reverseProxyOnce sync.Once
     ConfigMenu = &Menu{}
+    ConfigTmpl = &Tmpl{}
 )
-
-type Menu struct {
-    sync.RWMutex
-    items        []*config.Node            `yaml:"menu"`
-}
 
 type Api struct {
     Conf         *config.Config
+}
+
+type Menu struct {
+    sync.RWMutex
+    items        []*config.Node
+}
+
+type Tmpl struct {
+    sync.RWMutex
+    items        []*config.Tmpl
 }
 
 type Resp struct {
@@ -201,6 +207,19 @@ func (m *Menu) Get() ([]*config.Node, error) {
     return m.items, nil
 }
 
+func (t *Tmpl) Set(tmpl []*config.Tmpl) error {
+    t.Lock()
+    defer t.Unlock()
+    t.items = tmpl
+    return nil
+}
+
+func (t *Tmpl) Get() ([]*config.Tmpl, error) {
+    t.RLock()
+    defer t.RUnlock()
+    return t.items, nil
+}
+
 func New(conf *config.Config) (*Api, error) {
 
     if conf.Global.Security.AdminUser != "" && conf.Global.Security.AdminPassword != "" {
@@ -215,6 +234,7 @@ func New(conf *config.Config) (*Api, error) {
     }
 
     ConfigMenu.Set(conf.Menu)
+    ConfigTmpl.Set(conf.Templates)
     
     return &Api{ Conf: conf }, nil
 }
@@ -260,7 +280,13 @@ func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
 func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     menu, _ := ConfigMenu.Get()
-    w.Write(encodeResp(&Resp{Status:"error", Data:menu}))
+    w.Write(encodeResp(&Resp{Status:"success", Data:menu}))
+}
+
+func (api *Api) ApiTmpl(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    tmpl, _ := ConfigTmpl.Get()
+    w.Write(encodeResp(&Resp{Status:"success", Data:tmpl}))
 }
 
 func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {

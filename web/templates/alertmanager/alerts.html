@@ -4,7 +4,7 @@
     <li class="breadcrumb-item active">Dashboard v3</li-->
 </ol>
 
-<h1 class="page-header mb-3 text-muted">Alertmanager (alerts)</h1>
+<h1 class="page-header mb-3 text-muted">Alerts</h1>
 
 <div class="row">
 
@@ -20,7 +20,7 @@
                                 <div id="toolbar" class="float-left" style="width: 400px; margin-top: 10px;">
                                     <select id="urls" class="custom-select-sm form-control"></select>
                                 </div>
-                                <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfoShort" id="alerts">
+                                <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfo" id="alerts">
                                     <thead></thead>
                                     <tbody></tbody>
                                 </table>
@@ -63,6 +63,8 @@
 <script type="text/javascript" src="/assets/js/jquery/jquery-dateformat.min.js"></script>
 <script type="text/javascript">
 
+    var alerts = [];   
+
     function loadAlerts(url) {
 
         $.ajax({
@@ -72,13 +74,12 @@
                 request.setRequestHeader("X-Custom-URL", url);
             },
             success: function(jsn) {
-                updates.alerts = jsn.data;
+                alerts = jsn.data;
 
                 var nAlerts = [];
 
-                for (var key in updates.alerts) {
-                    var value = updates.alerts[key];
-
+                for (var key in alerts) {
+                    var value = alerts[key];
                     nAlerts.push({
                         alertId:    key,
                         state:      '<label class="label label-'+((value.status.state == "active") ? "firing" : "muted")+'">'+value.status.state+'</label>',
@@ -113,14 +114,6 @@
         });
     }
 
-    updates.alerts = [];   
-
-    updates.update10 = function(){
-        if (typeof menu[window.location.pathname] !== 'undefined'){
-            loadAlerts($("#urls option:selected").text());
-        }
-    }
-
     $(function() {
         $('#myModal button').on('click', function () {
             $('#myModal').modal('hide');
@@ -142,7 +135,7 @@
                 { title: "Summary", field: "summary" }
             ],
             onClickRow: function (e) { 
-                var alert = updates.alerts[e.alertId];
+                var alert = alerts[e.alertId];
                 var labels = [];
 
                 $('div[class="container-fluid"]').empty();
@@ -184,7 +177,8 @@
             loadAlerts($("#urls option:selected").text());
         });
 
-        updates.update10();
+        loadAlerts($("#urls option:selected").text());
+
     });
 
  

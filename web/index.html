@@ -12,6 +12,7 @@
     <link href="/assets/css/default/theme/black.min.css" rel="stylesheet" id="theme-css-link">
     <link href="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.css" rel="stylesheet" />
     <link href="/assets/plugins/bootstrap-treeview/dist/bootstrap-treeview.min.css" rel="stylesheet" />
+    <link href="/assets/plugins/gritter/css/jquery.gritter.css" rel="stylesheet" />
 </head>
 
 <body style="background-color: #1a2229;">
@@ -96,13 +97,15 @@
 <script type="text/javascript" src="/assets/js/app.min.js"></script>
 <script type="text/javascript" src="/assets/js/theme/default.min.js"></script>
 
-<script type="text/javascript" src="/templates/templates.js"></script>
 <script type="text/javascript" src="/assets/js/tree.min.js"></script>
-<script type="text/javascript" src="/assets/plugins/bootstrap/js/bootstrap.js"></script>
+<script type="text/javascript" src="/assets/plugins/bootstrap/dist/js/bootstrap.js"></script>
+
+<script type="text/javascript" src="/assets/plugins/gritter/js/jquery.gritter.js"></script>
 
 <script>
     var Updates = class {
         
+        templates = [];
         results = {};
 
         upload(nkey) {
@@ -243,10 +246,10 @@
     }, 60000);
 
     function getTemplate(url){
-        for (i = 0; i < templates.length; i++) {
-            var re = new RegExp(templates[i].url);
+        for (var i in updates.templates) {
+            var re = new RegExp(updates.templates[i].url_matcher);
             if (re.test(url)) {
-                return templates[i].tmpl;
+                return updates.templates[i].target_page;
             }
         }
         return '';
@@ -294,20 +297,29 @@
     }
 
     $(function() {
-        $.post('/api/v1/auth', function(json) {
-            $("#loginSpan").html(json.data.name);
+        $.ajax({
+            url: '/api/v1/auth',
+            async: false
+        }).done(function(jsn) {
+            $("#loginSpan").html(jsn.data.name);
         }).fail(function() { 
             window.location.replace("/login.html"); 
         });
 
         $.ajax({
+            url: '/api/v1/tmpl',
+            async: false
+        }).done(function(jsn) {
+            updates.templates = jsn.data;
+        });
+
+        $.ajax({
             url: '/api/v1/menu',
-            success: function(jsn) {
-                var path = decodeURIComponent(window.location.pathname);
-                $('#menu').treeControl({ action: 'create', data: jsn.data });
-                loadPage(path);
-                newObjects(path.replace(/^(\/[^/]+).*/, '$1'));
-            }
+        }).done(function(jsn) {
+            var path = decodeURIComponent(window.location.pathname);
+            $('#menu').treeControl({ action: 'create', data: jsn.data });
+            loadPage(path);
+            newObjects(path.replace(/^(\/[^/]+).*/, '$1'));
         });
     });
 

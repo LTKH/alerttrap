@@ -14044,7 +14044,7 @@ pre code {
 
 .form-control:focus {
     /*color: #2d353c;*/
-    /*background-color: #fff;*/
+    background-color: rgba(255, 255, 255, .1);
     border-color: #5db0ff;
     outline: 0;
     box-shadow: 0 0 0 .2rem rgba(52, 143, 226, .25)
@@ -14057,7 +14057,8 @@ pre code {
 
 .form-control:disabled,
 .form-control[readonly] {
-    background-color: #e9ecef;
+    background-color: rgba(255, 255, 255, .1);
+    color: #171a1e;
     opacity: 1
 }
 
@@ -15821,6 +15822,11 @@ input[type=submit].btn-block {
     width: 100%
 }
 
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+    transition: background-color 600000s 0s, color 600000s 0s;
+}
+
 .fade {
     transition: opacity .15s linear
 }
@@ -16584,7 +16590,7 @@ input[type=submit].btn-block {
     height: calc(1.4em + .625rem + 2px);
     padding-top: .3125rem;
     padding-bottom: .3125rem;
-    padding-left: .625rem;
+    padding-left: .400rem;
     font-size: .75rem
 }
 
@@ -32170,6 +32176,10 @@ hr {
 
 .label.label-info {
     background: #49b6d6
+}
+
+.label.label-no_data {
+    background: #6c757d
 }
 
 .label.label-test {

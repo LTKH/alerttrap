@@ -14,21 +14,21 @@
             </div>
             <!-- end panel-heading -->
             <!-- begin panel-body -->
-            <div class="panel-body text-silver" style="display:none;">
+            <div id="search" class="panel-body text-silver" style="display:none;">
                 <div class="row row-space-30">
                     <!-- begin col-4 -->
                     <div class="col-xl-4">
                         <div class="m-b-2 text-silver f-w-600 f-s-16">Source</div>
                         <div class="form-group row m-b-15">
                             <label class="col-form-label col-md-3">Name</label>
-                            <div class="col-md-9">
+                            <div class="col-md-9 input-group-sm">
                                 <input id="src_name" type="text" class="form-control m-b-5" placeholder="Source Name">
                                 <small class="f-s-12 text-grey-darker">can use regular expressions</small>
                             </div>
                         </div>
                         <div class="form-group row m-b-15">
                             <label class="col-form-label col-md-3">IP</label>
-                            <div class="col-md-9">
+                            <div class="col-md-9 input-group-sm">
                                 <input id="src_ip" type="text" class="form-control m-b-5" placeholder="Source IP">
                                 <small class="f-s-12 text-grey-darker">can use regular expressions</small>
                             </div>
@@ -40,14 +40,14 @@
                         <div class="m-b-2 text-silver f-w-600 f-s-16">Destination</div>
                         <div class="form-group row m-b-15">
                             <label class="col-form-label col-md-3">Name</label>
-                            <div class="col-md-9">
+                            <div class="col-md-9 input-group-sm">
                                 <input id="dst_name" type="text" class="form-control m-b-5" placeholder="Destination Name">
                                 <small class="f-s-12 text-grey-darker">can use regular expressions</small>
                             </div>
                         </div>
                         <div class="form-group row m-b-15">
                             <label class="col-form-label col-md-3">IP</label>
-                            <div class="col-md-9">
+                            <div class="col-md-9 input-group-sm">
                                 <input id="dst_ip" type="text" class="form-control m-b-5" placeholder="Destination IP">
                                 <small class="f-s-12 text-grey-darker">can use regular expressions</small>
                             </div>
@@ -60,14 +60,14 @@
                         <div class="m-b-2 text-silver f-w-600 f-s-16">Relation</div>
                         <div class="form-group row m-b-15">
                             <label class="col-form-label col-md-3">Port</label>
-                            <div class="col-md-9">
+                            <div class="col-md-9 input-group-sm">
                                 <input id="port" type="text" class="form-control m-b-5" placeholder="Relation Port">
                                 <small class="f-s-12 text-grey-darker">&nbsp;</small>
                             </div>
                         </div>
                         <div class="form-group row m-b-15">
                             <label class="col-form-label col-md-3">Mode</label>
-                            <div class="col-md-9">
+                            <div class="col-md-9 input-group-sm">
                                 <input id="mode" type="text" class="form-control m-b-5" placeholder="Relation Mode">
                                 <small class="f-s-12 text-grey-darker">&nbsp;</small>
                             </div>
@@ -78,7 +78,7 @@
                 </div>
                 <!-- end row -->
                 <div class="float-right">
-                    <button id="search" type="submit" class="btn btn-sm btn-primary m-r-5">Search</button>
+                    <button id="start" type="submit" class="btn btn-sm btn-primary m-r-5">Search</button>
                 </div>
             </div>
             <!-- end panel-body -->
@@ -102,19 +102,14 @@
                                 <div id="toolbar" class="float-left" style="width: 400px; margin-top: 10px;">
                                     <select id="urls" class="custom-select-sm form-control"></select>
                                 </div>
-                                <table data-height="1000" data-pagination-parts="pageInfoShort" id="records" class="table table-responsive-sm table-sm">
-                                    <thead>
-                                        <!--tr>
-                                            <th data-field="result">Status</th>
-                                            <th data-field="src_name">Source Name</th>
-                                            <th data-field="src_ip">Source IP</th>
-                                            <th data-field="dst_name">Destination Name</th>
-                                            <th data-field="dst_ip">Destination IP</th>
-                                            <th data-field="mode">Mode</th>
-                                            <th data-field="port">Port</th>
-                                            <th data-field="status">Status</th>
-                                        </tr-->
-                                    </thead>
+                                <div id="toolbar" class="float-left" style="margin-left: 10px; margin-top: 10px;">
+                                    <!--a id="live" href="#" class="btn btn-primary btn-sm">Live</a-->
+                                    <button id="start" type="submit" class="btn btn-sm btn-primary m-r-5">
+                                        <i class="fa fa-stop"></i>&nbsp;&nbsp;<span>Stop</span>
+                                    </button>
+                                </div>
+                                <table data-height="1000" data-pagination-parts="pageInfo" id="records" class="table table-responsive-sm table-sm">
+                                    <thead></thead>
                                 </table>
                             </div>
                         </div>
@@ -131,8 +126,7 @@
 <script type="text/javascript" src="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
 <script type="text/javascript">
 
-    //var data = {};
-    //data.timestamp = 0; 
+    var data = {};
 
     function loadRecords(url, data) {
         var records = [];
@@ -145,13 +139,13 @@
                 request.setRequestHeader("X-Custom-URL", url);
             },
         }).done(function(jsn) {
-            //var ts = 0;
+            var ts = 0;
 
             $.each(jsn.data, function(key, value) {
 
-                //if (value.options.active_time > ts) {
-                //    ts = value.options.active_time;
-                //}
+                if (value.options.active_time > ts) {
+                    ts = value.options.active_time;
+                }
 
                 //if (value.options.active_time < data.timestamp) {
                 //    return;
@@ -174,7 +168,7 @@
 
             });
 
-            //data.timestamp = ts;
+            data.timestamp = ts;
 
             records.sort(
                 function(a, b){
@@ -190,15 +184,21 @@
         });
     }
 
+    updates.update10 = function(){
+        if ($('#start span').text() == 'Stop') {
+            loadRecords($("#urls option:selected").text(), data);
+        }
+    }
+
     $(function() {
         $('#records').bootstrapTable({
             pagination: true,
             search: true,
             classes: "table table-responsive-sd table-sd",
-            pageSize: 3000,
+            pageSize: 1000,
             height: 850,
             columns: [
-                { title: "Status", field: "result", width: 100 },
+                { title: "State", field: "result", width: 100 },
                 { title: "Source Name", field: "src_name", width: 250 },
                 { title: "Source IP", field: "src_ip", width: 200 },
                 { title: "Destination Name", field: "dst_name", width: 250 },
@@ -232,6 +232,25 @@
             loadRecords($("#urls option:selected").text(), {});
         });
 
-        loadRecords($("#urls option:selected").text(), {});
+        $('#start').on('click', function(event) {
+            if ($('#start span').text() == 'Live') {
+
+                $('#start i').attr('class', 'fa fa-stop');
+                $('#start span').text('Stop');
+                $('#start').attr('class', 'btn btn-secondary btn-sm m-r-5');
+
+                data.timestamp = Math.floor(Date.now() / 1000);
+                loadRecords($("#urls option:selected").text(), data);
+            } else {
+
+                $('#start i').attr('class', 'fa fa-play');
+                $('#start span').text('Live');
+                $('#start').attr('class', 'btn btn-sm btn-primary m-r-5');
+
+            }
+        });
+
+        data.timestamp = Math.floor(Date.now() / 1000);
+        loadRecords($("#urls option:selected").text(), data);
     });
 </script>

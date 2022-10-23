@@ -114,6 +114,7 @@ func main() {
     http.HandleFunc("/api/v1/sync", apiV1.ApiSync)
     http.HandleFunc("/api/v1/auth", apiV1.ApiAuth)
     http.HandleFunc("/api/v1/menu", apiV1.ApiMenu)
+    http.HandleFunc("/api/v1/tmpl", apiV1.ApiTmpl)
     http.HandleFunc("/api/v1/login", apiV1.ApiLogin)
     http.HandleFunc("/api/v1/alerts", apiV1.ApiAlerts)
     http.HandleFunc("/", apiV1.ApiIndex)
