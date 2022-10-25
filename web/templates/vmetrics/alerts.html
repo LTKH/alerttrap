@@ -1,0 +1,211 @@
+<ol class="breadcrumb float-xl-right">
+    <!--li class="breadcrumb-item"><a href="javascript:;">Home</a></li>
+    <li class="breadcrumb-item"><a href="javascript:;">Dashboard</a></li>
+    <li class="breadcrumb-item active">Dashboard v3</li-->
+</ol>
+
+<h1 class="page-header mb-3 text-muted">Alerts</h1>
+
+<div class="row">
+
+    <div class="col-xl">
+
+        <div class="card border-0 mb-3 overflow-hidden bg-dark text-white">
+
+            <div class="card-body">
+                <div class="panel-body">
+                    <div id="data-table-default_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
+                        <!--div class="row">
+                            <div class="col-sm-12 col-md-6">
+                                <div class="dataTables_length" id="data-table-default_length"><label>Show <select name="data-table-default_length" aria-controls="data-table-default" class="custom-select custom-select-sm form-control form-control-sm"><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label></div>
+                            </div>
+                            <div class="col-sm-12 col-md-6">
+                                <div id="data-table-default_filter" class="dataTables_filter"><label>Search:<input type="search" class="form-control form-control-sm" placeholder="" aria-controls="data-table-default"></label></div>
+                            </div>
+                        </div-->
+                        <div class="row">
+                            <div class="col-sm-12 text-nowrap">
+                                <div id="toolbar" class="float-left m-t-10" style="width: 400px;">
+                                    <select id="urls" class="custom-select-sm form-control"></select>
+                                </div>
+                                <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfo" id="alerts">
+                                    <thead></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!--div class="row">
+                            <div class="col-sm-12 col-md-5">
+                                <div class="dataTables_info" id="data-table-default_info" role="status" aria-live="polite">Showing 1 to 10 of 57 entries</div>
+                            </div>
+                            <div class="col-sm-12 col-md-7">
+                                <div class="dataTables_paginate paging_simple_numbers" id="data-table-default_paginate">
+                                    <ul class="pagination">
+                                        <li class="paginate_button page-item previous disabled" id="data-table-default_previous"><a href="#" aria-controls="data-table-default" data-dt-idx="0" tabindex="0" class="page-link">Previous</a></li>
+                                        <li class="paginate_button page-item active"><a href="#" aria-controls="data-table-default" data-dt-idx="1" tabindex="0" class="page-link">1</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="2" tabindex="0" class="page-link">2</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="3" tabindex="0" class="page-link">3</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="4" tabindex="0" class="page-link">4</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="5" tabindex="0" class="page-link">5</a></li>
+                                        <li class="paginate_button page-item "><a href="#" aria-controls="data-table-default" data-dt-idx="6" tabindex="0" class="page-link">6</a></li>
+                                        <li class="paginate_button page-item next" id="data-table-default_next"><a href="#" aria-controls="data-table-default" data-dt-idx="7" tabindex="0" class="page-link">Next</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div-->
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+  
+<!-- Модальное окно -->
+<div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="myModalLabel">Information</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table data-pagination-parts="pageInfoShort" id="labels"></table> 
+                <!--div class="container-fluid"></div-->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                <!--button type="button" class="btn btn-primary">Сохранить изменения</button-->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
+<script type="text/javascript" src="/assets/js/jquery/jquery-dateformat.min.js"></script>
+<script type="text/javascript">
+
+    updates.alerts = [];
+
+    function loadAlerts(url) {
+
+        $.ajax({
+            url: "/api/v1/alerts",
+            beforeSend: function(request) {
+                request.setRequestHeader("X-Custom-URL", url);
+            }
+        }).done(function(jsn) {
+            updates.alerts = jsn.data.alerts;
+
+            var nAlerts = [];
+
+            $.each(jsn.data.alerts, function(key, value) {
+                var nowTime = new Date()
+                var scrapeTime = new Date(value.lastScrape);
+
+                nAlerts.push({
+                    id:         key,
+                    state:      '<label class="label label-'+value.state+'">'+value.state+'</label>',
+                    value:      value.value,
+                    alertname:  value.labels.alertname || '-',
+                    alertgroup: value.labels.alertgroup || '-',
+                    node:       '<span class="white-space:nowrap;">'+(value.labels.node || value.labels.host || '-')+'</span>',
+                    startsAt:   $.format.date(value.activeAt, 'dd/MM/yyyy HH:mm:ss') || '-',
+                    summary:    value.annotations.summary || '-',
+                });
+
+            });
+
+            nAlerts.sort(
+                function(a, b){
+                    if (a.alertname != b.alertname) {
+                        return (a.alertname > b.alertname) ? 1 : -1;
+                    }
+                    return (a.alertgroup > b.alertgroup) ? 1 : -1;
+                }
+            );
+
+            var currentPos = $('#alerts').position().top < 0 ? $('#alerts').position().top * -1 + 43 : 0;
+            $('#alerts').bootstrapTable('load', nAlerts);
+            $('div[class="fixed-table-body"]').scrollTop(currentPos);
+        });
+    }
+
+    $(function() {
+        var path = decodeURIComponent(window.location.pathname);
+
+        $('#myModal button').on('click', function () {
+            $('#myModal').modal('hide');
+        });
+
+        $('#labels').bootstrapTable({
+            pagination: false,
+            search: false,
+            classes: "table table-responsive-sd table-sd",
+            columns: [
+                { title: "Label", field: "label", width: 200 },
+                { title: "Value", field: "value" }
+            ]
+        });
+
+        $('#alerts').bootstrapTable({
+            pagination: true,
+            search: true,
+            classes: "table table-responsive-sd table-sd",
+            pageSize: 1000,
+            height: 900,
+            columns: [
+                { title: "State", field: "state", width: 100 },
+                { title: "Value", field: "value", width: 100 },
+                { title: "Alertname", field: "alertname", width: 250 },
+                { title: "Alertgroup", field: "alertgroup", width: 200 },
+                { title: "StartsAt", field: "startsAt", width: 140 },
+                { title: "Summary", field: "summary" }
+            ],
+            onClickRow: function (e) { 
+                var alert = updates.alerts[e.id];
+                var labels = [];
+
+                $('div[class="container-fluid"]').empty();
+                $.each(alert.labels, function(key, value) {
+                    labels.push({ label: '<label class="label label-muted">'+key+'</label>', value: value });
+                });
+                $.each(alert.annotations, function(key, value) {
+                    if (value != ""){
+                        labels.push({ label: '<label class="label label-aqua">'+key+'</label>', value: value });
+                    }
+                });
+                if (alert.generatorURL) {
+                    labels.push({ label: '<label class="label label-aqua">generatorURL</label>', value: '<a href="'+alert.generatorURL+'" target="_blank" style="color: #fff;">'+alert.generatorURL+'</a>' });
+                }
+                
+                $('#labels').bootstrapTable('load', labels);
+                $('#myModal').modal('show');
+            }
+        });
+
+        if (typeof menu[window.location.pathname] !== 'undefined'){
+            $.each(menu[window.location.pathname]['options']['X-Custom-URL'], function(key, value) {
+                $('#urls').append($('<option>', { value: key, text: value }));
+            });
+        }
+
+        $('#urls').change(function() {
+            $('#alerts').bootstrapTable('load', []);
+            loadAlerts($("#urls option:selected").text());
+        });
+
+        updates.update10 = function(){
+            loadAlerts($("#urls option:selected").text());
+        }
+
+        loadAlerts($("#urls option:selected").text());
+    });
+
+ 
+</script>

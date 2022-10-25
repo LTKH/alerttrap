@@ -206,55 +206,30 @@
 <script type="text/javascript" src="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
 <script type="text/javascript">
 
-    var search = {};
-
     function loadRecords(url) {
-        var nRecords = [];
-
         $.ajax({
             url: "/api/v1/netmap/records",
             method: 'GET',
-            //data: search,
             beforeSend: function(request) {
                 request.setRequestHeader("X-Custom-URL", url);
             },
         }).done(function(jsn) {
-            $.each(jsn.data, function(key, value) {
 
-                if(typeof search["src_name"] !== 'undefined') {
-                    var src_name = new RegExp(search["src_name"]);
-                    if (!src_name.test(value['localAddr']['name'])) {
-                        return;
-                    }
-                }
-
-                var rs = (value['relation']['result'] == 0) ? 'ok' : 'firing';
-
-                nRecords.push({
-                    id:          value['id'],
-                    result:      '<label class="label label-' + rs + '">' + rs + '</label>',
-                    src_name:    value['localAddr']['name'],
-                    src_ip:      value['localAddr']['ip'],
-                    dst_name:    value['remoteAddr']['name'],
-                    dst_ip:      value['remoteAddr']['ip'],
-                    mode:        value['relation']['mode'],
-                    port:        value['relation']['port'],
-                    status:      value['options']['status'],
-                    active_time: value['options']['active_time'] || 0,
-                });
-
-            });
-
-            nRecords.sort(
+            jsn.data.sort(
                 function(a, b){
-                    if (a.active_time != b.active_time) {
-                        return (a.active_time < b.active_time) ? 1 : -1;
+                    if (a.options.active_time != b.options.active_time) {
+                        return (a.options.active_time < b.options.active_time) ? 1 : -1;
                     }
                     return (a.id >= b.id) ? 1 : -1;
                 }
             );
 
-            $('#records').bootstrapTable('load', nRecords);
+            $.each(jsn.data, function(key, value) {
+                var rs = (value['relation']['result'] == 0) ? 'ok' : 'firing';
+                jsn.data[key]['state'] = '<label class="label label-' + rs + '">' + rs + '</label>';
+            });
+
+            $('#records').bootstrapTable('load', jsn.data);
 
         });
     }
@@ -268,23 +243,25 @@
             height: 850,
             columns: [
                 { checkbox: true, width: 100 },
-                { title: "State", field: "result", width: 100 },
-                { title: "Source Name", field: "src_name", width: 250 },
-                { title: "Source IP", field: "src_ip", width: 200 },
-                { title: "Destination Name", field: "dst_name", width: 250 },
-                { title: "Destination IP", field: "dst_ip", width: 200 },
-                { title: "Mode", field: "mode", width: 100 },
-                { title: "Port", field: "port", width: 100 },
-                { title: "Status", field: "status" }
+                { title: "State", field: "state", width: 100 },
+                { title: "Source Name", field: "localAddr.name", width: 250 },
+                { title: "Source IP", field: "localAddr.ip", width: 200 },
+                { title: "Destination Name", field: "remoteAddr.name", width: 250 },
+                { title: "Destination IP", field: "remoteAddr.ip", width: 200 },
+                { title: "Mode", field: "relation.mode", width: 100 },
+                { title: "Port", field: "relation.port", width: 100 },
+                { title: "Status", field: "options.status" }
             ],
             onClickRow: function (e) { 
-                $('#form #src_name').val("").val(e["src_name"]).prop('disabled', true);
-                $('#form #src_ip').val("").val(e["src_ip"]).prop('disabled', true);
-                $('#form #dst_name').val("").val(e["dst_name"]).prop('disabled', true);
-                $('#form #dst_ip').val("").val(e["dst_ip"]).prop('disabled', true);
-                $('#form #mode').val("").val(e["mode"]).prop('disabled', true);
-                $('#form #port').val("").val(e["port"]).prop('disabled', true);
-                $('#form #status').val("").val(e["status"]);
+                
+                $('#form #id').val(e.id);
+                $('#form #src_name').val("").val(e.localAddr.name).prop('disabled', true);
+                $('#form #src_ip').val("").val(e.localAddr.ip).prop('disabled', true);
+                $('#form #dst_name').val("").val(e.remoteAddr.name).prop('disabled', true);
+                $('#form #dst_ip').val("").val(e.remoteAddr.ip).prop('disabled', true);
+                $('#form #mode').val("").val(e.relation.mode).prop('disabled', true);
+                $('#form #port').val("").val(e.relation.port).prop('disabled', true);
+                $('#form #status').val("").val(e.options.status);
                 $("#form #error").html("");
 
                 $('#myModal').modal('show');
@@ -293,11 +270,14 @@
 
         $('#delete').on('click', function () {
             var ids = [];
+            var ins = [];
             var data = $('#records').bootstrapTable('getData');
+
             $('#records input:checkbox:checked').each(function(){
                 index = $(this).attr("data-index");
                 if (typeof index !== 'undefined') {
                     ids.push(data[index]["id"]);
+                    ins.push(index);
                 }
             });
 
@@ -310,14 +290,16 @@
                         request.setRequestHeader("X-Custom-URL", $("#urls option:selected").text());
                     },
                 }).done(function(jsn) {
-                    loadRecords($("#urls option:selected").text());
+                    $('#records').bootstrapTable('remove', { field: '$index', values: ins });
                 }).fail(function(jsn) { 
-                    //$("#error").html("Error: "+(jsn.responseJSON.error || ''));
+                    $("#error").html("Error: "+(jsn.responseJSON.error || ''));
                 });
             }
         });
 
         $('#add').on('click', function () {
+
+            $('#form #id').val("");
             $('#form #src_name').val("").prop('disabled', false);
             $('#form #src_ip').val("").prop('disabled', false);
             $('#form #dst_name').val("").prop('disabled', false);
@@ -331,22 +313,24 @@
         });
 
         $('#save').on('click', function () {
-            data = {};
-            data["localAddr"] = {};
-            data["localAddr"]["name"] = $('#form #src_name').val();
-            data["localAddr"]["ip"] = $('#form #src_ip').val();
-            data["remoteAddr"] = {};
-            data["remoteAddr"]["name"] = $('#form #dst_name').val();
-            data["remoteAddr"]["ip"] = $('#form #dst_ip').val();
-            data["relation"] = {};
-            data["relation"]["mode"] = $('#form #mode').val();
-            data["relation"]["port"] = parseInt($('#form #port').val());
-            data["options"] = {};
-            data["options"]["status"] = $('#form #status').val();
+            var id = $('#form #id').val();
+
+            var row = {};
+            row.localAddr = {};
+            row.localAddr.name = $('#form #src_name').val();
+            row.localAddr.ip = $('#form #src_ip').val();
+            row.remoteAddr = {};
+            row.remoteAddr.name = $('#form #dst_name').val();
+            row.remoteAddr.ip = $('#form #dst_ip').val();
+            row.relation = {};
+            row.relation.mode = $('#form #mode').val();
+            row.relation.port = parseInt($('#form #port').val());
+            row.options = {};
+            row.options.status = $('#form #status').val();
 
             $.ajax({
                 url: "/api/v1/netmap/records",
-                data: JSON.stringify({ data: [data] }),
+                data: JSON.stringify({ data: [row] }),
                 method: 'POST',
                 async: false,
                 beforeSend: function(request) {
@@ -354,7 +338,16 @@
                 },
             }).done(function(jsn) {
                 $('#myModal').modal('hide');
-                loadRecords($("#urls option:selected").text());
+                if (id != "") {
+                    console.log(id);
+                    //$('#records').bootstrapTable('remove', {field: 'id', values: ids}).
+                    //$('#records').bootstrapTable('updateRow', { index: 1, row: data });
+                    $('#records').bootstrapTable('updateByUniqueId', {id: id, row: row});
+                } else {
+                    row.state = '<label class="label label-ok">ok</label>';
+                    $('#records').bootstrapTable('append', row);
+                    $('#records').bootstrapTable('scrollTo', 'bottom');
+                }
             }).fail(function(jsn) { 
                 $("#error").html("Error: "+(jsn.responseJSON.error || ''));
             });

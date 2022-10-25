@@ -17,7 +17,7 @@
                     <div id="data-table-default_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">
                         <div class="row">
                             <div class="col-sm-12 text-nowrap">
-                                <div id="toolbar" class="float-left" style="width: 400px; margin-top: 10px;">
+                                <div id="toolbar" class="float-left m-t-10" style="width: 400px;">
                                     <select id="urls" class="custom-select-sm form-control"></select>
                                 </div>
                                 <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfo" id="alerts">
@@ -107,7 +107,9 @@
                     }
                 );
 
+                var currentPos = $('#alerts').position().top < 0 ? $('#alerts').position().top * -1 + 43 : 0;
                 $('#alerts').bootstrapTable('load', nAlerts);
+                $('div[class="fixed-table-body"]').scrollTop(currentPos);
             }
 
 
@@ -124,7 +126,7 @@
             search: true,
             classes: "table table-responsive-sd table-sd",
             pageSize: 1000,
-            height: 850,
+            height: 900,
             columns: [
                 { title: "State", field: "state", width: 100 },
                 { title: "AlertName", field: "alertname", width: 250 },
@@ -176,6 +178,10 @@
             $('#alerts').bootstrapTable('load', []);
             loadAlerts($("#urls option:selected").text());
         });
+
+        updates.update10 = function(){
+            loadAlerts($("#urls option:selected").text());
+        }
 
         loadAlerts($("#urls option:selected").text());
 

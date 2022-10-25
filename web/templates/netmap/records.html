@@ -4,86 +4,6 @@
 
     <div class="col-xl">
 
-        <div class="panel panel-inverse">
-            <!-- begin panel-heading -->
-            <div class="panel-heading bg-dark text-silver">
-                <h4 class="panel-title">Search</h4>
-                <div class="panel-heading-btn">
-                    <a href="javascript:;" class="btn btn-xs btn-icon btn-circle btn-warning" data-click="panel-collapse"><i class="fa fa-minus"></i></a>
-                </div>
-            </div>
-            <!-- end panel-heading -->
-            <!-- begin panel-body -->
-            <div id="search" class="panel-body text-silver" style="display:none;">
-                <div class="row row-space-30">
-                    <!-- begin col-4 -->
-                    <div class="col-xl-4">
-                        <div class="m-b-2 text-silver f-w-600 f-s-16">Source</div>
-                        <div class="form-group row m-b-15">
-                            <label class="col-form-label col-md-3">Name</label>
-                            <div class="col-md-9 input-group-sm">
-                                <input id="src_name" type="text" class="form-control m-b-5" placeholder="Source Name">
-                                <small class="f-s-12 text-grey-darker">can use regular expressions</small>
-                            </div>
-                        </div>
-                        <div class="form-group row m-b-15">
-                            <label class="col-form-label col-md-3">IP</label>
-                            <div class="col-md-9 input-group-sm">
-                                <input id="src_ip" type="text" class="form-control m-b-5" placeholder="Source IP">
-                                <small class="f-s-12 text-grey-darker">can use regular expressions</small>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- end col-4 -->
-                    <!-- begin col-4 -->
-                    <div class="col-xl-4">
-                        <div class="m-b-2 text-silver f-w-600 f-s-16">Destination</div>
-                        <div class="form-group row m-b-15">
-                            <label class="col-form-label col-md-3">Name</label>
-                            <div class="col-md-9 input-group-sm">
-                                <input id="dst_name" type="text" class="form-control m-b-5" placeholder="Destination Name">
-                                <small class="f-s-12 text-grey-darker">can use regular expressions</small>
-                            </div>
-                        </div>
-                        <div class="form-group row m-b-15">
-                            <label class="col-form-label col-md-3">IP</label>
-                            <div class="col-md-9 input-group-sm">
-                                <input id="dst_ip" type="text" class="form-control m-b-5" placeholder="Destination IP">
-                                <small class="f-s-12 text-grey-darker">can use regular expressions</small>
-                            </div>
-                        </div>
-                        <!-- end row -->
-                    </div>
-                    <!-- end col-4 -->
-                    <!-- begin col-4 -->
-                    <div class="col-xl-4">
-                        <div class="m-b-2 text-silver f-w-600 f-s-16">Relation</div>
-                        <div class="form-group row m-b-15">
-                            <label class="col-form-label col-md-3">Port</label>
-                            <div class="col-md-9 input-group-sm">
-                                <input id="port" type="text" class="form-control m-b-5" placeholder="Relation Port">
-                                <small class="f-s-12 text-grey-darker">&nbsp;</small>
-                            </div>
-                        </div>
-                        <div class="form-group row m-b-15">
-                            <label class="col-form-label col-md-3">Mode</label>
-                            <div class="col-md-9 input-group-sm">
-                                <input id="mode" type="text" class="form-control m-b-5" placeholder="Relation Mode">
-                                <small class="f-s-12 text-grey-darker">&nbsp;</small>
-                            </div>
-                        </div>
-                        <!-- end row -->
-                    </div>
-                    <!-- end col-4 -->
-                </div>
-                <!-- end row -->
-                <div class="float-right">
-                    <button id="start" type="submit" class="btn btn-sm btn-primary m-r-5">Search</button>
-                </div>
-            </div>
-            <!-- end panel-body -->
-        </div>
-
         <div class="card border-0 mb-3 overflow-hidden bg-dark text-silver">
 
             <div class="card-body">
@@ -196,7 +116,7 @@
             search: true,
             classes: "table table-responsive-sd table-sd",
             pageSize: 1000,
-            height: 850,
+            height: 900,
             columns: [
                 { title: "State", field: "result", width: 100 },
                 { title: "Source Name", field: "src_name", width: 250 },
@@ -208,17 +128,6 @@
                 { title: "Active Time", field: "active_time" },
                 { title: "Status", field: "status" }
             ]
-        });
-
-        $('#search').on('click', function(event) {
-            data = {};
-            $.each(['src_name','src_ip','dst_name','dst_ip','port','mode'], function(key, value) {
-                if ($('#'+value).val() != "") {
-                    data[value] = $('#'+value).val();
-                }
-            });
-            $('#records').bootstrapTable('load', []);
-            loadRecords($("#urls option:selected").text(), data);
         });
 
         if (typeof menu[window.location.pathname] !== 'undefined'){

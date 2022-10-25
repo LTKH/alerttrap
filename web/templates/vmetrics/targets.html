@@ -19,6 +19,9 @@
                         </div-->
                         <div class="row">
                             <div class="col-sm-12">
+                                <div id="toolbar" class="float-left m-t-10" style="width: 400px;">
+                                    <select id="urls" class="custom-select-sm form-control"></select>
+                                </div>
                                 <table class="table table-responsive-sd table-sd table-hover" data-pagination-parts="pageInfoShort" id="targets">
                                     <thead></thead>
                                     <tbody></tbody>
@@ -63,43 +66,41 @@
 
     updates.targets = [];
 
-    updates.update10 = function(){
+    function loadTargets(url) {
 
-        if (typeof menu[window.location.pathname] !== 'undefined'){
+        $.ajax({
+            url: "/api/v1/targets",
+            beforeSend: function(request) {
+                request.setRequestHeader("X-Custom-URL", url);
+            },
+            success: function(jsn) {
+                updates.targets = jsn.data.activeTargets;
 
-            $.ajax({
-                url: "/api/v1/targets",
-                beforeSend: function(request) {
-                    request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['X-Custom-URL']);
-                },
-                success: function(jsn) {
-                    updates.targets = jsn.data.activeTargets;
+                var nTargets = [];
 
-                    var nTargets = [];
+                $.each(jsn.data.activeTargets, function(key, value) {
+                    var nowTime = new Date()
+                    var scrapeTime = new Date(value.lastScrape);
 
-                    $.each(jsn.data.activeTargets, function(key, value) {
-                        var nowTime = new Date()
-                        var scrapeTime = new Date(value.lastScrape);
-
-                        nTargets.push({
-                            id:                 key,
-                            state:              '<label class="label label-'+value.health+'">'+value.health+'</label>',
-                            scrapeUrl:          value.scrapeUrl,
-                            lastError:          '<font color="red">'+value.lastError+'<font>',
-                            job:                value.discoveredLabels.job,
-                            lastScrape:         ((nowTime - scrapeTime) / 1000).toFixed(2) + 's ago',
-                            lastScrapeDuration: (value.lastScrapeDuration * 1000).toFixed(2) + 'ms',
-                        });
-
+                    nTargets.push({
+                        id:                 key,
+                        state:              '<label class="label label-'+value.health+'">'+value.health+'</label>',
+                        scrapeUrl:          value.scrapeUrl,
+                        lastError:          '<font color="red">'+value.lastError+'<font>',
+                        job:                value.discoveredLabels.job,
+                        lastScrape:         ((nowTime - scrapeTime) / 1000).toFixed(2) + 's ago',
+                        lastScrapeDuration: (value.lastScrapeDuration * 1000).toFixed(2) + 'ms',
                     });
 
-                    $('#targets').bootstrapTable('load', nTargets);
-                }
+                });
+
+                var currentPos = $('#targets').position().top < 0 ? $('#targets').position().top * -1 + 43 : 0;
+                $('#targets').bootstrapTable('load', nTargets);
+                $('div[class="fixed-table-body"]').scrollTop(currentPos);
+            }
 
 
-            });
-
-        }
+        });
 
     }
 
@@ -112,7 +113,8 @@
             pagination: true,
             search: true,
             classes: "table table-responsive-sm table-sm",
-            pageSize: 100,
+            pageSize: 1000,
+            height: 900,
             columns: [
                 { title: "State", field: "state", width: 50 },
                 { title: "Endpoint", field: "scrapeUrl", width: 250 },
@@ -153,6 +155,21 @@
             ]
         });
 
-        updates.update10();
+        if (typeof menu[window.location.pathname] !== 'undefined'){
+            $.each(menu[window.location.pathname]['options']['X-Custom-URL'], function(key, value) {
+                $('#urls').append($('<option>', { value: key, text: value }));
+            });
+        }
+
+        $('#urls').change(function() {
+            $('#targets').bootstrapTable('load', []);
+            loadTargets($("#urls option:selected").text());
+        });
+
+        updates.update10 = function(){
+            loadTargets($("#urls option:selected").text());
+        }
+
+        loadTargets($("#urls option:selected").text());
     });
 </script>

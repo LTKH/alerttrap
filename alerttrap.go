@@ -24,7 +24,7 @@ var (
             Name:      "cnt_alerts",
             Help:      "",
         },
-        []string{"state","alertname"},
+        []string{"alertname","state","url"},
     )
 )
 
@@ -94,15 +94,20 @@ func main() {
         for {
             lmap := map[string]int{}
             for _, a := range v1.CacheAlerts.Items() { 
-                alertname := "---"
+                larr := []string{}
                 if val, ok := a.Labels["alertname"]; ok {
-                    alertname = val.(string)
+                    larr = append(larr, val.(string))
+                } else {
+                    larr = append(larr, "")
                 }
-                lmap[a.State+"|"+alertname] ++
+                larr = append(larr, a.State)
+                larr = append(larr, a.GeneratorURL)
+
+                lmap[strings.Join(larr, "|")] ++
             }
             for key, val := range lmap {
                 spl := strings.Split(key, "|")
-                cntAlerts.With(prometheus.Labels{ "state": spl[0], "alertname": spl[1] }).Set(float64(val))
+                cntAlerts.With(prometheus.Labels{ "alertname": spl[0], "state": spl[1], "url": spl[2] }).Set(float64(val))
             }
             time.Sleep(60 * time.Second)
         }

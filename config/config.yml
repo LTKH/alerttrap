@@ -49,12 +49,11 @@ menu:
       - id: "targets"
         name: "Targets"
         options:
-          X-Custom-URL: "http://localhost:8429"
+          X-Custom-URL: ["http://localhost:8429"]
       - id: "alerts"
         name: "Alerts"
-        href: "/api/v1/alerts"
         options:         
-          X-Custom-URL: "http://localhost:8880"
+          X-Custom-URL: ["http://localhost:8880"]
       #- id: "testing"
       #  name: "Testing"
       #  options:         
@@ -92,7 +91,9 @@ templates:
   - url_matcher: "^/vmetrics/targets"
     target_page: "/templates/vmetrics/targets.html"
   - url_matcher: "^/vmetrics/alerts"
-    target_page: "/templates/alerts/alerts.html"
+    target_page: "/templates/vmetrics/alerts.html"
+  - url_matcher: "^/vmetrics/testing"
+    target_page: "/templates/vmetrics/testing.html"
   - url_matcher: "^/alertmanager/alerts"
     target_page: "/templates/alertmanager/alerts.html"
   - url_matcher: "^/netmap/records.*"
@@ -103,12 +104,6 @@ templates:
     target_page: "/templates/alerts/alerts.html"
   - url_matcher: "^/monitoring.*"
     target_page: "/templates/alerts/alerts.html"
-  - url_matcher: "^/vmetrics/testing"
-    target_page: "/templates/vmetrics/testing.html"
-  - url_matcher: "^/prometheus/[^/]+/targets"
-    target_page: "/templates/vmetrics/targets.html"
-  - url_matcher: "^/prometheus/[^/]+/alerts"
-    target_page: "/templates/vmetrics/alerts.html"
   - url_matcher: "^/.*"
     target_page: "/templates/main.html"
 
