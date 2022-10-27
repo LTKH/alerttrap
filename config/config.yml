@@ -75,11 +75,11 @@ menu:
       - id: "records"
         name: "Records"
         options:
-          X-Custom-URL: ["http://localhost:8082"]
+          X-Custom-URL: ["http://localhost:8084"]
       - id: "manage"
         name: "Manage"
         options:
-          X-Custom-URL: ["http://localhost:8082"]
+          X-Custom-URL: ["http://localhost:8084"]
 
   - id: "etcdkeeper"
     name: "Etcdkeeper"

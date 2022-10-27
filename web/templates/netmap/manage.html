@@ -61,14 +61,14 @@
                             <label class="col-form-label col-md-3">Port</label>
                             <div class="col-md-9 input-group-sm">
                                 <input id="port" type="text" class="form-control m-b-5" placeholder="Relation Port">
-                                <small class="f-s-12 text-grey-darker">&nbsp;</small>
+                                <small class="f-s-12 text-grey-darker">can use regular expressions</small>
                             </div>
                         </div>
                         <div class="form-group row m-b-15">
                             <label class="col-form-label col-md-3">Mode</label>
                             <div class="col-md-9 input-group-sm">
                                 <input id="mode" type="text" class="form-control m-b-5" placeholder="Relation Mode">
-                                <small class="f-s-12 text-grey-darker">&nbsp;</small>
+                                <small class="f-s-12 text-grey-darker">can use regular expressions</small>
                             </div>
                         </div>
                         <!-- end row -->
@@ -95,13 +95,16 @@
                             <button id="add" type="button" class="btn btn-warning m-l-10">
                                 <i class="fas fa-arrow-down fa-fw mx-1 opacity-5"></i> Add
                             </button>
+                            <button id="update" type="button" class="btn btn-primary m-l-10">
+                                <i class="fas fa-sync fa-fw mx-1 opacity-5"></i> Update
+                            </button>
                         </div>
                         <div class="row">
                             <div class="col-sm-12">
                                 <div id="toolbar" class="float-left m-t-10" style="width: 400px;">
                                     <select id="urls" class="custom-select-sm form-control"></select>
                                 </div>
-                                <table id="records" class="table table-responsive-sm table-sm table-hover" data-pagination-parts="pageInfo">
+                                <table id="records" class="table table-responsive-sd table-sd">
                                     <thead></thead>
                                 </table>
                             </div>
@@ -193,7 +196,7 @@
                     </tbody>
                 </table> 
                 <div id="error" style="margin-top: 10px; color: rgb(227, 80, 80)"></div>
-                <input id="id" type="hidden"/>
+                <input id="index" type="hidden"/>
             </div>
             <div class="modal-footer">
                 <button id="close" type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
@@ -237,6 +240,7 @@
     $(function() {
         $('#records').bootstrapTable({
             pagination: true,
+            paginationParts: ["pageInfo","pageList"],
             search: true,
             classes: "table table-responsive-sd table-sd",
             pageSize: 1000,
@@ -251,21 +255,22 @@
                 { title: "Mode", field: "relation.mode", width: 100 },
                 { title: "Port", field: "relation.port", width: 100 },
                 { title: "Status", field: "options.status" }
-            ],
-            onClickRow: function (e) { 
-                
-                $('#form #id').val(e.id);
-                $('#form #src_name').val("").val(e.localAddr.name).prop('disabled', true);
-                $('#form #src_ip').val("").val(e.localAddr.ip).prop('disabled', true);
-                $('#form #dst_name').val("").val(e.remoteAddr.name).prop('disabled', true);
-                $('#form #dst_ip').val("").val(e.remoteAddr.ip).prop('disabled', true);
-                $('#form #mode').val("").val(e.relation.mode).prop('disabled', true);
-                $('#form #port').val("").val(e.relation.port).prop('disabled', true);
-                $('#form #status').val("").val(e.options.status);
-                $("#form #error").html("");
+            ]
+        });
 
-                $('#myModal').modal('show');
-            }
+        $('#records').on('click-row.bs.table', function (e, row, $element) {
+
+            $('#form #index').val($element.index());
+            $('#form #src_name').val("").val(row.localAddr.name).prop('disabled', true);
+            $('#form #src_ip').val("").val(row.localAddr.ip).prop('disabled', true);
+            $('#form #dst_name').val("").val(row.remoteAddr.name).prop('disabled', true);
+            $('#form #dst_ip').val("").val(row.remoteAddr.ip).prop('disabled', true);
+            $('#form #mode').val("").val(row.relation.mode).prop('disabled', true);
+            $('#form #port').val("").val(row.relation.port).prop('disabled', true);
+            $('#form #status').val("").val(row.options.status);
+            $("#form #error").html("");
+            $('#myModal').modal('show');
+
         });
 
         $('#delete').on('click', function () {
@@ -299,7 +304,7 @@
 
         $('#add').on('click', function () {
 
-            $('#form #id').val("");
+            $('#form #index').val("");
             $('#form #src_name').val("").prop('disabled', false);
             $('#form #src_ip').val("").prop('disabled', false);
             $('#form #dst_name').val("").prop('disabled', false);
@@ -313,7 +318,6 @@
         });
 
         $('#save').on('click', function () {
-            var id = $('#form #id').val();
 
             var row = {};
             row.localAddr = {};
@@ -337,17 +341,25 @@
                     request.setRequestHeader("X-Custom-URL", $("#urls option:selected").text());
                 },
             }).done(function(jsn) {
-                $('#myModal').modal('hide');
-                if (id != "") {
-                    console.log(id);
-                    //$('#records').bootstrapTable('remove', {field: 'id', values: ids}).
-                    //$('#records').bootstrapTable('updateRow', { index: 1, row: data });
-                    $('#records').bootstrapTable('updateByUniqueId', {id: id, row: row});
+                var index = $('#form #index').val();
+
+                if (index != "") {
+                    $('#records').bootstrapTable('updateRow', { index: index, row: row });
                 } else {
-                    row.state = '<label class="label label-ok">ok</label>';
-                    $('#records').bootstrapTable('append', row);
-                    $('#records').bootstrapTable('scrollTo', 'bottom');
+                    if (typeof jsn["data"] !== 'undefined'){
+                        $.each(jsn.data, function(key, value) {
+                            row.id = value;
+                            row.state = '<label class="label label-ok">ok</label>';
+                            $('#records').bootstrapTable('append', row);
+                            $('#records').bootstrapTable('scrollTo', 'bottom');
+                            return;
+                        });
+                    } else {
+                        // Old version
+                        loadRecords($("#urls option:selected").text());
+                    }
                 }
+                $('#myModal').modal('hide');
             }).fail(function(jsn) { 
                 $("#error").html("Error: "+(jsn.responseJSON.error || ''));
             });
@@ -355,11 +367,17 @@
         });
 
         $('#search #start').on('click', function(event) {
-            $.each(['src_name','src_ip','dst_name','dst_ip','port','mode'], function(key, value) {
-                search[value] = $('#search #'+value).val();
+            $('#records').bootstrapTable('filterBy', {}, {
+                'filterAlgorithm': (row, filters) => {
+                    if ($('#search #src_name').val() != "" && row.localAddr.name.search('^'+$('#search #src_name').val()+'$') < 0) return 0;
+                    if ($('#search #src_ip').val() != "" && row.localAddr.ip.search('^'+$('#search #src_ip').val()+'$') < 0) return 0;
+                    if ($('#search #dst_name').val() != "" && row.remoteAddr.name.search('^'+$('#search #dst_name').val()+'$') < 0) return 0;
+                    if ($('#search #dst_ip').val() != "" && row.remoteAddr.ip.search('^'+$('#search #dst_ip').val()+'$') < 0) return 0;
+                    if ($('#search #mode').val() !== "" && row.relation.mode.search('^'+$('#search #mode').val()+'$') < 0) return 0;
+                    if ($('#search #port').val() != "" && row.relation.port.toString().search('^'+$('#search #port').val()+'$') < 0) return 0;
+                    return 1;
+                }
             });
-            $('#records').bootstrapTable('load', []);
-            loadRecords($("#urls option:selected").text());
         });
 
         if (typeof menu[window.location.pathname] !== 'undefined'){
@@ -369,6 +387,11 @@
         }
 
         $('#urls').change(function() {
+            $('#records').bootstrapTable('load', []);
+            loadRecords($("#urls option:selected").text());
+        });
+
+        $('#update').on('click', function () {
             $('#records').bootstrapTable('load', []);
             loadRecords($("#urls option:selected").text());
         });

@@ -21,10 +21,10 @@ var (
     cntAlerts = prometheus.NewGaugeVec(
         prometheus.GaugeOpts{
             Namespace: "alerttrap",
-            Name:      "cnt_alerts",
+            Name:      "alerts",
             Help:      "",
         },
-        []string{"alertname","state","url"},
+        []string{"state","alertname"},
     )
 )
 
@@ -94,20 +94,15 @@ func main() {
         for {
             lmap := map[string]int{}
             for _, a := range v1.CacheAlerts.Items() { 
-                larr := []string{}
+                alertname := "---"
                 if val, ok := a.Labels["alertname"]; ok {
-                    larr = append(larr, val.(string))
-                } else {
-                    larr = append(larr, "")
+                    alertname = val.(string)
                 }
-                larr = append(larr, a.State)
-                larr = append(larr, a.GeneratorURL)
-
-                lmap[strings.Join(larr, "|")] ++
+                lmap[a.State+"|"+alertname] ++
             }
             for key, val := range lmap {
                 spl := strings.Split(key, "|")
-                cntAlerts.With(prometheus.Labels{ "alertname": spl[0], "state": spl[1], "url": spl[2] }).Set(float64(val))
+                cntAlerts.With(prometheus.Labels{ "state": spl[0], "alertname": spl[1] }).Set(float64(val))
             }
             time.Sleep(60 * time.Second)
         }
