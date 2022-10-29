@@ -262,14 +262,16 @@ func (api *Api) WsEndpoint(w http.ResponseWriter, r *http.Request) {
 
     for {
 
-        data := &Change{}
+        data := []cache.Alert{}
 
         for i := 0; i < len(changes); i++ {
             select {
                 case id := <- changes:
-                    alert, ok := CacheAlerts.Get(id)
-                    if ok {
-                        data.Alerts["test"] = append(data.Alerts["test"], alert)
+                    if alert, ok := CacheAlerts.Get(id); ok {
+                        //if _, found := data.Alerts["test"]; !found {
+                        //    data.Alerts["test"] := []cache.Alert{}
+                        //}
+                        data = append(data, alert)
                     }
                 default:
                     continue

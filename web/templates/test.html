@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+</head>
+
+<body style="background-color: #1a2229; color: white;">
+    <div id="test"></div>
+</body>
+
+<script>
+    function connectSocket() {
+        ws = new WebSocket('ws://localhost:8081/api/v1/ws');
+
+        ws.onopen = function() {
+            console.log('onopen');
+        };
+
+        ws.onmessage = function(evt) {
+            //var json = $.parseJSON(evt.data);
+
+            //updateWidget('secondary', json.data.requestTotal);
+            //updateWidget('resolved', json.data.requestSuccess);
+            //updateWidget('firing', json.data.requestErrors);
+            //updateWidget('warning', json.data.requestSpeed * json.data.packetSize);
+
+            //if (json.data.threads > 0) {
+            //    $('#start').text('Stop');
+            //    $('#start').attr('class', 'btn btn-secondary btn-sm btn-primary m-r-5');
+            //} else {
+            //    $('#start').text('Start');
+            //    $('#start').attr('class', 'btn btn-sm btn-primary m-r-5');
+            //}
+            console.log('test');
+            //document.getElementById("test").innerHTML = evt.data;
+        };
+
+        ws.onclose = function(e) {
+            setTimeout(function() {
+                console.log('onclose');
+                connectSocket();
+            }, 1000);
+        };
+    }
+
+    //$(function() {
+        connectSocket();
+    //});
+</script>
