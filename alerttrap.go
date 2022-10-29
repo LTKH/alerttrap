@@ -111,7 +111,7 @@ func main() {
     // Enabled listen port
     http.Handle("/metrics", promhttp.Handler())
     http.HandleFunc("/-/healthy", apiV1.ApiHealthy)
-    http.HandleFunc("/api/v1/sync", apiV1.ApiSync)
+    http.HandleFunc("/api/v1/ws", apiV1.WsEndpoint)
     http.HandleFunc("/api/v1/auth", apiV1.ApiAuth)
     http.HandleFunc("/api/v1/menu", apiV1.ApiMenu)
     http.HandleFunc("/api/v1/tmpl", apiV1.ApiTmpl)

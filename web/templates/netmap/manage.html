@@ -104,7 +104,7 @@
                                 <div id="toolbar" class="float-left m-t-10" style="width: 400px;">
                                     <select id="urls" class="custom-select-sm form-control"></select>
                                 </div>
-                                <table id="records" class="table table-responsive-sd table-sd">
+                                <table id="records" class="table table-responsive-sd table-sd table-hover">
                                     <thead></thead>
                                 </table>
                             </div>
@@ -196,7 +196,7 @@
                     </tbody>
                 </table> 
                 <div id="error" style="margin-top: 10px; color: rgb(227, 80, 80)"></div>
-                <input id="index" type="hidden"/>
+                <input id="id" type="hidden"/>
             </div>
             <div class="modal-footer">
                 <button id="close" type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
@@ -220,10 +220,13 @@
 
             jsn.data.sort(
                 function(a, b){
-                    if (a.options.active_time != b.options.active_time) {
-                        return (a.options.active_time < b.options.active_time) ? 1 : -1;
+                    if (a.localAddr.name != b.localAddr.name) {
+                        return (a.localAddr.name > b.localAddr.name) ? 1 : -1;
                     }
-                    return (a.id >= b.id) ? 1 : -1;
+                    if (a.remoteAddr.name != b.remoteAddr.name) {
+                        return (a.remoteAddr.name > b.remoteAddr.name) ? 1 : -1;
+                    }
+                    return (a.relation.port >= b.relation.port) ? 1 : -1;
                 }
             );
 
@@ -233,20 +236,20 @@
             });
 
             $('#records').bootstrapTable('load', jsn.data);
-
         });
     }
 
     $(function() {
         $('#records').bootstrapTable({
             pagination: true,
-            paginationParts: ["pageInfo","pageList"],
+            paginationParts: ["pageInfo"],
             search: true,
             classes: "table table-responsive-sd table-sd",
             pageSize: 1000,
             height: 850,
             columns: [
                 { checkbox: true, width: 100 },
+                //{ title: "id", field: "id", width: 100 },
                 { title: "State", field: "state", width: 100 },
                 { title: "Source Name", field: "localAddr.name", width: 250 },
                 { title: "Source IP", field: "localAddr.ip", width: 200 },
@@ -260,7 +263,7 @@
 
         $('#records').on('click-row.bs.table', function (e, row, $element) {
 
-            $('#form #index').val($element.index());
+            $('#form #id').val(row.id);
             $('#form #src_name').val("").val(row.localAddr.name).prop('disabled', true);
             $('#form #src_ip').val("").val(row.localAddr.ip).prop('disabled', true);
             $('#form #dst_name').val("").val(row.remoteAddr.name).prop('disabled', true);
@@ -275,17 +278,15 @@
 
         $('#delete').on('click', function () {
             var ids = [];
-            var ins = [];
             var data = $('#records').bootstrapTable('getData');
 
             $('#records input:checkbox:checked').each(function(){
                 index = $(this).attr("data-index");
                 if (typeof index !== 'undefined') {
                     ids.push(data[index]["id"]);
-                    ins.push(index);
                 }
             });
-
+            
             if (ids.length > 0){
                 $.ajax({
                     url: "/api/v1/netmap/records",
@@ -295,7 +296,7 @@
                         request.setRequestHeader("X-Custom-URL", $("#urls option:selected").text());
                     },
                 }).done(function(jsn) {
-                    $('#records').bootstrapTable('remove', { field: '$index', values: ins });
+                    $('#records').bootstrapTable('remove', {field: 'id', values: ids});
                 }).fail(function(jsn) { 
                     $("#error").html("Error: "+(jsn.responseJSON.error || ''));
                 });
@@ -304,7 +305,7 @@
 
         $('#add').on('click', function () {
 
-            $('#form #index').val("");
+            $('#form #id').val("");
             $('#form #src_name').val("").prop('disabled', false);
             $('#form #src_ip').val("").prop('disabled', false);
             $('#form #dst_name').val("").prop('disabled', false);
@@ -320,6 +321,7 @@
         $('#save').on('click', function () {
 
             var row = {};
+            row.id = $('#form #id').val();
             row.localAddr = {};
             row.localAddr.name = $('#form #src_name').val();
             row.localAddr.ip = $('#form #src_ip').val();
@@ -341,10 +343,11 @@
                     request.setRequestHeader("X-Custom-URL", $("#urls option:selected").text());
                 },
             }).done(function(jsn) {
-                var index = $('#form #index').val();
-
-                if (index != "") {
-                    $('#records').bootstrapTable('updateRow', { index: index, row: row });
+                if (row.id != "") {
+                    row.state = '<label class="label label-ok">ok</label>';
+                    $('#records').bootstrapTable('remove', {field: 'id', values: [row.id]});
+                    $('#records').bootstrapTable('append', row);
+                    $('#records').bootstrapTable('scrollTo', 'bottom');
                 } else {
                     if (typeof jsn["data"] !== 'undefined'){
                         $.each(jsn.data, function(key, value) {

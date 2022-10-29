@@ -20,19 +20,31 @@ import (
     "github.com/ltkh/alerttrap/internal/cache"
     "github.com/ltkh/alerttrap/internal/config"
     "github.com/ltkh/alerttrap/internal/ldap"
+    "github.com/gorilla/websocket"
 )
 
 var (
     CacheAlerts *cache.Alerts = cache.NewCacheAlerts()
     CacheUsers *cache.Users = cache.NewCacheUsers()
-    reverseProxy *httputil.ReverseProxy
-	reverseProxyOnce sync.Once
     ConfigMenu = &Menu{}
     ConfigTmpl = &Tmpl{}
+    reverseProxy *httputil.ReverseProxy
+    reverseProxyOnce sync.Once
+
+    changes = make(chan string, 10000)
+    upgrader = websocket.Upgrader{
+        ReadBufferSize:  1024,
+        WriteBufferSize: 1024,
+        CheckOrigin:     func(r *http.Request) bool { return true },
+    }
 )
 
 type Api struct {
     Conf         *config.Config
+}
+
+type Change struct {
+    Alerts       map[string][]cache.Alert
 }
 
 type Menu struct {
@@ -239,6 +251,48 @@ func New(conf *config.Config) (*Api, error) {
     return &Api{ Conf: conf }, nil
 }
 
+func (api *Api) WsEndpoint(w http.ResponseWriter, r *http.Request) {
+    ws, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        log.Printf("[error] %v", err)
+        w.WriteHeader(500)
+        return
+    }
+    defer ws.Close()
+
+    for {
+
+        data := &Change{}
+
+        for i := 0; i < len(changes); i++ {
+            select {
+                case id := <- changes:
+                    alert, ok := CacheAlerts.Get(id)
+                    if ok {
+                        data.Alerts["test"] = append(data.Alerts["test"], alert)
+                    }
+                default:
+                    continue
+            }
+        }
+
+        jsn, err := json.Marshal(data)
+        if err != nil {
+            log.Printf("[error] %v", err)
+            w.WriteHeader(500)
+            return
+        }
+
+        if err := ws.WriteMessage(websocket.TextMessage, []byte(jsn)); err != nil {
+            log.Printf("[error] %v", err)
+            w.WriteHeader(500)
+            return
+        }
+
+        time.Sleep(100 * time.Millisecond)
+    }
+}
+
 func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
     //var alerts []string
 
@@ -289,27 +343,6 @@ func (api *Api) ApiTmpl(w http.ResponseWriter, r *http.Request) {
     w.Write(encodeResp(&Resp{Status:"success", Data:tmpl}))
 }
 
-func (api *Api) ApiSync(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "application/json")
-
-    var alert Alert
-
-    body, err := ioutil.ReadAll(r.Body)
-    if err != nil {
-        log.Printf("[error] %v - %s", err, r.URL.Path)
-        w.WriteHeader(400)
-        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-        return
-    }
-
-    if err := json.Unmarshal(body, &alert); err != nil {
-        log.Printf("[error] %v - %s", err, r.URL.Path)
-        w.WriteHeader(400)
-        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-        return
-    }
-}
-
 func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
     if r.Header.Get("X-Custom-URL") != "" {
         r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL"))
@@ -321,6 +354,17 @@ func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
         http.ServeFile(w, r, api.Conf.Global.WebDir+r.URL.Path)
     } else {
         http.ServeFile(w, r, api.Conf.Global.WebDir+"/index.html")
+    }
+}
+
+func addAlert(id string, alert cache.Alert) {
+
+    CacheAlerts.Set(id, alert)
+
+    select {
+        case changes <- id:
+        default:
+            log.Printf("[error] channel is not ready - %s", id)
     }
 }
 
@@ -378,8 +422,8 @@ func (api *Api) SetAlerts(data Alerts) {
             alert.Annotations    = value.Annotations
             alert.GeneratorURL   = value.GeneratorURL
             alert.Repeat         = alert.Repeat + 1
-    
-            CacheAlerts.Set(group_id, alert)
+
+            addAlert(group_id, alert)
     
         } else {
 
@@ -399,7 +443,7 @@ func (api *Api) SetAlerts(data Alerts) {
             alert.Repeat         = 1
             alert.ChangeSt       = 0
     
-            CacheAlerts.Set(group_id, alert)
+            addAlert(group_id, alert)
 
         }
 
