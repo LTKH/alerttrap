@@ -34,6 +34,11 @@ func NewCacheAlerts() *Alerts {
     return &cache
 }
 
+func (a *Alerts) Len() int {
+    
+    return len(a.items)
+}
+
 func (a *Alerts) Set(key string, value Alert) {
 
     a.Lock()

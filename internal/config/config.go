@@ -5,6 +5,9 @@ import (
     "path"
     "errors"
     "regexp"
+    "strings"
+    "strconv"
+    "net/url"
     "io/ioutil"
     "gopkg.in/yaml.v2"
 )
@@ -76,12 +79,21 @@ type Node struct {
     Class            string                  `yaml:"class" json:"class,omitempty"`
     Summary          string                  `yaml:"summary" json:"summary,omitempty"`
     Nodes            []*Node                 `yaml:"nodes" json:"nodes,omitempty"`
+    MatchRules       MatchingRule            `yaml:"-" json:"-"`
 }
 
 type ExtensionRule struct {
-    SourceMatchers  []string                 `yaml:"source_matchers"`
-    Labels          map[string]string        `yaml:"labels"`
-    Matchers        [][]Matcher
+    SourceMatchers   []string                 `yaml:"source_matchers"`
+    Labels           map[string]string        `yaml:"labels"`
+    Matchers         [][]Matcher
+}
+
+type MatchingRule struct {
+    IntArgs          map[string]int64
+    StrArgs          map[string]string
+    Matchers         [][]Matcher
+    State            map[string]int
+    Limit            int
 }
 
 // Matcher models the matching of a label.
@@ -116,8 +128,8 @@ func newMatcher(t, n, v string) (Matcher, error) {
     return m, nil
 }
 
-func ParseMetricSelector(input string) (m []Matcher, err error) {
-    var matchers []Matcher
+func ParseMetricSelector(input string) ([]Matcher, error) {
+    matchers := []Matcher{}
 
     lbls := ReLabels.FindAllStringSubmatch(input, -1)
     for _, l := range lbls {
@@ -133,11 +145,69 @@ func ParseMetricSelector(input string) (m []Matcher, err error) {
     return matchers, nil
 }
 
-func pathNodes(p string, nodes []*Node) {
-    for _, n := range nodes {
-        n.Path = path.Join(p, n.Id)
-        pathNodes(n.Path, n.Nodes)
+func ParseQueryValues(values map[string][]string) (MatchingRule, error) {
+    matchRule := MatchingRule{}
+
+    for k, v := range values {
+        switch k {
+            case "alert_id","group_id":
+                matchRule.StrArgs[k] = v[0]
+            case "state":
+                for _, st := range strings.Split(v[0], "|") {
+                    matchRule.State[st] = 1
+                }
+            case "position","repeat_min","repeat_max":
+                i, err := strconv.Atoi(v[0])
+                if err != nil {
+                    return matchRule, err
+                }
+                matchRule.IntArgs[k] = int64(i)
+            case "limit":
+                l, err := strconv.Atoi(v[0])
+                if err != nil {
+                    return matchRule, err
+                }
+                matchRule.Limit = l
+            case "match[]":
+                for _, s := range v {
+                    mrs, err := ParseMetricSelector(s)
+                    if err != nil {
+                        return matchRule, err
+                    }
+                    matchRule.Matchers = append(matchRule.Matchers, mrs)
+                }
+            default:
+                return matchRule, fmt.Errorf("executing query: invalid parameter '%v'", k)
+        }
     }
+
+    return matchRule, nil
+}
+
+func pathNodes(p string, nodes []*Node) error {
+    for _, n := range nodes {
+        u, err := url.Parse(n.Href)
+        if err != nil {
+            return err
+        }
+
+        m, err := url.ParseQuery(u.RawQuery)
+        if err != nil {
+            return err
+        }
+
+        n.MatchRules, err = ParseQueryValues(m)
+        if err != nil {
+            return err
+        }
+
+        n.Path = path.Join(p, n.Id)
+        if err := pathNodes(n.Path, n.Nodes); err != nil {
+            return err
+        }
+    }
+
+    return nil
 }
 
 func New(filename string) (*Config, error) {
@@ -153,7 +223,9 @@ func New(filename string) (*Config, error) {
         return cfg, err
     }
 
-    pathNodes("/", cfg.Menu)
+    if err := pathNodes("/", cfg.Menu); err != nil {
+        return cfg, err
+    }
 
     for _, ext := range cfg.ExtensionRules {
         for _, sm := range ext.SourceMatchers {

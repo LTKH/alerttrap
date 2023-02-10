@@ -33,6 +33,15 @@ global:
         email:        "mail" 
 
 menu:
+  - id: "monitoring"
+    name: "Monitoring"
+    class: "fa fa-cubes"
+    nodes:
+      - id: "alerts"
+        name: "Alerts"
+        href: '/api/v1/alerts?match[]={node=~"hostname-.*"}'
+        tags: ["alertgroup","node"]
+
   - id: "kubernetes"
     name: "Kubernetes"
     class: "fa fa-cubes"

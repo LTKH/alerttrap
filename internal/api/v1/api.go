@@ -14,7 +14,6 @@ import (
     "sync"
     "strconv"
     "errors"
-    "strings"
     "io/ioutil"
     "encoding/json"
     "github.com/ltkh/alerttrap/internal/cache"
@@ -44,7 +43,14 @@ type Api struct {
 }
 
 type Change struct {
-    Alerts       map[string][]cache.Alert
+    Timestamp    int64                     `json:"timestamp"`
+    Metrics      Metrics                   `json:"metrics"`
+    Alerts       map[string][]Alert        `json:"alerts"`
+}
+
+type Metrics struct {
+    AlertsCount  int                       `json:"alerttrap_alerts_count"`
+    ChanCount    int                       `json:"alerttrap_chan_count"`
 }
 
 type Menu struct {
@@ -146,7 +152,7 @@ func matches(m config.Matcher, s string) bool {
     return false
 }
 
-func checkMatches(labels map[string]interface{}, matchers [][]config.Matcher) bool {
+func checkLabels(labels map[string]interface{}, matchers [][]config.Matcher) bool {
     for _, mtch := range matchers {
         match := true
 
@@ -206,6 +212,48 @@ func authentication(cfg *config.DB, r *http.Request) (string, int, error) {
     return "", 401, errors.New("Unauthorized")
 }
 
+func getRules(nodes []*config.Node) (map[string]config.MatchingRule) {
+    rules := map[string]config.MatchingRule{}
+
+    for _, n := range nodes {
+        if n.Href != "" {
+            rules[n.Path] = n.MatchRules
+        }
+        for k, value := range getRules(n.Nodes) {
+            rules[k] = value
+        }
+    }
+
+    return rules
+}
+
+func checkMatch(a cache.Alert, r config.MatchingRule) bool {
+
+    if r.IntArgs["position"] != 0 && r.IntArgs["position"] > a.ActiveAt {
+        return false
+    }
+    if r.IntArgs["repeat_min"] != 0 && r.IntArgs["repeat_min"] > int64(a.Repeat) {
+        return false
+    }
+    if r.IntArgs["repeat_max"] != 0 && r.IntArgs["repeat_max"] < int64(a.Repeat) {
+        return false
+    }
+    if r.StrArgs["alert_id"] != "" && r.StrArgs["alert_id"] != a.AlertId {
+        return false
+    }
+    if r.StrArgs["group_id"] != "" && r.StrArgs["group_id"] != a.GroupId {
+        return false
+    }
+    if len(r.State) != 0 && r.State[a.State] == 0 {
+        return false
+    }
+    if len(r.Matchers) != 0 && !checkLabels(a.Labels, r.Matchers) {
+        return false
+    }
+
+    return true
+}
+
 func (m *Menu) Set(menu []*config.Node) error {
     m.Lock()
     defer m.Unlock()
@@ -252,6 +300,7 @@ func New(conf *config.Config) (*Api, error) {
 }
 
 func (api *Api) WsEndpoint(w http.ResponseWriter, r *http.Request) {
+
     ws, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
         log.Printf("[error] %v", err)
@@ -262,17 +311,46 @@ func (api *Api) WsEndpoint(w http.ResponseWriter, r *http.Request) {
 
     for {
 
-        data := []cache.Alert{}
+        data := &Change{
+            Timestamp: time.Now().UTC().Unix(),
+            Metrics: Metrics {
+                AlertsCount: CacheAlerts.Len(),
+                ChanCount: len(changes),
+            },
+            Alerts: map[string][]Alert{},
+        }
+
+        cMenu, err := ConfigMenu.Get()
+        if err != nil {
+            log.Printf("[error] %v", err)
+            return
+        }
+
+        mRules := getRules(cMenu)
 
         for i := 0; i < len(changes); i++ {
             select {
                 case id := <- changes:
-                    if alert, ok := CacheAlerts.Get(id); ok {
-                        //if _, found := data.Alerts["test"]; !found {
-                        //    data.Alerts["test"] := []cache.Alert{}
-                        //}
-                        data = append(data, alert)
-                    }
+                    if a, ok := CacheAlerts.Get(id); ok {
+                        alert := Alert{}
+
+                        alert.AlertId      = a.AlertId
+                        alert.GroupId      = a.GroupId
+                        alert.State        = a.State
+                        alert.StartsAt     = time.Unix(a.StartsAt, 0)
+                        alert.EndsAt       = time.Unix(a.EndsAt, 0)
+                        alert.Repeat       = a.Repeat
+                        alert.ChangeSt     = a.ChangeSt
+                        alert.Labels       = a.Labels
+                        alert.Annotations  = a.Annotations
+                        alert.GeneratorURL = a.GeneratorURL
+
+                        for id, rule := range mRules {
+                            if checkMatch(a, rule) {
+                                data.Alerts[id] = append(data.Alerts[id], alert)
+                            }
+                        }
+                    } 
                 default:
                     continue
             }
@@ -281,22 +359,20 @@ func (api *Api) WsEndpoint(w http.ResponseWriter, r *http.Request) {
         jsn, err := json.Marshal(data)
         if err != nil {
             log.Printf("[error] %v", err)
-            w.WriteHeader(500)
             return
         }
 
         if err := ws.WriteMessage(websocket.TextMessage, []byte(jsn)); err != nil {
             log.Printf("[error] %v", err)
-            w.WriteHeader(500)
             return
         }
 
-        time.Sleep(100 * time.Millisecond)
+        time.Sleep(500 * time.Millisecond)
     }
 }
 
 func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
-    //var alerts []string
+    //alerts := []string{}
 
     //if err := api.Client.Healthy(); err != nil {
     //    alerts = append(alerts, err.Error())
@@ -376,7 +452,7 @@ func (api *Api) SetAlerts(data Alerts) {
         for _, ext := range api.Conf.ExtensionRules {
             for _, mrs := range ext.Matchers {
                 matchers := [][]config.Matcher{ mrs }
-                if checkMatches(value.Labels, matchers) {
+                if checkLabels(value.Labels, matchers) {
                     for k, v := range ext.Labels {
                         value.Labels[k] = v
                     }
@@ -431,7 +507,7 @@ func (api *Api) SetAlerts(data Alerts) {
 
             alert_id := getHash(string(strconv.FormatInt(time.Now().UTC().UnixNano(), 16)+group_id))
             
-            var alert cache.Alert
+            alert := cache.Alert{}
 
             alert.AlertId        = alert_id
             alert.GroupId        = group_id
@@ -470,85 +546,22 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        var alerts Alerts
-
-        limit        := api.Conf.Global.AlertsLimit
-        state        := make(map[string]int)
-        strArgs      := make(map[string]string)
-        intArgs      := make(map[string]int64)
-        var matchers [][]config.Matcher
-
-        for k, v := range r.URL.Query() {
-            switch k {
-                case "alert_id","group_id":
-                    strArgs[k] = v[0]
-                case "state":
-                    for _, st := range strings.Split(v[0], "|") {
-                        state[st] = 1
-                    }
-                case "position","repeat_min","repeat_max":
-                    i, err := strconv.Atoi(v[0])
-                    if err != nil {
-                        w.WriteHeader(400)
-                        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-                        return 
-                    }
-                    intArgs[k] = int64(i)
-                case "limit":
-                    l, err := strconv.Atoi(v[0])
-                    if err != nil {
-                        w.WriteHeader(400)
-                        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-                        return 
-                    }
-                    if l < limit {
-                        limit = l
-                    }
-                case "match[]":
-                    for _, s := range v {
-                        mrs, err := config.ParseMetricSelector(s)
-                        if err != nil {
-                            w.WriteHeader(400)
-                            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
-                            return
-                        }
-                        matchers = append(matchers, mrs)
-                    }
-                default:
-                    w.WriteHeader(400)
-                    w.Write(encodeResp(&Resp{Status:"error", Error:fmt.Sprintf("executing query: invalid parameter '%v'", k), Data:make(map[string]string, 0)}))
-                    return
-            }
+        matchRule, err := config.ParseQueryValues(r.URL.Query())
+        if err != nil {
+            w.WriteHeader(400)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
         }
+
+        alerts := Alerts{}
 
         for _, a := range CacheAlerts.Items() {
 
-            if intArgs["position"] != 0 && intArgs["position"] > a.ActiveAt {
-                continue
-            }
-            if intArgs["repeat_min"] != 0 && intArgs["repeat_min"] > int64(a.Repeat) {
-                continue
-            }
-            if intArgs["repeat_max"] != 0 && intArgs["repeat_max"] < int64(a.Repeat) {
-                continue
-            }
-            if intArgs["position"] != 0 && intArgs["position"] > a.ActiveAt {
-                continue
-            }
-            if strArgs["alert_id"] != "" && strArgs["alert_id"] != a.AlertId {
-                continue
-            }
-            if strArgs["group_id"] != "" && strArgs["group_id"] != a.GroupId {
-                continue
-            }
-            if len(state) != 0 && state[a.State] == 0 {
-                continue
-            }
-            if len(matchers) != 0 && !checkMatches(a.Labels, matchers) {
+            if !checkMatch(a, matchRule) {
                 continue
             }
 
-            var alert Alert
+            alert := Alert{}
 
             alert.AlertId      = a.AlertId
             alert.GroupId      = a.GroupId
@@ -567,7 +580,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
                 alerts.Position  = a.ActiveAt
             }
             
-            if len(alerts.AlertsArray) >= limit {
+            if len(alerts.AlertsArray) >= matchRule.Limit {
                 continue
             }
         }
@@ -575,9 +588,9 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
         if len(alerts.AlertsArray) == 0 {
             alerts.AlertsArray = make([]Alert, 0)
         } else {
-            if limit == api.Conf.Global.AlertsLimit {
-                var warnings []string
-                warnings = append(warnings, fmt.Sprintf("display limit exceeded - %d", limit))
+            if matchRule.Limit == api.Conf.Global.AlertsLimit {
+                warnings := []string{}
+                warnings = append(warnings, fmt.Sprintf("display limit exceeded - %d", matchRule.Limit))
                 w.Write(encodeResp(&Resp{Status:"success", Warnings:warnings, Data:alerts}))
                 return
             }
@@ -619,7 +632,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
     if r.Method == "POST" {
 
-        var alerts Alerts
+        alerts := Alerts{}
 
         body, err := ioutil.ReadAll(r.Body)
         if err != nil {
@@ -665,15 +678,6 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    user, found := CacheUsers.Get(username)
-    if found {
-        if getHash(password) == user.Password {
-            w.WriteHeader(200)
-            w.Write(encodeResp(&Resp{Status:"success", Data:user}))
-            return
-        }
-    }
-
     if api.Conf.Global.Auth.Ldap.Enabled {
 
         if api.Conf.Global.Auth.Ldap.BindUser == "" && api.Conf.Global.Auth.Ldap.BindPass == "" {
@@ -681,7 +685,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
             api.Conf.Global.Auth.Ldap.BindPass = password
         }
 
-        var attributes []string
+        attributes := []string{}
         for _, val := range api.Conf.Global.Auth.Ldap.Attributes {
             attributes = append(attributes, val)
         }
@@ -706,7 +710,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        var user cache.User
+        user := cache.User{}
         user.Login = username
         user.Password = getHash(password)
         user.Token = getHash(string(time.Now().UTC().Unix()))
@@ -722,7 +726,15 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         w.WriteHeader(200)
         w.Write(encodeResp(&Resp{Status:"success", Data:user}))
         return
+    }
 
+    user, found := CacheUsers.Get(username)
+    if found {
+        if getHash(password) == user.Password {
+            w.WriteHeader(200)
+            w.Write(encodeResp(&Resp{Status:"success", Data:user}))
+            return
+        }
     }
 
     log.Printf("[error] user authenticating %s", username)

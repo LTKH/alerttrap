@@ -154,7 +154,7 @@
         if ('key' in menu[path].options) {
             path = menu[path].options.key;
         }
-        for (var alert of updates.results[path].data.alerts) {
+        for (var alert of updates.results[path].alerts) {
             if (alert.alertId == id) {
                 return alert;
             }
@@ -163,7 +163,7 @@
     }
 
     updates.update10 = function(){
-        var alerts = [];
+        /*
         var nAlerts = [];
         var tags = {};
         var path = decodeURIComponent(window.location.pathname);
@@ -179,10 +179,8 @@
         }
 
         if (path in updates.results) {
-            if (typeof updates.results[path].data !== 'undefined') {
-                if (typeof updates.results[path].data.alerts !== 'undefined') {
-                    alerts = updates.results[path].data.alerts;
-                }
+            if (typeof updates.results[path].alerts === 'undefined') {
+                return;
             }
         }
 
@@ -192,7 +190,7 @@
         levels.resolved = 0;
         levels.unknown = 0;
 
-        $.each(alerts, function(key, value) {
+        $.each(updates.results[path].alerts, function(key, value) {
             for (t in tags) {
                 if (!(t in value.labels)){
                     value.labels[t] = '---';
@@ -228,6 +226,11 @@
                     levels.unknown ++;
             }
 
+            if(!('annotations' in value)){
+                value.annotations = {};
+                value.annotations.summary = '-';
+            }
+
             nAlerts.push({
                 level:     level,
                 alertId:   value.alertId,
@@ -237,7 +240,7 @@
                 node:      '<span class="white-space:nowrap;">'+(value.labels.node || value.labels.host || '-')+'</span>',
                 startsAt:  $.format.date(value.startsAt || value.activeAt, 'dd/MM/yyyy HH:mm:ss') || '-',
                 endsAt:    $.format.date(value.endsAt, 'dd/MM/yyyy HH:mm:ss') || '-',
-                //summary:   value.annotations.summary || '-',
+                //summary:   value.annotations.summary,
             });
 
         });
@@ -273,6 +276,7 @@
         var currentPos = $('#alerts').position().top < 0 ? $('#alerts').position().top * -1 + 43 : 0;
         $('#alerts').bootstrapTable('load', nAlerts);
         $('div[class="fixed-table-body"]').scrollTop(currentPos);
+        */
     }
 
     $(function() {
