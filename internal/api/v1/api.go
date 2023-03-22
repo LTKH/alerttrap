@@ -431,7 +431,9 @@ func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
     if _, err := os.Stat(api.Conf.Global.WebDir+r.URL.Path); err == nil {
         http.ServeFile(w, r, api.Conf.Global.WebDir+r.URL.Path)
     } else {
-        http.ServeFile(w, r, api.Conf.Global.WebDir+"/index.html")
+        index, _ := os.ReadFile(api.Conf.Global.WebDir+"/index.html")
+        w.WriteHeader(404)
+        w.Write(index)
     }
 }
 

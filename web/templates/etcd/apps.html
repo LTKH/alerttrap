@@ -1,0 +1,170 @@
+<h1 class="page-header mb-3 text-muted">Etcd v2</h1>
+
+<div class="row">
+
+    <div class="col-xl">
+        <div class="card border-0 mb-3 overflow-hidden bg-dark text-silver">
+
+            <div class="card-body">
+                <div class="panel-body">
+                    <div id="data-table-default_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer" style="visibility: hidden;">
+                        <div class="row">
+                            <button id="delete" type="button" class="btn btn-danger m-l-10">
+                                <i class="fas fa-trash fa-fw mx-1 opacity-5"></i> Delete
+                            </button>
+                            <button id="add" type="button" class="btn btn-warning m-l-10">
+                                <i class="fas fa-arrow-down fa-fw mx-1 opacity-5"></i> Add
+                            </button>
+                            <button id="update" type="button" class="btn btn-primary m-l-10">
+                                <i class="fas fa-sync fa-fw mx-1 opacity-5"></i> Update
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div id="toolbar" class="float-left m-t-10" style="width: 400px;">
+                                    <select id="urls" class="custom-select-sm form-control" style="visibility: hidden;"></select>
+                                </div>
+                                <table id="applications" class="table table-responsive-sd table-sd table-hover">
+                                    <thead></thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script type="text/javascript" src="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
+<script type="text/javascript">
+
+function getSubMenu(url) {
+    $.ajax({
+        url: '/v2/keys'+url,
+        method: "GET",
+        beforeSend: function(request) {
+            request.setRequestHeader("X-Custom-URL", $("#urls option:selected").text());
+        }
+    }).done(function(jsn) {
+        if (jsn.node.nodes) {
+
+            $.each(jsn.node.nodes, function(k, v) {
+                $('#menu').treeControl({ 
+                    action: 'append', 
+                    path: '/etcdkeeper/prod'+v.key, 
+                    name: v.key.replace(/^.*\//g, ''), 
+                    options: { },
+                });
+                console.log('/etcdkeeper/prod'+v.key);
+                //if(v.dir == true){
+                //    $('#'+('/etcdkeeper/prod'+v.key).replace(/\//g, '_')+' a b').addClass("caret");
+                //}
+                //jsn.node.nodes[k].state = '<label class="label label-muted">unknown</label>';
+            });
+        }
+    }).fail(function(e) { 
+
+    });
+}
+
+function request(url, method, data) {
+        $.ajax({
+            url: url,
+            method: method,
+            data: JSON.stringify(data),
+            beforeSend: function(request) {
+                request.setRequestHeader("X-Custom-URL", $("#urls option:selected").text());
+            }
+        }).done(function(jsn) {
+            //console.log(jsn);
+            if (jsn.node.nodes) {
+
+                $.each(jsn.node.nodes, function(k, v) {
+                    $('#menu').treeControl({ 
+                        action: 'append', 
+                        path: '/etcdkeeper/prod'+v.key, 
+                        name: v.key.replace(/^.*\//g, ''), 
+                        options: { },
+                    });
+                    //console.log(v);
+                    if(v.dir == true){
+                        getSubMenu(v.key);
+                        //$('#'+('/etcdkeeper/prod'+v.key).replace(/\//g, '_')+' a b').addClass("caret");
+                    }
+                    jsn.node.nodes[k].state = '<label class="label label-muted">unknown</label>';
+                });
+
+                if(url.match(/\/apps$/)){
+                    jsn.node.nodes.sort(
+                        function(a, b){
+                            return (a.modifiedIndex >= b.modifiedIndex) ? 1 : -1;
+                        }
+                    );
+
+                    $('#data-table-default_wrapper').css("visibility","");
+                    $('#applications').bootstrapTable('load', jsn.node.nodes);
+                } else {
+                    $('#data-table-default_wrapper').css("visibility","hidden");
+                }
+
+            }
+        }).fail(function(e) { 
+            /*
+            if (e.status == 401 || e.status == 403){
+                window.location.replace("/login.html"); 
+            }
+            $.gritter.add({
+                title: e.responseJSON.status,
+                text: e.responseJSON.error,
+                image: '/images/warning.png',
+                time: 10000,
+                class_name: 'my-class'
+            });
+            */
+        });
+    }
+
+    $(function() {
+        $('#applications').bootstrapTable({
+            pagination: true,
+            paginationParts: ["pageInfo"],
+            search: true,
+            classes: "table table-responsive-sd table-sd",
+            pageSize: 1000,
+            height: 850,
+            columns: [
+                { checkbox: true, width: 100 },
+                { title: "State", field: "state", width: 100 },
+                { title: "Created Index", field: "createdIndex", width: 100 },
+                { title: "Modified Index", field: "modifiedIndex", width: 100 },
+                { title: "Key", field: "key" },
+            ]
+        });
+
+        $.each(menu['/etcdkeeper/prod']['options']['X-Custom-URL'], function(key, value) {
+            $('#urls').append($('<option>', { value: key, text: value }));
+        });
+
+        var path = window.location.pathname.replace('/etcdkeeper/prod', '/v2/keys');
+
+        $('#update').on('click', function () {
+            $('#applications').bootstrapTable('load', []);
+            request(path, "GET");
+        });
+
+        request(path, "GET");
+
+        /*
+        if (typeof menu[window.location.pathname] !== 'undefined'){
+            console.log(window.location.pathname);
+            $('#'+window.location.pathname.replace(/\//g, '_')).addClass("expand");
+        }
+        */
+
+    });
+</script>

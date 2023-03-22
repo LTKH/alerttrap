@@ -229,15 +229,15 @@
             }
 
             nAlerts.push({
-                level:     level,
-                alertId:   value.alertId,
-                state:     '<label class="label label-'+value.state+'">'+value.state+'</label>',
-                repeat:    value.repeat || '-',
-                alertname: value.labels.alertname || '-',
-                node:      '<span class="white-space:nowrap;">'+(value.labels.node || value.labels.host || '-')+'</span>',
-                startsAt:  $.format.date(value.startsAt || value.activeAt, 'dd/MM/yyyy HH:mm:ss') || '-',
-                endsAt:    $.format.date(value.endsAt, 'dd/MM/yyyy HH:mm:ss') || '-',
-                //summary:   value.annotations.summary || '-',
+                level:       level,
+                alertId:     value.alertId,
+                state:       '<label class="label label-'+value.state+'">'+value.state+'</label>',
+                repeat:      value.repeat || '-',
+                alertname:   value.labels.alertname || '-',
+                node:        '<span class="white-space:nowrap;">'+(value.labels.node || value.labels.host || '-')+'</span>',
+                startsAt:    $.format.date(value.startsAt || value.activeAt, 'dd/MM/yyyy HH:mm:ss') || '-',
+                endsAt:      $.format.date(value.endsAt, 'dd/MM/yyyy HH:mm:ss') || '-',
+                description: value.annotations.description || '-',
             });
 
         });
@@ -309,7 +309,7 @@
                 { title: "Node", field: "node", width: 200 },
                 { title: "StartsAt", field: "startsAt", width: 140 },
                 { title: "EndsAt", field: "endsAt", width: 140 },
-                { title: "Summary", field: "summary" }
+                { title: "Description", field: "description" }
             ],
             onClickRow: function (e) { 
                 var alert = getAlert(path, e.alertId)

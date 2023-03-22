@@ -274,6 +274,9 @@
                     if(XMLHttpRequest.status == 401){
                         window.location.replace("/login.html");
                     }
+                    if(XMLHttpRequest.status == 404){
+                        loadPage("/404.html");
+                    }
                 }
             });
         }

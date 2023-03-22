@@ -1,4 +1,4 @@
-<h1 class="page-header mb-3 text-muted">Records</h1>
+<h1 class="page-header mb-3 text-muted">Exceptions</h1>
 
 <div class="row">
 
@@ -91,7 +91,7 @@
                                 <div id="toolbar" class="float-left m-t-10" style="width: 400px;">
                                     <select id="urls" class="custom-select-sm form-control"></select>
                                 </div>
-                                <table id="records" class="table table-responsive-sd table-sd table-hover">
+                                <table id="exceptions" class="table table-responsive-sd table-sd table-hover">
                                     <thead></thead>
                                 </table>
                             </div>
@@ -112,7 +112,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content bg-dark text-white">
             <div class="modal-header">
-                <h5 class="modal-title" id="myModalLabel">Сonnection</h5>
+                <h5 class="modal-title" id="myModalLabel">Exception</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -124,66 +124,31 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td width="150">Source Name</td>
+                            <td width="150">Account ID</td>
                             <td>
                                 <div class="input-group-sm">
-                                   <input id="src_name" type="text" class="form-control m-t-2 m-b-2" style="width: 400px;"/>
+                                   <input id="accountID" type="text" class="form-control m-t-2 m-b-2" style="width: 200px;"/>
                                 </div>
                             </td>
                         </tr>
                         <tr>
-                            <td>Source IP</td>
+                            <td>Host Mask</td>
                             <td>
                                 <div class="input-group-sm">
-                                   <input id="src_ip" type="text" class="form-control m-t-2 m-b-2" style="width: 200px;"/>
+                                   <input id="hostMask" type="text" class="form-control m-t-2 m-b-2" style="width: 400px;"/>
                                 </div>
                             </td>
                         </tr>
                         <tr>
-                            <td>Destination Name</td>
+                            <td>Ignore Mask</td>
                             <td>
                                 <div class="input-group-sm">
-                                    <input id="dst_name" type="text" class="form-control m-t-2 m-b-2"/>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Destination IP</td>
-                            <td>
-                                <div class="input-group-sm">
-                                    <input id="dst_ip" type="text" class="form-control m-t-2 m-b-2" style="width: 200px;"/>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Mode</td>
-                            <td>
-                                <select id="mode" class="custom-select-sm form-control m-t-2 m-b-2" style="width: 100px;">
-                                    <option value="tcp">tcp</option>
-                                    <option value="udp">udp</option>
-                                    <option value="cmd">cmd</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Port</td>
-                            <td>
-                                <div class="input-group-sm">
-                                    <input id="port" type="text" class="form-control m-t-2 m-b-2" style="width: 100px;"/>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Status</td>
-                            <td>
-                                <div class="input-group-sm">
-                                    <input id="status" type="text" class="form-control m-t-2 m-b-2" style="width: 100px;"/>
+                                    <input id="ignoreMask" type="text" class="form-control m-t-2 m-b-2"  style="width: 400px;"/>
                                 </div>
                             </td>
                         </tr>
                     </tbody>
                 </table> 
-                <div id="error" style="margin-top: 10px; color: rgb(227, 80, 80)"></div>
             </div>
             <div class="modal-footer">
                 <button id="close" type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
@@ -206,31 +171,14 @@
             }
         }).done(function(jsn) {
             if (method == 'GET'){
-                jsn.data.sort(
-                    function(a, b){
-                        if (a.localAddr.name != b.localAddr.name) {
-                            return (a.localAddr.name > b.localAddr.name) ? 1 : -1;
-                        }
-                        if (a.remoteAddr.name != b.remoteAddr.name) {
-                            return (a.remoteAddr.name > b.remoteAddr.name) ? 1 : -1;
-                        }
-                        return (a.relation.port >= b.relation.port) ? 1 : -1;
-                    }
-                );
-
-                $.each(jsn.data, function(key, value) {
-                    var rs = (value['relation']['result'] == 0) ? 'ok' : 'firing';
-                    jsn.data[key]['state'] = '<label class="label label-' + rs + '">' + rs + '</label>';
-                });
-
-                $('#records').bootstrapTable('load', jsn.data);
+                $('#exceptions').bootstrapTable('load', jsn.data);
             }
             if (method == 'POST'){
                 $('#myModal').modal('hide');
-                request("/api/v1/netmap/records","GET");
+                request("/api/v1/netmap/exceptions","GET");
             }
             if (method == 'DELETE'){
-                request("/api/v1/netmap/records","GET");
+                request("/api/v1/netmap/exceptions","GET");
             }
         }).fail(function(e) { 
             if (e.status == 401 || e.status == 403){
@@ -248,7 +196,7 @@
     }
 
     $(function() {
-        $('#records').bootstrapTable({
+        $('#exceptions').bootstrapTable({
             pagination: true,
             paginationParts: ["pageInfo"],
             search: true,
@@ -257,38 +205,27 @@
             height: 850,
             columns: [
                 { checkbox: true, width: 100 },
-                //{ title: "id", field: "id", width: 100 },
-                { title: "State", field: "state", width: 100 },
-                { title: "Source Name", field: "localAddr.name", width: 250 },
-                { title: "Source IP", field: "localAddr.ip", width: 200 },
-                { title: "Destination Name", field: "remoteAddr.name", width: 250 },
-                { title: "Destination IP", field: "remoteAddr.ip", width: 200 },
-                { title: "Mode", field: "relation.mode", width: 100 },
-                { title: "Port", field: "relation.port", width: 100 },
-                { title: "Status", field: "options.status" }
+                { title: "Account ID", field: "accountID", width: 100 },
+                { title: "Host Mask", field: "hostMask", width: 250 },
+                { title: "Ignore Mask", field: "ignoreMask" }
             ]
         });
 
-        $('#records').on('click-row.bs.table', function (e, row, $element) {
+        $('#exceptions').on('click-row.bs.table', function (e, row, $element) {
 
             $('#form #id').val(row.id);
-            $('#form #src_name').val("").val(row.localAddr.name);
-            $('#form #src_ip').val("").val(row.localAddr.ip);
-            $('#form #dst_name').val("").val(row.remoteAddr.name);
-            $('#form #dst_ip').val("").val(row.remoteAddr.ip);
-            $('#form #mode').val("").val(row.relation.mode);
-            $('#form #port').val("").val(row.relation.port);
-            $('#form #status').val("").val(row.options.status);
-            $("#form #error").html("");
+            $('#form #accountID').val("").val(row.accountID);
+            $('#form #hostMask').val("").val(row.hostMask);
+            $('#form #ignoreMask').val("").val(row.ignoreMask);
             $('#myModal').modal('show');
 
         });
 
         $('#delete').on('click', function () {
             var ids = [];
-            var data = $('#records').bootstrapTable('getData');
+            var data = $('#exceptions').bootstrapTable('getData');
 
-            $('#records input:checkbox:checked').each(function(){
+            $('#exceptions input:checkbox:checked').each(function(){
                 index = $(this).attr("data-index");
                 if (typeof index !== 'undefined') {
                     ids.push(data[index]["id"]);
@@ -296,21 +233,16 @@
             });
             
             if (ids.length > 0){
-                request("/api/v1/netmap/records", "DELETE", ids);
+                request("/api/v1/netmap/exceptions", "DELETE", ids);
             }
         });
 
         $('#add').on('click', function () {
 
             $('#form #id').val("");
-            $('#form #src_name').val("").prop('disabled', false);
-            $('#form #src_ip').val("").prop('disabled', false);
-            $('#form #dst_name').val("").prop('disabled', false);
-            $('#form #dst_ip').val("").prop('disabled', false);
-            $('#form #mode').val("tcp").prop('disabled', false);
-            $('#form #port').val("").prop('disabled', false);
-            $('#form #status').val("").prop('disabled', false);
-            $("#form #error").html("");
+            $('#form #accountID').val("0");
+            $('#form #hostMask').val("");
+            $('#form #ignoreMask').val("");
 
             $('#myModal').modal('show');
         });
@@ -319,34 +251,12 @@
 
             var row = {};
             row.id = $('#form #id').val();
-            row.localAddr = {};
-            row.localAddr.name = $('#form #src_name').val();
-            row.localAddr.ip = $('#form #src_ip').val();
-            row.remoteAddr = {};
-            row.remoteAddr.name = $('#form #dst_name').val();
-            row.remoteAddr.ip = $('#form #dst_ip').val();
-            row.relation = {};
-            row.relation.mode = $('#form #mode').val();
-            row.relation.port = parseInt($('#form #port').val());
-            row.options = {};
-            row.options.status = $('#form #status').val();
+            row.accountID = Number($('#form #accountID').val());
+            row.hostMask = $('#form #hostMask').val();
+            row.ignoreMask = $('#form #ignoreMask').val();
 
-            request("/api/v1/netmap/records", "POST", { data: [row] });
+            request("/api/v1/netmap/exceptions", "POST", { data: [row] });
             
-        });
-
-        $('#search #start').on('click', function(event) {
-            $('#records').bootstrapTable('filterBy', {}, {
-                'filterAlgorithm': (row, filters) => {
-                    if ($('#search #src_name').val() != "" && row.localAddr.name.search('^'+$('#search #src_name').val()+'$') < 0) return 0;
-                    if ($('#search #src_ip').val() != "" && row.localAddr.ip.search('^'+$('#search #src_ip').val()+'$') < 0) return 0;
-                    if ($('#search #dst_name').val() != "" && row.remoteAddr.name.search('^'+$('#search #dst_name').val()+'$') < 0) return 0;
-                    if ($('#search #dst_ip').val() != "" && row.remoteAddr.ip.search('^'+$('#search #dst_ip').val()+'$') < 0) return 0;
-                    if ($('#search #mode').val() !== "" && row.relation.mode.search('^'+$('#search #mode').val()+'$') < 0) return 0;
-                    if ($('#search #port').val() != "" && row.relation.port.toString().search('^'+$('#search #port').val()+'$') < 0) return 0;
-                    return 1;
-                }
-            });
         });
 
         if (typeof menu[window.location.pathname] !== 'undefined'){
@@ -356,16 +266,16 @@
         }
 
         $('#urls').change(function() {
-            $('#records').bootstrapTable('load', []);
-            request("/api/v1/netmap/records", "GET");
+            $('#exceptions').bootstrapTable('load', []);
+            request("/api/v1/netmap/exceptions", "GET");
         });
 
         $('#update').on('click', function () {
-            $('#records').bootstrapTable('load', []);
-            request("/api/v1/netmap/records", "GET");
+            $('#exceptions').bootstrapTable('load', []);
+            request("/api/v1/netmap/exceptions", "GET");
         });
 
-        request("/api/v1/netmap/records", "GET");
+        request("/api/v1/netmap/exceptions", "GET");
 
         $('#close, #myModal .close').on('click', function () {
             $('#myModal').modal('hide');

@@ -85,16 +85,23 @@ menu:
         name: "Records"
         options:
           X-Custom-URL: ["http://localhost:8084"]
-      - id: "manage"
-        name: "Manage"
+      - id: "exceptions"
+        name: "Exceptions"
         options:
           X-Custom-URL: ["http://localhost:8084"]
 
   - id: "etcdkeeper"
     name: "Etcdkeeper"
     class: "fas fa-cog fa-fw"
+    nodes:
+      - id: "prod"
+        name: "Prod"
+        options:
+          X-Custom-URL: ["http://localhost:2379"]
 
 templates:
+  - url_matcher: "^/404.html"
+    target_page: "/404.html"
   - url_matcher: "^/kubernetes/alerts.*"
     target_page: "/templates/alerts/alerts.html"
   - url_matcher: "^/vmetrics/targets"
@@ -107,12 +114,16 @@ templates:
     target_page: "/templates/alertmanager/alerts.html"
   - url_matcher: "^/netmap/records.*"
     target_page: "/templates/netmap/records.html"
-  - url_matcher: "^/netmap/manage.*"
-    target_page: "/templates/netmap/manage.html"
+  - url_matcher: "^/netmap/exceptions.*"
+    target_page: "/templates/netmap/exceptions.html"
   - url_matcher: "^/alerts.*"
     target_page: "/templates/alerts/alerts.html"
   - url_matcher: "^/monitoring.*"
     target_page: "/templates/alerts/alerts.html"
+  - url_matcher: "^/etcdkeeper/.*/apps/[^/]+$"
+    target_page: "/templates/etcd/editor.html"
+  - url_matcher: "^/etcdkeeper"
+    target_page: "/templates/etcd/apps.html"
   - url_matcher: "^/.*"
     target_page: "/templates/main.html"
 
