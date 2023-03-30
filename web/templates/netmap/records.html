@@ -135,7 +135,7 @@
                             <td>Source IP</td>
                             <td>
                                 <div class="input-group-sm">
-                                   <input id="src_ip" type="text" class="form-control m-t-2 m-b-2" style="width: 200px;"/>
+                                   <input id="src_ip" type="text" class="form-control m-t-2 m-b-2" style="width: 200px;" disabled/>
                                 </div>
                             </td>
                         </tr>
@@ -151,14 +151,14 @@
                             <td>Destination IP</td>
                             <td>
                                 <div class="input-group-sm">
-                                    <input id="dst_ip" type="text" class="form-control m-t-2 m-b-2" style="width: 200px;"/>
+                                    <input id="dst_ip" type="text" class="form-control m-t-2 m-b-2" style="width: 200px;" disabled/>
                                 </div>
                             </td>
                         </tr>
                         <tr>
                             <td>Mode</td>
                             <td>
-                                <select id="mode" class="custom-select-sm form-control m-t-2 m-b-2" style="width: 100px;">
+                                <select id="mode" class="custom-select-sm form-control m-t-2 m-b-2" style="width: 100px;" disabled>
                                     <option value="tcp">tcp</option>
                                     <option value="udp">udp</option>
                                     <option value="cmd">cmd</option>
@@ -169,7 +169,7 @@
                             <td>Port</td>
                             <td>
                                 <div class="input-group-sm">
-                                    <input id="port" type="text" class="form-control m-t-2 m-b-2" style="width: 100px;"/>
+                                    <input id="port" type="text" class="form-control m-t-2 m-b-2" style="width: 100px;" disabled/>
                                 </div>
                             </td>
                         </tr>
@@ -178,6 +178,18 @@
                             <td>
                                 <div class="input-group-sm">
                                     <input id="status" type="text" class="form-control m-t-2 m-b-2" style="width: 100px;"/>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Result</td>
+                            <td>
+                                <div>
+                                    <select id="result" class="custom-select-sm form-control m-t-2 m-b-2" style="width: 100px;">
+                                        <option value="0">success</option>
+                                        <option value="1">timeout</option>
+                                        <option value="2">failed</option>
+                                    </select>
                                 </div>
                             </td>
                         </tr>
@@ -194,6 +206,7 @@
 </div>
 
 <script type="text/javascript" src="/assets/plugins/bootstrap-table/dist/bootstrap-table.min.js"></script>
+<script type="text/javascript" src="/assets/js/jquery/jquery-dateformat.min.js"></script>
 <script type="text/javascript">
 
     function request(url, method, data) {
@@ -219,8 +232,13 @@
                 );
 
                 $.each(jsn.data, function(key, value) {
-                    var rs = (value['relation']['result'] == 0) ? 'ok' : 'firing';
-                    jsn.data[key]['state'] = '<label class="label label-' + rs + '">' + rs + '</label>';
+                    var rs = 'no_data';
+                    if (value.options.status != "disabled") {
+                        rs = (value.relation.result == 0) ? 'ok' : 'firing';
+                    }
+                    jsn.data[key].state = '<label class="label label-' + rs + '">' + rs + '</label>';
+                    jsn.data[key].time = $.format.date(new Date(value.timestamp*1000), 'dd/MM/yyyy HH:mm:ss') || '-';
+                    //console.log(new Date(value.timestamp*1000));
                 });
 
                 $('#records').bootstrapTable('load', jsn.data);
@@ -259,10 +277,11 @@
                 { checkbox: true, width: 100 },
                 //{ title: "id", field: "id", width: 100 },
                 { title: "State", field: "state", width: 100 },
-                { title: "Source Name", field: "localAddr.name", width: 250 },
-                { title: "Source IP", field: "localAddr.ip", width: 200 },
-                { title: "Destination Name", field: "remoteAddr.name", width: 250 },
-                { title: "Destination IP", field: "remoteAddr.ip", width: 200 },
+                { title: "Time", field: "time", width: 160 },
+                { title: "Source Name", field: "localAddr.name", width: 300 },
+                //{ title: "Source IP", field: "localAddr.ip", width: 200 },
+                { title: "Destination Name", field: "remoteAddr.name", width: 300 },
+                //{ title: "Destination IP", field: "remoteAddr.ip", width: 200 },
                 { title: "Mode", field: "relation.mode", width: 100 },
                 { title: "Port", field: "relation.port", width: 100 },
                 { title: "Status", field: "options.status" }
@@ -273,11 +292,12 @@
 
             $('#form #id').val(row.id);
             $('#form #src_name').val("").val(row.localAddr.name);
-            $('#form #src_ip').val("").val(row.localAddr.ip);
+            $('#form #src_ip').val("").val(row.localAddr.ip).prop('disabled', true);
             $('#form #dst_name').val("").val(row.remoteAddr.name);
-            $('#form #dst_ip').val("").val(row.remoteAddr.ip);
-            $('#form #mode').val("").val(row.relation.mode);
-            $('#form #port').val("").val(row.relation.port);
+            $('#form #dst_ip').val("").val(row.remoteAddr.ip).prop('disabled', true);
+            $('#form #mode').val("").val(row.relation.mode).prop('disabled', true);
+            $('#form #port').val("").val(row.relation.port).prop('disabled', true);
+            $('#form #result').val("").val(row.relation.result);
             $('#form #status').val("").val(row.options.status);
             $("#form #error").html("");
             $('#myModal').modal('show');
@@ -310,6 +330,7 @@
             $('#form #mode').val("tcp").prop('disabled', false);
             $('#form #port').val("").prop('disabled', false);
             $('#form #status').val("").prop('disabled', false);
+            $('#form #result').val("success").prop('disabled', false);
             $("#form #error").html("");
 
             $('#myModal').modal('show');
@@ -328,6 +349,7 @@
             row.relation = {};
             row.relation.mode = $('#form #mode').val();
             row.relation.port = parseInt($('#form #port').val());
+            row.relation.result = parseInt($('#form #result').val());
             row.options = {};
             row.options.status = $('#form #status').val();
 
