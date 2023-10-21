@@ -35,7 +35,7 @@ global:
 menu:
   - id: "monitoring"
     name: "Monitoring"
-    class: "fa fa-cubes"
+    class: "fa fa-chart-area"
     nodes:
       - id: "alerts"
         name: "Alerts"
@@ -63,10 +63,6 @@ menu:
         name: "Alerts"
         options:         
           X-Custom-URL: ["http://localhost:8880"]
-      #- id: "testing"
-      #  name: "Testing"
-      #  options:         
-      #    X-Custom-URL: "http://localhost:8065"
 
   - id: "alertmanager"
     name: "Alertmanager"
@@ -90,6 +86,16 @@ menu:
         options:
           X-Custom-URL: ["http://localhost:8084"]
 
+  - id: "testing"
+    name: "Testing"
+    class: "fas fa-list"
+    nodes:
+      - id: "testing"
+        name: "Testing"
+        options:         
+          X-Custom-URL: "http://localhost:8065"
+          X-Custom-WS: "ws://localhost:8065/ws"
+
   - id: "etcdkeeper"
     name: "Etcdkeeper"
     class: "fas fa-cog fa-fw"
@@ -108,8 +114,8 @@ templates:
     target_page: "/templates/vmetrics/targets.html"
   - url_matcher: "^/vmetrics/alerts"
     target_page: "/templates/vmetrics/alerts.html"
-  - url_matcher: "^/vmetrics/testing"
-    target_page: "/templates/vmetrics/testing.html"
+  - url_matcher: "^/testing/testing"
+    target_page: "/templates/testing/testing.html"
   - url_matcher: "^/alertmanager/alerts"
     target_page: "/templates/alertmanager/alerts.html"
   - url_matcher: "^/netmap/records.*"
