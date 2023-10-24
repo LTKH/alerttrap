@@ -94,7 +94,7 @@ menu:
         name: "Testing"
         options:         
           X-Custom-URL: "http://localhost:8065"
-          X-Custom-WS: "ws://localhost:8065/ws"
+          X-Custom-WS: "ws://localhost:8066/ws"
 
   - id: "etcdkeeper"
     name: "Etcdkeeper"
