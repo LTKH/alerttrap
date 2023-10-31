@@ -147,6 +147,7 @@
 
 </div>
 
+<script type="text/javascript" src="/assets/js/jquery/jquery-cookie.min.js"></script>
 <script>
     function updateWidget(name, number) {
         $('#widget-test-'+name+' .stats-number').text(number);
@@ -157,8 +158,37 @@
         }
     }
 
+    updates.update10 = function(){
+        $.ajax({
+            url: "/api/v1/status",
+            beforeSend: function(request) {
+                request.setRequestHeader("X-Custom-URL", menu[window.location.pathname]['options']['X-Custom-URL']);
+            },
+            success: function(jsn) {
+                var json = $.parseJSON(jsn);
+
+                console.log(json.data.requestTotal);
+
+                updateWidget('secondary', json.data.requestTotal);
+                updateWidget('resolved', json.data.requestSuccess);
+                updateWidget('firing', json.data.requestErrors);
+                updateWidget('warning', json.data.requestSpeed * json.data.packetSize);
+
+                if (json.data.threads > 0) {
+                    $('#start').text('Stop');
+                    //$('#start').attr('class', 'btn btn-secondary btn-sm btn-primary m-r-5');
+                } else {
+                    $('#start').text('Start');
+                    //$('#start').attr('class', 'btn btn-sm btn-primary m-r-5');
+                }
+            }
+        });
+    }
+
     function connectSocket() {
-        ws = new WebSocket(menu[window.location.pathname]['options']['X-Custom-WS']);
+        $.cookie('target', menu[window.location.pathname]['options']['X-Custom-URL'], { path: '/' });
+
+        ws = new WebSocket("ws://localhost:8081/api/v1/ws");
 
         ws.onopen = function() {
             $('#start').prop('disabled', false);
@@ -190,8 +220,6 @@
     }
 
     $(function() {
-        
-        connectSocket();
 
         $('#start').on('click', function(event) {
             $('#start').prop('disabled', true);
@@ -235,5 +263,8 @@
             }
 
         });
+
+        //connectSocket();
+        updates.update10();
     });
 </script>

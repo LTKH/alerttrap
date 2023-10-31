@@ -237,7 +237,7 @@
                 node:        '<span class="white-space:nowrap;">'+(value.labels.node || value.labels.host || '-')+'</span>',
                 startsAt:    $.format.date(value.startsAt || value.activeAt, 'dd/MM/yyyy HH:mm:ss') || '-',
                 endsAt:      $.format.date(value.endsAt, 'dd/MM/yyyy HH:mm:ss') || '-',
-                description: value.annotations.description || '-',
+                summary:     value.annotations.summary || '-',
             });
 
         });
@@ -309,7 +309,7 @@
                 { title: "Node", field: "node", width: 200 },
                 { title: "StartsAt", field: "startsAt", width: 140 },
                 { title: "EndsAt", field: "endsAt", width: 140 },
-                { title: "Description", field: "description" }
+                { title: "Summary", field: "summary" }
             ],
             onClickRow: function (e) { 
                 var alert = getAlert(path, e.alertId)
