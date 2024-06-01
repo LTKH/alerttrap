@@ -14,6 +14,7 @@ import (
     "github.com/prometheus/client_golang/prometheus/promhttp"
     "github.com/ltkh/alerttrap/internal/db"
     "github.com/ltkh/alerttrap/internal/api/v1"
+    "github.com/ltkh/alerttrap/internal/api/v2"
     "github.com/ltkh/alerttrap/internal/config"
 )
 
@@ -87,6 +88,10 @@ func main() {
     if err != nil {
         log.Fatalf("[error] %v", err)
     }
+    apiV2, err := v2.New(cfg)
+    if err != nil {
+        log.Fatalf("[error] %v", err)
+    }
 
     // Creating monitoring
     prometheus.MustRegister(cntAlerts)
@@ -117,6 +122,7 @@ func main() {
     http.HandleFunc("/api/v1/tmpl", apiV1.ApiTmpl)
     http.HandleFunc("/api/v1/login", apiV1.ApiLogin)
     http.HandleFunc("/api/v1/alerts", apiV1.ApiAlerts)
+    http.HandleFunc("/api/v2/alerts", apiV2.ApiAlerts)
     http.HandleFunc("/", apiV1.ApiIndex)
 
     go func(cfg *config.Global){

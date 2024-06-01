@@ -104,6 +104,9 @@ menu:
         name: "Prod"
         options:
           X-Custom-URL: ["http://localhost:2379"]
+        nodes:
+          - id: "test"
+            name: "Test"
 
 templates:
   - url_matcher: "^/404.html"

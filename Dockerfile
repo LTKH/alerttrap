@@ -2,7 +2,7 @@ FROM golang:1.20.3 AS builder
 
 COPY . /src/
 WORKDIR /src/
-RUN go build -o /bin/alerttrap alerttrap.go
+RUN go build -o /bin/alerttrap app/alerttrap/alerttrap.go
 
 FROM centos
 
