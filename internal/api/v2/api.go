@@ -448,8 +448,8 @@ func addAlert(id string, alert cache.Alert) {
     }
 }
 
-func (api *Api) SetAlerts(data Alerts) {
-    for _, value := range data.AlertsArray {
+func (api *Api) SetAlerts(alerts []Alert) {
+    for _, value := range alerts {
 
         for _, ext := range api.Conf.ExtensionRules {
             for _, mrs := range ext.Matchers {
@@ -634,7 +634,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
     if r.Method == "POST" {
 
-        alerts := Alerts{}
+        alerts := []Alert{}
 
         body, err := ioutil.ReadAll(r.Body)
         if err != nil {
