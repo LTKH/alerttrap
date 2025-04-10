@@ -30,7 +30,6 @@ var (
     reverseProxy *httputil.ReverseProxy
     reverseProxyOnce sync.Once
 
-    changes = make(chan string, 10000)
     upgrader = websocket.Upgrader{
         ReadBufferSize:  1024,
         WriteBufferSize: 1024,
@@ -299,78 +298,6 @@ func New(conf *config.Config) (*Api, error) {
     return &Api{ Conf: conf }, nil
 }
 
-func (api *Api) WsEndpoint(w http.ResponseWriter, r *http.Request) {
-
-    ws, err := upgrader.Upgrade(w, r, nil)
-    if err != nil {
-        log.Printf("[error] %v", err)
-        w.WriteHeader(500)
-        return
-    }
-    defer ws.Close()
-
-    for {
-
-        data := &Change{
-            Timestamp: time.Now().UTC().Unix(),
-            Metrics: Metrics {
-                AlertsCount: CacheAlerts.Len(),
-                ChanCount: len(changes),
-            },
-            Alerts: map[string][]Alert{},
-        }
-
-        cMenu, err := ConfigMenu.Get()
-        if err != nil {
-            log.Printf("[error] %v", err)
-            return
-        }
-
-        mRules := getRules(cMenu)
-
-        for i := 0; i < len(changes); i++ {
-            select {
-                case id := <- changes:
-                    if a, ok := CacheAlerts.Get(id); ok {
-                        alert := Alert{}
-
-                        alert.AlertId      = a.AlertId
-                        alert.GroupId      = a.GroupId
-                        alert.State        = a.State
-                        alert.StartsAt     = time.Unix(a.StartsAt, 0)
-                        alert.EndsAt       = time.Unix(a.EndsAt, 0)
-                        alert.Repeat       = a.Repeat
-                        alert.ChangeSt     = a.ChangeSt
-                        alert.Labels       = a.Labels
-                        alert.Annotations  = a.Annotations
-                        alert.GeneratorURL = a.GeneratorURL
-
-                        for id, rule := range mRules {
-                            if checkMatch(a, rule) {
-                                data.Alerts[id] = append(data.Alerts[id], alert)
-                            }
-                        }
-                    } 
-                default:
-                    continue
-            }
-        }
-
-        jsn, err := json.Marshal(data)
-        if err != nil {
-            log.Printf("[error] %v", err)
-            return
-        }
-
-        if err := ws.WriteMessage(websocket.TextMessage, []byte(jsn)); err != nil {
-            log.Printf("[error] %v", err)
-            return
-        }
-
-        time.Sleep(500 * time.Millisecond)
-    }
-}
-
 func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
     //alerts := []string{}
 
@@ -440,12 +367,6 @@ func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
 func addAlert(id string, alert cache.Alert) {
 
     CacheAlerts.Set(id, alert)
-
-    select {
-        case changes <- id:
-        default:
-            log.Printf("[error] channel is not ready - %s", id)
-    }
 }
 
 func (api *Api) SetAlerts(data Alerts) {
@@ -470,14 +391,12 @@ func (api *Api) SetAlerts(data Alerts) {
 
         group_id := getHash(string(labels))
 
-        if value.Status != "" {
-            if value.Status != "resolved" {
-                if value.Labels["severity"] != nil {
-                    value.State = value.Labels["severity"].(string)
-                }
-            } else {
-                value.State = value.Status
+        if value.Status != "resolved" {
+            if value.Labels["severity"] != nil {
+                value.State = value.Labels["severity"].(string)
             }
+        } else {
+            value.State = value.Status
         }
     
         starts_at := value.StartsAt.UTC().Unix()
@@ -654,6 +573,138 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
         go api.SetAlerts(alerts)
 
         w.WriteHeader(204)
+        return
+    }
+
+    w.WriteHeader(405)
+    w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed", Data:make(map[string]string, 0)}))
+}
+
+func (api *Api) Api2Alerts(w http.ResponseWriter, r *http.Request) {
+    if r.Header.Get("X-Custom-URL") != "" {
+        r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL"))
+        getReverseProxy().ServeHTTP(w, r)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+
+    if r.Method == "GET" {
+
+        _, code, err := authentication(api.Conf.Global.DB, r)
+        if err != nil {
+            w.WriteHeader(code)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        matchRule, err := config.ParseQueryValues(r.URL.Query())
+        if err != nil {
+            w.WriteHeader(400)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        alerts := Alerts{}
+
+        for _, a := range CacheAlerts.Items() {
+
+            if !checkMatch(a, matchRule) {
+                continue
+            }
+
+            alert := Alert{}
+
+            alert.AlertId      = a.AlertId
+            alert.GroupId      = a.GroupId
+            alert.State        = a.State
+            alert.StartsAt     = time.Unix(a.StartsAt, 0)
+            alert.EndsAt       = time.Unix(a.EndsAt, 0)
+            alert.Repeat       = a.Repeat
+            alert.ChangeSt     = a.ChangeSt
+            alert.Labels       = a.Labels
+            alert.Annotations  = a.Annotations
+            alert.GeneratorURL = a.GeneratorURL
+
+            alerts.AlertsArray = append(alerts.AlertsArray, alert)
+
+            if a.ActiveAt > alerts.Position {
+                alerts.Position  = a.ActiveAt
+            }
+            
+            if len(alerts.AlertsArray) >= matchRule.Limit {
+                continue
+            }
+        }
+
+        if len(alerts.AlertsArray) == 0 {
+            alerts.AlertsArray = make([]Alert, 0)
+        } else {
+            if matchRule.Limit == api.Conf.Global.AlertsLimit {
+                warnings := []string{}
+                warnings = append(warnings, fmt.Sprintf("display limit exceeded - %d", matchRule.Limit))
+                w.Write(encodeResp(&Resp{Status:"success", Warnings:warnings, Data:alerts}))
+                return
+            }
+        }
+        
+        w.Write(encodeResp(&Resp{Status:"success", Data:alerts}))
+        return
+    }
+
+    if r.Method == "DELETE" {
+
+        _, code, err := authentication(api.Conf.Global.DB, r)
+        if err != nil {
+            w.WriteHeader(code)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        if r.URL.Query()["group_id"] != nil {
+            
+            _, found := CacheAlerts.Get(r.URL.Query()["group_id"][0])
+            if found {
+                CacheAlerts.Delete(r.URL.Query()["group_id"][0])
+                w.WriteHeader(200)
+                w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
+                return
+            }
+
+            w.WriteHeader(400)
+            w.Write(encodeResp(&Resp{Status:"error", Error:"Alert Not Found", Data:make(map[string]string, 0)}))
+            return
+
+        }
+
+        w.WriteHeader(400)
+        w.Write(encodeResp(&Resp{Status:"error", Error:"group_id required", Data:make(map[string]string, 0)}))
+        return
+    }
+
+    if r.Method == "POST" {
+
+        alerts := []Alert{}
+
+        body, err := ioutil.ReadAll(r.Body)
+        if err != nil {
+            log.Printf("[error] %v - %s", err, r.URL.Path)
+            w.WriteHeader(400)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        if err := json.Unmarshal(body, &alerts); err != nil {
+            log.Printf("[error] %v - %s", err, r.URL.Path)
+            w.WriteHeader(400)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        go api.SetAlerts(Alerts{AlertsArray: alerts})
+
+        w.WriteHeader(200)
+        w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
         return
     }
 

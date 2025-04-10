@@ -30,7 +30,6 @@ var (
     reverseProxy *httputil.ReverseProxy
     reverseProxyOnce sync.Once
 
-    changes = make(chan string, 10000)
     upgrader = websocket.Upgrader{
         ReadBufferSize:  1024,
         WriteBufferSize: 1024,
@@ -299,78 +298,6 @@ func New(conf *config.Config) (*Api, error) {
     return &Api{ Conf: conf }, nil
 }
 
-func (api *Api) WsEndpoint(w http.ResponseWriter, r *http.Request) {
-
-    ws, err := upgrader.Upgrade(w, r, nil)
-    if err != nil {
-        log.Printf("[error] %v", err)
-        w.WriteHeader(500)
-        return
-    }
-    defer ws.Close()
-
-    for {
-
-        data := &Change{
-            Timestamp: time.Now().UTC().Unix(),
-            Metrics: Metrics {
-                AlertsCount: CacheAlerts.Len(),
-                ChanCount: len(changes),
-            },
-            Alerts: map[string][]Alert{},
-        }
-
-        cMenu, err := ConfigMenu.Get()
-        if err != nil {
-            log.Printf("[error] %v", err)
-            return
-        }
-
-        mRules := getRules(cMenu)
-
-        for i := 0; i < len(changes); i++ {
-            select {
-                case id := <- changes:
-                    if a, ok := CacheAlerts.Get(id); ok {
-                        alert := Alert{}
-
-                        alert.AlertId      = a.AlertId
-                        alert.GroupId      = a.GroupId
-                        alert.State        = a.State
-                        alert.StartsAt     = time.Unix(a.StartsAt, 0)
-                        alert.EndsAt       = time.Unix(a.EndsAt, 0)
-                        alert.Repeat       = a.Repeat
-                        alert.ChangeSt     = a.ChangeSt
-                        alert.Labels       = a.Labels
-                        alert.Annotations  = a.Annotations
-                        alert.GeneratorURL = a.GeneratorURL
-
-                        for id, rule := range mRules {
-                            if checkMatch(a, rule) {
-                                data.Alerts[id] = append(data.Alerts[id], alert)
-                            }
-                        }
-                    } 
-                default:
-                    continue
-            }
-        }
-
-        jsn, err := json.Marshal(data)
-        if err != nil {
-            log.Printf("[error] %v", err)
-            return
-        }
-
-        if err := ws.WriteMessage(websocket.TextMessage, []byte(jsn)); err != nil {
-            log.Printf("[error] %v", err)
-            return
-        }
-
-        time.Sleep(500 * time.Millisecond)
-    }
-}
-
 func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
     //alerts := []string{}
 
@@ -440,12 +367,6 @@ func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
 func addAlert(id string, alert cache.Alert) {
 
     CacheAlerts.Set(id, alert)
-
-    select {
-        case changes <- id:
-        default:
-            log.Printf("[error] channel is not ready - %s", id)
-    }
 }
 
 func (api *Api) SetAlerts(alerts []Alert) {
@@ -653,7 +574,8 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
         go api.SetAlerts(alerts)
 
-        w.WriteHeader(204)
+        w.WriteHeader(200)
+        w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
         return
     }
 
