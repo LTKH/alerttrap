@@ -1,6 +1,7 @@
 package config
 
 import (
+    "os"
     "fmt"
     "path"
     "errors"
@@ -225,6 +226,26 @@ func New(filename string) (*Config, error) {
 
     if err := pathNodes("/", cfg.Menu); err != nil {
         return cfg, err
+    }
+
+    if cfg.Global.Security.AdminUser != "" {
+        if string(cfg.Global.Security.AdminUser[0]) == "$" {
+            user, ok := os.LookupEnv(strings.TrimPrefix(cfg.Global.Security.AdminUser, "$"))
+            if !ok {
+                return cfg, fmt.Errorf("no value found for %v", cfg.Global.Security.AdminUser)
+            }
+            cfg.Global.Security.AdminUser = user
+        }
+    }
+
+    if cfg.Global.Security.AdminPassword != "" {
+        if string(cfg.Global.Security.AdminPassword[0]) == "$" {
+            password, ok := os.LookupEnv(strings.TrimPrefix(cfg.Global.Security.AdminPassword, "$"))
+            if !ok {
+                return cfg, fmt.Errorf("no value found for %v", cfg.Global.Security.AdminPassword)
+            }
+            cfg.Global.Security.AdminPassword = password
+        }
     }
 
     for _, ext := range cfg.ExtensionRules {

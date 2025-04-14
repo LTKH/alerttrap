@@ -177,40 +177,6 @@ func checkLabels(labels map[string]interface{}, matchers [][]config.Matcher) boo
     return false
 }
 
-func authentication(cfg *config.DB, r *http.Request) (string, int, error) {
-
-    login, password, ok := r.BasicAuth()
-    if ok {
-        user, ok := CacheUsers.Get(login)
-        if ok { 
-            if user.Password == getHash(password) {
-                return login, 204, nil
-            }
-        }
-        return login, 403, errors.New("Forbidden")
-    }
-
-    lg, err := r.Cookie("login")
-    if err != nil {
-        return "", 401, errors.New("Unauthorized")
-    }
-    tk, err := r.Cookie("token")
-    if err != nil {
-        return "", 401, errors.New("Unauthorized")
-    }
-    if lg.Value != "" && tk.Value != "" {
-        user, ok := CacheUsers.Get(lg.Value)
-        if ok { 
-            if user.Token == tk.Value {
-                return lg.Value, 204, nil
-            }
-        }
-        return lg.Value, 403, errors.New("Forbidden")
-    }
-
-    return "", 401, errors.New("Unauthorized")
-}
-
 func getRules(nodes []*config.Node) (map[string]config.MatchingRule) {
     rules := map[string]config.MatchingRule{}
 
@@ -298,6 +264,50 @@ func New(conf *config.Config) (*Api, error) {
     return &Api{ Conf: conf }, nil
 }
 
+func (api *Api) Authentication(username, password string, r *http.Request) (cache.User, int, error) {
+
+    if username != "" && password != "" {
+        user, ok := CacheUsers.Get(username)
+        if ok { 
+            if user.Password == getHash(password) {
+                return user, 204, nil
+            }
+        }
+        return cache.User{}, 403, errors.New("Forbidden")
+    }
+
+    username, password, ok := r.BasicAuth()
+    if ok {
+        user, ok := CacheUsers.Get(username)
+        if ok { 
+            if user.Password == getHash(password) {
+                return user, 204, nil
+            }
+        }
+        return cache.User{}, 403, errors.New("Forbidden")
+    }
+
+    login, err := r.Cookie("login")
+    if err != nil {
+        return cache.User{}, 401, errors.New("Unauthorized")
+    }
+    token, err := r.Cookie("token")
+    if err != nil {
+        return cache.User{}, 401, errors.New("Unauthorized")
+    }
+    if login.Value != "" && token.Value != "" {
+        user, ok := CacheUsers.Get(login.Value)
+        if ok { 
+            if user.Token == token.Value {
+                return user, 204, nil
+            }
+        }
+        return cache.User{}, 403, errors.New("Forbidden")
+    }
+
+    return cache.User{}, 401, errors.New("Unauthorized")
+}
+
 func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
     //alerts := []string{}
 
@@ -318,22 +328,15 @@ func (api *Api) ApiHealthy(w http.ResponseWriter, r *http.Request) {
 func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
 
-    login, code, err := authentication(api.Conf.Global.DB, r)
+    user, code, err := api.Authentication("", "", r)
     if err != nil {
         w.WriteHeader(code)
         w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
         return
     }
 
-    user, ok := CacheUsers.Get(login)
-    if ok { 
-        w.WriteHeader(200)
-        w.Write(encodeResp(&Resp{Status:"success", Data:user}))
-        return
-    }
-
-    w.WriteHeader(code)
-    w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
+    w.WriteHeader(200)
+    w.Write(encodeResp(&Resp{Status:"success", Data:user}))
 }
 
 func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
@@ -460,7 +463,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
     if r.Method == "GET" {
 
-        _, code, err := authentication(api.Conf.Global.DB, r)
+        _, code, err := api.Authentication("", "", r)
         if err != nil {
             w.WriteHeader(code)
             w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
@@ -523,7 +526,7 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 
     if r.Method == "DELETE" {
 
-        _, code, err := authentication(api.Conf.Global.DB, r)
+        _, code, err := api.Authentication("", "", r)
         if err != nil {
             w.WriteHeader(code)
             w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
@@ -591,7 +594,7 @@ func (api *Api) Api2Alerts(w http.ResponseWriter, r *http.Request) {
 
     if r.Method == "GET" {
 
-        _, code, err := authentication(api.Conf.Global.DB, r)
+        _, code, err := api.Authentication("", "", r)
         if err != nil {
             w.WriteHeader(code)
             w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
@@ -654,7 +657,7 @@ func (api *Api) Api2Alerts(w http.ResponseWriter, r *http.Request) {
 
     if r.Method == "DELETE" {
 
-        _, code, err := authentication(api.Conf.Global.DB, r)
+        _, code, err := api.Authentication("", "", r)
         if err != nil {
             w.WriteHeader(code)
             w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
@@ -731,8 +734,20 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    if api.Conf.Global.Auth.Ldap.Enabled {
+    if username == api.Conf.Global.Security.AdminUser {
+        user, code, err := api.Authentication(username, password, r)
+        if err != nil {
+            w.WriteHeader(code)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
 
+        w.WriteHeader(200)
+        w.Write(encodeResp(&Resp{Status:"success", Data:user}))
+        return
+    }
+
+    if api.Conf.Global.Auth.Ldap.Enabled {
         if api.Conf.Global.Auth.Ldap.BindUser == "" && api.Conf.Global.Auth.Ldap.BindPass == "" {
             api.Conf.Global.Auth.Ldap.BindUser = username
             api.Conf.Global.Auth.Ldap.BindPass = password
@@ -781,17 +796,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    user, found := CacheUsers.Get(username)
-    if found {
-        if getHash(password) == user.Password {
-            w.WriteHeader(200)
-            w.Write(encodeResp(&Resp{Status:"success", Data:user}))
-            return
-        }
-    }
-
     log.Printf("[error] user authenticating %s", username)
     w.WriteHeader(403)
     w.Write(encodeResp(&Resp{Status:"error", Error:"Invalid username or password", Data:make(map[string]string, 0)}))
-
 }
