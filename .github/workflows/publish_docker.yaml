@@ -57,9 +57,9 @@ jobs:
           tags: ghcr.io/ltkh/alerttrap:${{ env.COMMIT_MESSAGE }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Create a new tag
-        if: env.MATCH == 'true'
-        run: |
-          TAG_NAME="v${{ env.COMMIT_MESSAGE }}"
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
+      #- name: Create a new tag
+      #  if: env.MATCH == 'true'
+      #  run: |
+      #    TAG_NAME="v${{ env.COMMIT_MESSAGE }}"
+      #    git tag $TAG_NAME
+      #    git push origin $TAG_NAME
