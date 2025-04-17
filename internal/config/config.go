@@ -3,6 +3,7 @@ package config
 import (
     "os"
     "fmt"
+    "log"
     "path"
     "errors"
     "regexp"
@@ -55,6 +56,8 @@ type DB struct {
     Client           string                  `yaml:"client"`
     ConnString       string                  `yaml:"conn_string"`
     HistoryDays      int                     `yaml:"history_days"`
+    User             string                  `yaml:"user"`
+    Password         string                  `yaml:"password"`
 }
 
 type Ldap struct {
@@ -211,6 +214,19 @@ func pathNodes(p string, nodes []*Node) error {
     return nil
 }
 
+func setEnv(value string) string {
+    if len(value) > 0 && string(value[0]) == "$" {
+        val, ok := os.LookupEnv(strings.TrimPrefix(value, "$"))
+        if !ok {
+            log.Printf("[error] no value found for %v", value)
+            return ""
+        }
+        return val
+    }
+
+    return value
+}
+
 func New(filename string) (*Config, error) {
 
     cfg := &Config{}
@@ -228,25 +244,11 @@ func New(filename string) (*Config, error) {
         return cfg, err
     }
 
-    if cfg.Global.Security.AdminUser != "" {
-        if string(cfg.Global.Security.AdminUser[0]) == "$" {
-            user, ok := os.LookupEnv(strings.TrimPrefix(cfg.Global.Security.AdminUser, "$"))
-            if !ok {
-                return cfg, fmt.Errorf("no value found for %v", cfg.Global.Security.AdminUser)
-            }
-            cfg.Global.Security.AdminUser = user
-        }
-    }
-
-    if cfg.Global.Security.AdminPassword != "" {
-        if string(cfg.Global.Security.AdminPassword[0]) == "$" {
-            password, ok := os.LookupEnv(strings.TrimPrefix(cfg.Global.Security.AdminPassword, "$"))
-            if !ok {
-                return cfg, fmt.Errorf("no value found for %v", cfg.Global.Security.AdminPassword)
-            }
-            cfg.Global.Security.AdminPassword = password
-        }
-    }
+    cfg.Global.Security.AdminUser = setEnv(cfg.Global.Security.AdminUser)
+    cfg.Global.Security.AdminPassword = setEnv(cfg.Global.Security.AdminPassword)
+    cfg.Global.DB.User = setEnv(cfg.Global.DB.User)
+    cfg.Global.DB.Password = setEnv(cfg.Global.DB.Password)
+    
 
     for _, ext := range cfg.ExtensionRules {
         for _, sm := range ext.SourceMatchers {

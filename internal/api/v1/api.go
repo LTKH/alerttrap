@@ -14,6 +14,7 @@ import (
     "sync"
     "strconv"
     "errors"
+    "regexp"
     "io/ioutil"
     "encoding/json"
     "github.com/ltkh/alerttrap/internal/cache"
@@ -340,22 +341,49 @@ func (api *Api) ApiAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *Api) ApiMenu(w http.ResponseWriter, r *http.Request) {
+    _, code, err := api.Authentication("", "", r)
+    if err != nil {
+        w.WriteHeader(code)
+        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+        return
+    }
+
     w.Header().Set("Content-Type", "application/json")
     menu, _ := ConfigMenu.Get()
     w.Write(encodeResp(&Resp{Status:"success", Data:menu}))
 }
 
 func (api *Api) ApiTmpl(w http.ResponseWriter, r *http.Request) {
+    _, code, err := api.Authentication("", "", r)
+    if err != nil {
+        w.WriteHeader(code)
+        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+        return
+    }
+
     w.Header().Set("Content-Type", "application/json")
     tmpl, _ := ConfigTmpl.Get()
     w.Write(encodeResp(&Resp{Status:"success", Data:tmpl}))
 }
 
 func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
-    if r.Header.Get("X-Custom-URL") != "" {
-        r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL"))
-        getReverseProxy().ServeHTTP(w, r)
-        return
+    match, _ := regexp.MatchString("^/(|[a-z0-9]+.html|assets/.*)$", r.URL.Path)
+
+    if !match {
+        user, code, err := api.Authentication("", "", r)
+        if err != nil {
+            w.WriteHeader(code)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+    
+        if r.Header.Get("X-Custom-URL") != "" {
+            log.Printf("[proxy] %v - %v - %v - %v", user.Login, r.Method, r.Header.Get("X-Custom-URL"), r.URL.Path)
+
+            r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL"))
+            getReverseProxy().ServeHTTP(w, r)
+            return
+        }
     }
 
     if _, err := os.Stat(api.Conf.Global.WebDir+r.URL.Path); err == nil {
@@ -453,12 +481,6 @@ func (api *Api) SetAlerts(data Alerts) {
 }
 
 func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
-    if r.Header.Get("X-Custom-URL") != "" {
-        r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL"))
-        getReverseProxy().ServeHTTP(w, r)
-        return
-    }
-
     w.Header().Set("Content-Type", "application/json")
 
     if r.Method == "GET" {
@@ -584,12 +606,6 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *Api) Api2Alerts(w http.ResponseWriter, r *http.Request) {
-    if r.Header.Get("X-Custom-URL") != "" {
-        r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL"))
-        getReverseProxy().ServeHTTP(w, r)
-        return
-    }
-
     w.Header().Set("Content-Type", "application/json")
 
     if r.Method == "GET" {

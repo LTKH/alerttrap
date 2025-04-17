@@ -207,6 +207,16 @@
                         if(XMLHttpRequest.status == 401){
                             window.location.replace("/login.html");
                         }
+                        if(XMLHttpRequest.status == 0){
+                            $.gritter.add({
+                                title: 'Service unavailable!',
+                                text: 'The service may be unavailable or taking a long time to respond to requests',
+                                image: '/assets/img/others/warning.png',
+                                //sticky: true,
+                                time: 10000,
+                                class_name: 'my-sticky-class'
+                            });
+                        }
                         updates.results[nkey].status = 'error';
                     }
                 });
