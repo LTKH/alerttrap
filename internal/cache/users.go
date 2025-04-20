@@ -16,6 +16,7 @@ type User struct {
     Name             string             `yaml:"name" json:"name"`
     Password         string             `yaml:"password" json:"-"`
     Token            string             `yaml:"token" json:"token"`
+    Created          int64              `yaml:"created" json:"-"`
     EndsAt           int64              `yaml:"endsAt" json:"-"`
 }
 

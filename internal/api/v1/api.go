@@ -40,7 +40,8 @@ var (
 
 type Api struct {
     Conf         *config.Config
-    ProxyLog     chan *config.Proxy
+    Users        chan *cache.User
+    Actions      chan *config.Action
 }
 
 type Change struct {
@@ -263,7 +264,7 @@ func New(conf *config.Config) (*Api, error) {
     ConfigMenu.Set(conf.Menu)
     ConfigTmpl.Set(conf.Templates)
     
-    return &Api{ Conf: conf, ProxyLog: make(chan *config.Proxy, 10000) }, nil
+    return &Api{ Conf: conf, Users: make(chan *cache.User, 10000), Actions: make(chan *config.Action, 10000) }, nil
 }
 
 func (api *Api) Authentication(username, password string, r *http.Request) (cache.User, int, error) {
@@ -379,13 +380,18 @@ func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
         }
     
         if r.Header.Get("X-Custom-URL") != "" {
-            if len(api.ProxyLog) < 10000 {
-                api.ProxyLog <- &config.Proxy{
-                    Login:     user.Login,
-                    Method:    r.Method,
-                    Url:       r.Header.Get("X-Custom-URL"),
-                    Path:      r.URL.Path,
-                    Timestamp: time.Now().UTC().Unix(),
+            if len(api.Actions) < 10000 {
+                api.Actions <- &config.Action{
+                    Login:        user.Login,
+                    Action:       "request via proxy",
+                    Object:       "",
+                    Attributes:   map[string]string{
+                        "method": r.Method,
+                        "url":    r.Header.Get("X-Custom-URL"),
+                        "path":   r.URL.Path,
+                    },
+                    Description:  "",
+                    Created:      time.Now().UTC().Unix(),
                 }
             }
 
@@ -762,6 +768,17 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
     if username == api.Conf.Global.Security.AdminUser {
         user, code, err := api.Authentication(username, password, r)
         if err != nil {
+            if len(api.Actions) < 10000 {
+                api.Actions <- &config.Action{
+                    Login:        username,
+                    Action:       "failed login attempt",
+                    Object:       "",
+                    Attributes:   map[string]string{},
+                    Description:  "",
+                    Created:      time.Now().UTC().Unix(),
+                }
+            }
+
             w.WriteHeader(code)
             w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
             return
@@ -797,6 +814,17 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 
         ok, usr, err := clnt.Authenticate(username, password)
         if !ok {
+            if len(api.Actions) < 10000 {
+                api.Actions <- &config.Action{
+                    Login:        username,
+                    Action:       "failed login attempt",
+                    Object:       "",
+                    Attributes:   map[string]string{},
+                    Description:  err.Error(),
+                    Created:      time.Now().UTC().Unix(),
+                }
+            }
+
             log.Printf("[error] user authenticating %s: %+v", username, err)
             w.WriteHeader(403)
             w.Write(encodeResp(&Resp{Status:"error", Error:"See application log for more details", Data:make(map[string]string, 0)}))
@@ -813,7 +841,11 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         if api.Conf.Global.Auth.Ldap.Attributes["email"] != "" {
             user.Email = usr[api.Conf.Global.Auth.Ldap.Attributes["email"]]
         }
-        
+
+        if len(api.Users) < 10000 {
+            api.Users <- &user
+        }
+
         CacheUsers.Set(username, user)
 
         w.WriteHeader(200)

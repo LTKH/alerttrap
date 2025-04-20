@@ -27,6 +27,7 @@ var (
         },
         []string{"state","alertname"},
     )
+    usrCreated = int64(0)
 )
 
 func main() {
@@ -71,6 +72,16 @@ func main() {
     if err != nil {
         log.Fatalf("[error] create tables: %v", err)
     }
+    // Loading users
+    users, err := client.LoadUsers(0)
+    if err != nil {
+        log.Fatalf("[error] loading users: %v", err)
+    }
+    for _, user := range users {
+        usrCreated = user.Created
+        v1.CacheUsers.Set(user.Login, user)
+    }
+    log.Printf("[info] loaded users from dbase (%d)", len(users))
     // Loading alerts
     alerts, err := client.LoadAlerts()
     if err != nil {
@@ -132,7 +143,7 @@ func main() {
         }
     }(cfg.Global)
 
-    // Write new proxy log
+    // Write new users
     go func(cfg *config.DB){
         // Connection to data base
         client, err := db.NewClient(cfg) 
@@ -140,8 +151,23 @@ func main() {
             log.Printf("[error] connect to db: %v", err)
         }
 
-        for prx := range apiV1.ProxyLog {
-            if err := client.SaveProxyLog(*prx); err != nil {
+        for usr := range apiV1.Users {
+            if err := client.SaveUser(*usr); err != nil {
+                log.Printf("[error] %v", err)
+            }
+        }
+    }(cfg.Global.DB)
+
+    // Write new action
+    go func(cfg *config.DB){
+        // Connection to data base
+        client, err := db.NewClient(cfg) 
+        if err != nil {
+            log.Printf("[error] connect to db: %v", err)
+        }
+
+        for act := range apiV1.Actions {
+            if err := client.SaveAction(*act); err != nil {
                 log.Printf("[error] %v", err)
             }
         }
@@ -166,13 +192,13 @@ func main() {
                 }
             }
 
-            // Cleaning old proxy logs
-            clg, err := client.DeleteOldProxyLogs()
+            // Cleaning old actions
+            ctn, err := client.DeleteOldActions()
             if err != nil {
                 log.Printf("[error] %v", err)
             } else {
-                if clg > 0 {
-                    log.Printf("[info] deleted old proxy log (%d)", clg)
+                if ctn > 0 {
+                    log.Printf("[info] deleted old actions (%d)", ctn)
                 }
             }
 
@@ -226,20 +252,34 @@ func main() {
     // Daemon mode
     for {
 
+        client, err := db.NewClient(cfg.Global.DB)
+        if err != nil {
+            log.Printf("[error] connect to db: %v", err)
+        }
+
         // Cleaning cache alerts
         if items := v1.CacheAlerts.ExpiredItems(); len(items) != 0 {
-            client, err := db.NewClient(cfg.Global.DB)
-            if err != nil {
-                log.Printf("[error] connect to db: %v", err)
-            }
             if err := client.SaveAlerts(items); err != nil {
                 log.Printf("[error] %v", err)
             } else {
                 log.Printf("[info] alerts recorded in database (%d)", len(items))
                 v1.CacheAlerts.ClearItems(items)
             }
-            client.Close()
         }
+
+        // Loading users
+        if users, err := client.LoadUsers(usrCreated); len(users) != 0 {
+            if err != nil {
+                log.Fatalf("[error] loading users: %v", err)
+            }
+            for _, user := range users {
+                usrCreated = user.Created
+                v1.CacheUsers.Set(user.Login, user)
+            }
+            log.Printf("[info] loaded users from dbase (%d)", len(users))
+        }
+
+        client.Close()
 
         time.Sleep(600 * time.Second)
 

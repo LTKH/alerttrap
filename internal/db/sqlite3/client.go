@@ -58,7 +58,8 @@ func (db *Client) CreateTables() error {
         email         varchar(100),
         name          varchar(150),
         password      varchar(100) not null,
-        token         varchar(100) not null
+        token         varchar(100) not null,
+        created       bigint(20) default 0
       );`)
     if err != nil {
         return err
@@ -100,13 +101,13 @@ func (db *Client) LoadUser(login string) (cache.User, error) {
 }
 
 func (db *Client) SaveUser(user cache.User) error {
-    stmt, err := db.client.Prepare("replace into users (login,name,password,token) values (?,?,?,?)")
+    stmt, err := db.client.Prepare("replace into users (login,name,password,token,created) values (?,?,?,?,?)")
     if err != nil {
         return err
     }
     defer stmt.Close()
 
-    _, err = stmt.Exec(user.Login, user.Name, user.Password, user.Token)
+    _, err = stmt.Exec(user.Login, user.Name, user.Password, user.Token, time.Now().UTC().Unix())
     if err != nil {
         return err
     }
@@ -114,12 +115,12 @@ func (db *Client) SaveUser(user cache.User) error {
     return nil
 }
 
-func (db *Client) LoadUsers() ([]cache.User, error) {
+func (db *Client) LoadUsers(timestamp int64) ([]cache.User, error) {
     result := []cache.User{}
 
-    rows, err := db.client.Query("select login,password,token from users")
+    rows, err := db.client.Query("select login,password,token from users where created >= $1", timestamp)
     if err != nil {
-        return nil, err
+        return result, err
     }
     defer rows.Close()
 
@@ -346,12 +347,12 @@ func (db *Client) DeleteOldAlerts() (int64, error) {
     return cnt, nil
 }
 
-func (db *Client) SaveProxyLog(proxy config.Proxy) error {
+func (db *Client) SaveAction(action config.Action) error {
 
     return nil
 }
 
-func (db *Client) DeleteOldProxyLogs() (int64, error) {
+func (db *Client) DeleteOldActions() (int64, error) {
 
     return 0, nil
 }

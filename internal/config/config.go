@@ -110,12 +110,13 @@ type Matcher struct {
     Re *regexp.Regexp
 }
 
-type Proxy struct {
+type Action struct {
     Login         string
-    Method        string
-    Url           string
-    Path          string
-    Timestamp     int64
+    Action        string
+    Object        string
+    Attributes    map[string]string
+    Description   string
+    Created       int64
 }
 
 // NewMatcher returns a matcher object.

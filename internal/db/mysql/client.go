@@ -74,19 +74,8 @@ func (db *Client) CreateTables() error {
         %[1]sname%[1]s          varchar(150),
         %[1]semail%[1]s         varchar(100),
         %[1]stoken%[1]s         varchar(100) not null,
+        %[1]screated%[1]s       bigint(20) default 0,
         unique key IDX_mon_users_login (login)
-      ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci
-    `, "`"))
-
-    _, err = db.client.Exec(fmt.Sprintf(`
-      create table if not exists proxy_logs (
-        %[1]sid%[1]s            int not null auto_increment,
-        %[1]slogin%[1]s         varchar(100) not null,
-        %[1]smethod%[1]s        varchar(10),
-        %[1]surl%[1]s           varchar(500),
-        %[1]spath%[1]s          varchar(1000),
-        %[1]stimestamp%[1]s     bigint(20) default 0,
-        primary key (id)
       ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci
     `, "`"))
     if err != nil {
@@ -101,7 +90,7 @@ func (db *Client) CreateTables() error {
         %[1]sobject%[1]s        varchar(100),
         %[1]sattributes%[1]s    json,
         %[1]sdescription%[1]s   text,
-        %[1]stimestamp%[1]s     bigint(20) default 0,
+        %[1]screated%[1]s       bigint(20) default 0,
         primary key (id)
       ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci
     `, "`"))
@@ -140,13 +129,13 @@ func (db *Client) LoadUser(login string) (cache.User, error) {
 }
 
 func (db *Client) SaveUser(user cache.User) error {
-    stmt, err := db.client.Prepare("replace into users (login,name,password,token) values (?,?,?,?)")
+    stmt, err := db.client.Prepare("replace into users (login,name,password,token,created) values (?,?,?,?,?)")
     if err != nil {
         return err
     }
     defer stmt.Close()
 
-    _, err = stmt.Exec(user.Login, user.Name, user.Password, user.Token)
+    _, err = stmt.Exec(user.Login, user.Name, user.Password, user.Token, time.Now().UTC().Unix())
     if err != nil {
         return err
     }
@@ -154,10 +143,10 @@ func (db *Client) SaveUser(user cache.User) error {
     return nil
 }
 
-func (db *Client) LoadUsers() ([]cache.User, error) {
+func (db *Client) LoadUsers(timestamp int64) ([]cache.User, error) {
     result := []cache.User{}
 
-    rows, err := db.client.Query("select login,password,token from users")
+    rows, err := db.client.Query("select login,password,token,created from users where created >= ?", timestamp)
     if err != nil {
         return nil, err
     }
@@ -166,7 +155,7 @@ func (db *Client) LoadUsers() ([]cache.User, error) {
     for rows.Next() {
         var usr cache.User
         usr.EndsAt = time.Now().UTC().Unix()
-        err := rows.Scan(&usr.Login, &usr.Password, &usr.Token)
+        err := rows.Scan(&usr.Login, &usr.Password, &usr.Token, &usr.Created)
         if err != nil {
             return nil, err
         }
@@ -386,14 +375,19 @@ func (db *Client) DeleteOldAlerts() (int64, error) {
     return cnt, nil
 }
 
-func (db *Client) SaveProxyLog(proxy config.Proxy) error {
-    stmt, err := db.client.Prepare("insert into proxy_logs (login,method,url,path,timestamp) values (?,?,?,?,?)")
+func (db *Client) SaveAction(action config.Action) error {
+    stmt, err := db.client.Prepare("insert into actions (login,action,object,attributes,description,created) values (?,?,?,?,?,?)")
     if err != nil {
         return err
     }
     defer stmt.Close()
 
-    _, err = stmt.Exec(proxy.Login, proxy.Method, proxy.Url, proxy.Path, proxy.Timestamp)
+    attributes, err := json.Marshal(action.Attributes)
+    if err != nil {
+        return err
+    }
+
+    _, err = stmt.Exec(action.Login, action.Action, action.Object, attributes, action.Description, action.Created)
     if err != nil {
         return err
     }
@@ -401,9 +395,9 @@ func (db *Client) SaveProxyLog(proxy config.Proxy) error {
     return nil
 }
 
-func (db *Client) DeleteOldProxyLogs() (int64, error) {
+func (db *Client) DeleteOldActions() (int64, error) {
 
-    stmt, err := db.client.Prepare("delete from proxy_logs where timestamp < UNIX_TIMESTAMP() - 86400 * ?")
+    stmt, err := db.client.Prepare("delete from actions where created < UNIX_TIMESTAMP() - 86400 * ?")
     if err != nil {
         return 0, err
     }
