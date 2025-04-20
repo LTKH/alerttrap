@@ -132,7 +132,22 @@ func main() {
         }
     }(cfg.Global)
 
-    // Delete old alerts
+    // Write new proxy log
+    go func(cfg *config.DB){
+        // Connection to data base
+        client, err := db.NewClient(cfg) 
+        if err != nil {
+            log.Printf("[error] connect to db: %v", err)
+        }
+
+        for prx := range apiV1.ProxyLog {
+            if err := client.SaveProxyLog(*prx); err != nil {
+                log.Printf("[error] %v", err)
+            }
+        }
+    }(cfg.Global.DB)
+
+    // Delete old records
     go func(cfg *config.DB){
         for {
             // Connection to data base
@@ -140,17 +155,28 @@ func main() {
             if err != nil {
                 log.Printf("[error] connect to db: %v", err)
             }
+
             // Cleaning old alerts
-            cnt, err := client.DeleteOldAlerts()
+            clt, err := client.DeleteOldAlerts()
             if err != nil {
                 log.Printf("[error] %v", err)
             } else {
-                if cnt > 0 {
-                    log.Printf("[info] deleted old alerts (%d)", cnt)
+                if clt > 0 {
+                    log.Printf("[info] deleted old alerts (%d)", clt)
                 }
             }
-            client.Close()
 
+            // Cleaning old proxy logs
+            clg, err := client.DeleteOldProxyLogs()
+            if err != nil {
+                log.Printf("[error] %v", err)
+            } else {
+                if clg > 0 {
+                    log.Printf("[info] deleted old proxy log (%d)", clg)
+                }
+            }
+
+            client.Close()
             time.Sleep(24 * time.Hour)
         }
     }(cfg.Global.DB)

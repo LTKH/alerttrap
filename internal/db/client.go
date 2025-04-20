@@ -17,9 +17,11 @@ type DbClient interface {
 	LoadUsers() ([]cache.User, error)
 	LoadAlerts() ([]cache.Alert, error)
 	SaveAlerts(alerts map[string]cache.Alert) error
+	SaveProxyLog(proxy config.Proxy) error
 	AddAlert(alert cache.Alert) error
 	UpdAlert(alert cache.Alert) error
 	DeleteOldAlerts() (int64, error)
+	DeleteOldProxyLogs() (int64, error)
 }
 
 func NewClient(config *config.DB) (DbClient, error) {

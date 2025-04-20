@@ -56,6 +56,8 @@ type DB struct {
     Client           string                  `yaml:"client"`
     ConnString       string                  `yaml:"conn_string"`
     HistoryDays      int                     `yaml:"history_days"`
+    Host             string                  `yaml:"host"`
+    Name             string                  `yaml:"name"`
     User             string                  `yaml:"user"`
     Password         string                  `yaml:"password"`
 }
@@ -106,6 +108,14 @@ type Matcher struct {
     Name  string
     Value string
     Re *regexp.Regexp
+}
+
+type Proxy struct {
+    Login         string
+    Method        string
+    Url           string
+    Path          string
+    Timestamp     int64
 }
 
 // NewMatcher returns a matcher object.
@@ -214,7 +224,7 @@ func pathNodes(p string, nodes []*Node) error {
     return nil
 }
 
-func setEnv(value string) string {
+func getEnv(value string) string {
     if len(value) > 0 && string(value[0]) == "$" {
         val, ok := os.LookupEnv(strings.TrimPrefix(value, "$"))
         if !ok {
@@ -244,10 +254,10 @@ func New(filename string) (*Config, error) {
         return cfg, err
     }
 
-    cfg.Global.Security.AdminUser = setEnv(cfg.Global.Security.AdminUser)
-    cfg.Global.Security.AdminPassword = setEnv(cfg.Global.Security.AdminPassword)
-    cfg.Global.DB.User = setEnv(cfg.Global.DB.User)
-    cfg.Global.DB.Password = setEnv(cfg.Global.DB.Password)
+    cfg.Global.Security.AdminUser = getEnv(cfg.Global.Security.AdminUser)
+    cfg.Global.Security.AdminPassword = getEnv(cfg.Global.Security.AdminPassword)
+    cfg.Global.DB.User = getEnv(cfg.Global.DB.User)
+    cfg.Global.DB.Password = getEnv(cfg.Global.DB.Password)
     
 
     for _, ext := range cfg.ExtensionRules {

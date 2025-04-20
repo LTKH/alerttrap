@@ -64,7 +64,7 @@ func (db *Client) CreateTables() error {
         return err
     }
 
-      return nil
+    return nil
 }
 
 func (db *Client) Healthy() error {
@@ -96,7 +96,7 @@ func (db *Client) LoadUser(login string) (cache.User, error) {
         return usr, err
     }
 
-      return usr, nil
+    return usr, nil
 }
 
 func (db *Client) SaveUser(user cache.User) error {
@@ -112,7 +112,6 @@ func (db *Client) SaveUser(user cache.User) error {
     }
 
     return nil
-
 }
 
 func (db *Client) LoadUsers() ([]cache.User, error) {
@@ -134,7 +133,7 @@ func (db *Client) LoadUsers() ([]cache.User, error) {
         result = append(result, usr) 
     }
 
-      return result, nil
+    return result, nil
 }
 
 func (db *Client) LoadAlerts() ([]cache.Alert, error) {
@@ -215,7 +214,7 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
         result = append(result, a) 
     }
  
-      return result, nil
+    return result, nil
 }
 
 func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
@@ -258,7 +257,6 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
     }
 
     return nil
-
 }
 
 func (db *Client) AddAlert(alert cache.Alert) error {
@@ -346,5 +344,14 @@ func (db *Client) DeleteOldAlerts() (int64, error) {
     }
 
     return cnt, nil
+}
 
+func (db *Client) SaveProxyLog(proxy config.Proxy) error {
+
+    return nil
+}
+
+func (db *Client) DeleteOldProxyLogs() (int64, error) {
+
+    return 0, nil
 }

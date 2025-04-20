@@ -40,6 +40,7 @@ var (
 
 type Api struct {
     Conf         *config.Config
+    ProxyLog     chan *config.Proxy
 }
 
 type Change struct {
@@ -262,7 +263,7 @@ func New(conf *config.Config) (*Api, error) {
     ConfigMenu.Set(conf.Menu)
     ConfigTmpl.Set(conf.Templates)
     
-    return &Api{ Conf: conf }, nil
+    return &Api{ Conf: conf, ProxyLog: make(chan *config.Proxy, 10000) }, nil
 }
 
 func (api *Api) Authentication(username, password string, r *http.Request) (cache.User, int, error) {
@@ -378,7 +379,15 @@ func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
         }
     
         if r.Header.Get("X-Custom-URL") != "" {
-            log.Printf("[proxy] %v - %v - %v - %v", user.Login, r.Method, r.Header.Get("X-Custom-URL"), r.URL.Path)
+            if len(api.ProxyLog) < 10000 {
+                api.ProxyLog <- &config.Proxy{
+                    Login:     user.Login,
+                    Method:    r.Method,
+                    Url:       r.Header.Get("X-Custom-URL"),
+                    Path:      r.URL.Path,
+                    Timestamp: time.Now().UTC().Unix(),
+                }
+            }
 
             r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL"))
             getReverseProxy().ServeHTTP(w, r)

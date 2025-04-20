@@ -6,11 +6,17 @@ global:
   web_dir:            "web"
   
   db:
-    #client:           "mysql"
-    #conn_string:      "root:test@(172.17.0.1)/alerttrap?parseTime=true"
     client:           "sqlite3"
     conn_string:      "/tmp/dbase.db"
     history_days:     7
+  
+#  db:
+#    conn_string:      ""
+#    client:           "mysql"
+#    user:             "$USER"
+#    password:         "$SECURITYSESSIONID"
+#    name:             "alerttrap"
+#    host:             "localhost:1234"
 
   security:
     admin_user:       "admin"

@@ -7,7 +7,7 @@ import (
     "strconv"
     "encoding/json"
     "database/sql"
-    _ "github.com/go-sql-driver/mysql"
+    msl "github.com/go-sql-driver/mysql"
     "github.com/ltkh/alerttrap/internal/config"
     "github.com/ltkh/alerttrap/internal/cache"
 )
@@ -18,10 +18,23 @@ type Client struct {
 }
 
 func NewClient(conf *config.DB) (*Client, error) {
+    if conf.ConnString == "" {
+        cfg := msl.Config{
+            User:                 conf.User,
+            Passwd:               conf.Password,
+            Net:                  "tcp",
+            Addr:                 conf.Host,
+            DBName:               conf.Name,
+            AllowNativePasswords: true,
+        }
+        conf.ConnString = cfg.FormatDSN()
+    }
+
     conn, err := sql.Open("mysql", conf.ConnString)
     if err != nil {
         return nil, err
     }
+
     return &Client{ client: conn, config: conf }, nil
 }
 
@@ -64,6 +77,34 @@ func (db *Client) CreateTables() error {
         unique key IDX_mon_users_login (login)
       ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci
     `, "`"))
+
+    _, err = db.client.Exec(fmt.Sprintf(`
+      create table if not exists proxy_logs (
+        %[1]sid%[1]s            int not null auto_increment,
+        %[1]slogin%[1]s         varchar(100) not null,
+        %[1]smethod%[1]s        varchar(10),
+        %[1]surl%[1]s           varchar(500),
+        %[1]spath%[1]s          varchar(1000),
+        %[1]stimestamp%[1]s     bigint(20) default 0,
+        primary key (id)
+      ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci
+    `, "`"))
+    if err != nil {
+        return err
+    }
+
+    _, err = db.client.Exec(fmt.Sprintf(`
+      create table if not exists actions (
+        %[1]sid%[1]s            int not null auto_increment,
+        %[1]slogin%[1]s         varchar(100) not null,
+        %[1]saction%[1]s        varchar(100),
+        %[1]sobject%[1]s        varchar(100),
+        %[1]sattributes%[1]s    json,
+        %[1]sdescription%[1]s   text,
+        %[1]stimestamp%[1]s     bigint(20) default 0,
+        primary key (id)
+      ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci
+    `, "`"))
     if err != nil {
         return err
     }
@@ -95,7 +136,7 @@ func (db *Client) LoadUser(login string) (cache.User, error) {
         return usr, err
     }
 
-      return usr, nil
+    return usr, nil
 }
 
 func (db *Client) SaveUser(user cache.User) error {
@@ -111,7 +152,6 @@ func (db *Client) SaveUser(user cache.User) error {
     }
 
     return nil
-
 }
 
 func (db *Client) LoadUsers() ([]cache.User, error) {
@@ -133,7 +173,7 @@ func (db *Client) LoadUsers() ([]cache.User, error) {
         result = append(result, usr) 
     }
 
-      return result, nil
+    return result, nil
 }
 
 func (db *Client) LoadAlerts() ([]cache.Alert, error) {
@@ -214,7 +254,7 @@ func (db *Client) LoadAlerts() ([]cache.Alert, error) {
         result = append(result, a) 
     }
 
-      return result, nil
+    return result, nil
 }
 
 func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
@@ -257,7 +297,6 @@ func (db *Client) SaveAlerts(alerts map[string]cache.Alert) error {
     }
 
     return nil
-
 }
 
 func (db *Client) AddAlert(alert cache.Alert) error {
@@ -345,5 +384,40 @@ func (db *Client) DeleteOldAlerts() (int64, error) {
     }
 
     return cnt, nil
+}
 
+func (db *Client) SaveProxyLog(proxy config.Proxy) error {
+    stmt, err := db.client.Prepare("insert into proxy_logs (login,method,url,path,timestamp) values (?,?,?,?,?)")
+    if err != nil {
+        return err
+    }
+    defer stmt.Close()
+
+    _, err = stmt.Exec(proxy.Login, proxy.Method, proxy.Url, proxy.Path, proxy.Timestamp)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func (db *Client) DeleteOldProxyLogs() (int64, error) {
+
+    stmt, err := db.client.Prepare("delete from proxy_logs where timestamp < UNIX_TIMESTAMP() - 86400 * ?")
+    if err != nil {
+        return 0, err
+    }
+    defer stmt.Close()
+
+    res, err := stmt.Exec(db.config.HistoryDays)
+    if err != nil {
+        return 0, err
+    }
+
+    cnt, err := res.RowsAffected()
+    if err != nil {
+        return 0, err
+    }
+
+    return cnt, nil
 }
