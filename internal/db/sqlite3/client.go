@@ -59,7 +59,16 @@ func (db *Client) CreateTables() error {
         name          varchar(150),
         password      varchar(100) not null,
         token         varchar(100) not null,
-        created       bigint(20) default 0
+        timestamp     bigint(20) default 0
+      );
+      create table if not exists actions (
+        id            integer primary key autoincrement,
+        login         varchar(100) not null,
+        action        varchar(100),
+        object        varchar(100),
+        attributes    text,
+        description   text,
+        timestamp     bigint(20) default 0
       );`)
     if err != nil {
         return err
@@ -101,7 +110,7 @@ func (db *Client) LoadUser(login string) (cache.User, error) {
 }
 
 func (db *Client) SaveUser(user cache.User) error {
-    stmt, err := db.client.Prepare("replace into users (login,name,password,token,created) values (?,?,?,?,?)")
+    stmt, err := db.client.Prepare("replace into users (login,name,password,token,timestamp) values (?,?,?,?,?)")
     if err != nil {
         return err
     }
@@ -118,7 +127,7 @@ func (db *Client) SaveUser(user cache.User) error {
 func (db *Client) LoadUsers(timestamp int64) ([]cache.User, error) {
     result := []cache.User{}
 
-    rows, err := db.client.Query("select login,password,token from users where created >= $1", timestamp)
+    rows, err := db.client.Query("select login,password,token from users where timestamp >= ?", timestamp)
     if err != nil {
         return result, err
     }
@@ -140,7 +149,7 @@ func (db *Client) LoadUsers(timestamp int64) ([]cache.User, error) {
 func (db *Client) LoadAlerts() ([]cache.Alert, error) {
     result := []cache.Alert{}
 
-    rows, err := db.client.Query("select *, max(ends_at) from alerts where ends_at > $1 group by group_id", time.Now().UTC().Unix())
+    rows, err := db.client.Query("select *, max(ends_at) from alerts where ends_at > ? group by group_id", time.Now().UTC().Unix())
     if err != nil {
         return result, err
     }
@@ -347,12 +356,78 @@ func (db *Client) DeleteOldAlerts() (int64, error) {
     return cnt, nil
 }
 
+func (db *Client) LoadActions(action string) ([]config.Action, error) {
+    result := []config.Action{}
+
+    rows, err := db.client.Query("select login,action,object,attributes,description,timestamp from actions where action like ? order by timestamp desc limit 10000", action)
+    if err != nil {
+        return result, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var action config.Action
+        var attributes []byte
+        err := rows.Scan(&action.Login, &action.Action, &action.Object, &attributes, &action.Description, &action.Timestamp)
+        if err != nil {
+            return nil, err
+        }
+        if err := json.Unmarshal(attributes, &action.Attributes); err != nil {
+            return nil, err
+        }
+        action.Created = time.Unix(action.Timestamp, 0)
+        result = append(result, action) 
+    }
+
+    return result, nil
+}
+
 func (db *Client) SaveAction(action config.Action) error {
+    stmt, err := db.client.Prepare("insert into actions (login,action,object,attributes,description,timestamp) values (?,?,?,?,?,?)")
+    if err != nil {
+        return err
+    }
+    defer stmt.Close()
+
+    if action.Action == "" {
+        action.Action = "unknown"
+    }
+
+    if action.Timestamp == 0 {
+        action.Timestamp = time.Now().UTC().Unix()
+    }
+
+    attributes, err := json.Marshal(action.Attributes)
+    if err != nil {
+        return err
+    }
+
+    _, err = stmt.Exec(action.Login, action.Action, action.Object, attributes, action.Description, action.Timestamp)
+    if err != nil {
+        return err
+    }
 
     return nil
 }
 
 func (db *Client) DeleteOldActions() (int64, error) {
 
-    return 0, nil
+    stmt, err := db.client.Prepare("delete from actions where timestamp < ? - 86400 * ?")
+    if err != nil {
+        return 0, err
+    }
+    defer stmt.Close()
+
+    res, err := stmt.Exec(time.Now().UTC().Unix(), db.config.HistoryDays)
+    if err != nil {
+        return 0, err
+    }
+
+    cnt, err := res.RowsAffected()
+    if err != nil {
+        return 0, err
+    }
+
+    return cnt, nil
 }
+

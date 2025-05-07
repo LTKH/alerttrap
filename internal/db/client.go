@@ -16,6 +16,7 @@ type DbClient interface {
     SaveUser(user cache.User) error
     LoadUsers(timestamp int64) ([]cache.User, error)
     LoadAlerts() ([]cache.Alert, error)
+	LoadActions(action string) ([]config.Action, error)
     SaveAlerts(alerts map[string]cache.Alert) error
     SaveAction(action config.Action) error
     AddAlert(alert cache.Alert) error

@@ -1,12 +1,12 @@
 package cache
 
 import (
-	"sync"
+    "sync"
     "time"
 )
 
 type Users struct {
-	sync.RWMutex
+    sync.RWMutex
     items            map[string]User
 }
 
@@ -16,8 +16,8 @@ type User struct {
     Name             string             `yaml:"name" json:"name"`
     Password         string             `yaml:"password" json:"-"`
     Token            string             `yaml:"token" json:"token"`
-    Created          int64              `yaml:"created" json:"-"`
     EndsAt           int64              `yaml:"endsAt" json:"-"`
+    Timestamp        int64              `json:"-"`
 }
 
 func NewCacheUsers() *Users {
@@ -54,15 +54,15 @@ func (u *Users) Get(key string) (User, bool) {
 
 func (u *Users) Items() map[string]User {
 
-	u.RLock()
+        u.RLock()
     defer u.RUnlock()
     
-	items := make(map[string]User, len(u.items))
-	for k, v := range u.items {
-		items[k] = v
+        items := make(map[string]User, len(u.items))
+        for k, v := range u.items {
+                items[k] = v
     }
     
-	return items
+        return items
 }
 
 func (u *Users) ClearItems(items map[string]User) {

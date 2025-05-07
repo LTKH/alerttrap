@@ -5,6 +5,7 @@ import (
     "fmt"
     "log"
     "path"
+    "time"
     "errors"
     "regexp"
     "strings"
@@ -104,19 +105,20 @@ type MatchingRule struct {
 
 // Matcher models the matching of a label.
 type Matcher struct {
-    Type  string
-    Name  string
-    Value string
-    Re *regexp.Regexp
+    Type             string
+    Name             string
+    Value            string
+    Re               *regexp.Regexp
 }
 
 type Action struct {
-    Login         string
-    Action        string
-    Object        string
-    Attributes    map[string]string
-    Description   string
-    Created       int64
+    Login            string                  `json:"login"`
+    Action           string                  `json:"action"`
+    Object           string                  `json:"object"`
+    Attributes       map[string]interface{}  `json:"attributes"`
+    Description      string                  `json:"description"`
+    Timestamp        int64                   `json:"-"`
+    Created          time.Time               `json:"created"`
 }
 
 // NewMatcher returns a matcher object.
@@ -168,7 +170,9 @@ func ParseQueryValues(values map[string][]string) (MatchingRule, error) {
             case "alert_id","group_id":
                 matchRule.StrArgs[k] = v[0]
             case "state":
-                for _, st := range strings.Split(v[0], "|") {
+                statuses := strings.Split(v[0], "|")
+                matchRule.State = make(map[string]int, len(statuses))
+                for _, st := range statuses {
                     matchRule.State[st] = 1
                 }
             case "position","repeat_min","repeat_max":

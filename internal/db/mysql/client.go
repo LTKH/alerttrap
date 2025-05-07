@@ -74,7 +74,7 @@ func (db *Client) CreateTables() error {
         %[1]sname%[1]s          varchar(150),
         %[1]semail%[1]s         varchar(100),
         %[1]stoken%[1]s         varchar(100) not null,
-        %[1]screated%[1]s       bigint(20) default 0,
+        %[1]stimestamp%[1]s     bigint(20) default 0,
         unique key IDX_mon_users_login (login)
       ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci
     `, "`"))
@@ -90,7 +90,7 @@ func (db *Client) CreateTables() error {
         %[1]sobject%[1]s        varchar(100),
         %[1]sattributes%[1]s    json,
         %[1]sdescription%[1]s   text,
-        %[1]screated%[1]s       bigint(20) default 0,
+        %[1]stimestamp%[1]s     bigint(20) default 0,
         primary key (id)
       ) engine InnoDB default charset=utf8mb4 collate=utf8mb4_unicode_ci
     `, "`"))
@@ -129,7 +129,7 @@ func (db *Client) LoadUser(login string) (cache.User, error) {
 }
 
 func (db *Client) SaveUser(user cache.User) error {
-    stmt, err := db.client.Prepare("replace into users (login,name,password,token,created) values (?,?,?,?,?)")
+    stmt, err := db.client.Prepare("replace into users (login,name,password,token,timestamp) values (?,?,?,?,?)")
     if err != nil {
         return err
     }
@@ -146,7 +146,7 @@ func (db *Client) SaveUser(user cache.User) error {
 func (db *Client) LoadUsers(timestamp int64) ([]cache.User, error) {
     result := []cache.User{}
 
-    rows, err := db.client.Query("select login,password,token,created from users where created >= ?", timestamp)
+    rows, err := db.client.Query("select login,password,token,timestamp from users where timestamp >= ?", timestamp)
     if err != nil {
         return nil, err
     }
@@ -155,7 +155,7 @@ func (db *Client) LoadUsers(timestamp int64) ([]cache.User, error) {
     for rows.Next() {
         var usr cache.User
         usr.EndsAt = time.Now().UTC().Unix()
-        err := rows.Scan(&usr.Login, &usr.Password, &usr.Token, &usr.Created)
+        err := rows.Scan(&usr.Login, &usr.Password, &usr.Token, &usr.Timestamp)
         if err != nil {
             return nil, err
         }
@@ -375,19 +375,52 @@ func (db *Client) DeleteOldAlerts() (int64, error) {
     return cnt, nil
 }
 
+func (db *Client) LoadActions(action string) ([]config.Action, error) {
+    result := []config.Action{}
+
+    rows, err := db.client.Query("select login,action,object,attributes,description,timestamp from actions where action like ? order by timestamp desc limit 10000", action)
+    if err != nil {
+        return result, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var action config.Action
+        var attributes []byte
+        err := rows.Scan(&action.Login, &action.Action, &action.Object, &attributes, &action.Description, &action.Timestamp)
+        if err != nil {
+            return nil, err
+        }
+        if err := json.Unmarshal(attributes, &action.Attributes); err != nil {
+            return nil, err
+        }
+        result = append(result, action) 
+    }
+
+    return result, nil
+}
+
 func (db *Client) SaveAction(action config.Action) error {
-    stmt, err := db.client.Prepare("insert into actions (login,action,object,attributes,description,created) values (?,?,?,?,?,?)")
+    stmt, err := db.client.Prepare("insert into actions (login,action,object,attributes,description,timestamp) values (?,?,?,?,?,?)")
     if err != nil {
         return err
     }
     defer stmt.Close()
+
+    if action.Action == "" {
+        action.Action = "unknown"
+    }
+
+    if action.Timestamp == 0 {
+        action.Timestamp = time.Now().UTC().Unix()
+    }
 
     attributes, err := json.Marshal(action.Attributes)
     if err != nil {
         return err
     }
 
-    _, err = stmt.Exec(action.Login, action.Action, action.Object, attributes, action.Description, action.Created)
+    _, err = stmt.Exec(action.Login, action.Action, action.Object, attributes, action.Description, action.Timestamp)
     if err != nil {
         return err
     }
@@ -397,7 +430,7 @@ func (db *Client) SaveAction(action config.Action) error {
 
 func (db *Client) DeleteOldActions() (int64, error) {
 
-    stmt, err := db.client.Prepare("delete from actions where created < UNIX_TIMESTAMP() - 86400 * ?")
+    stmt, err := db.client.Prepare("delete from actions where timestamp < UNIX_TIMESTAMP() - 86400 * ?")
     if err != nil {
         return 0, err
     }

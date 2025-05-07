@@ -27,7 +27,7 @@ var (
         },
         []string{"state","alertname"},
     )
-    usrCreated = int64(0)
+    usrTimestamp = int64(0)
 )
 
 func main() {
@@ -78,7 +78,7 @@ func main() {
         log.Fatalf("[error] loading users: %v", err)
     }
     for _, user := range users {
-        usrCreated = user.Created
+        usrTimestamp = user.Timestamp
         v1.CacheUsers.Set(user.Login, user)
     }
     log.Printf("[info] loaded users from dbase (%d)", len(users))
@@ -129,6 +129,7 @@ func main() {
     http.HandleFunc("/api/v1/login", apiV1.ApiLogin)
     http.HandleFunc("/api/v1/alerts", apiV1.ApiAlerts)
     http.HandleFunc("/api/v2/alerts", apiV1.Api2Alerts)
+    http.HandleFunc("/api/v1/actions", apiV1.ApiActions)
     http.HandleFunc("/", apiV1.ApiIndex)
 
     go func(cfg *config.Global){
@@ -268,12 +269,12 @@ func main() {
         }
 
         // Loading users
-        if users, err := client.LoadUsers(usrCreated); len(users) != 0 {
+        if users, err := client.LoadUsers(usrTimestamp); len(users) != 0 {
             if err != nil {
                 log.Fatalf("[error] loading users: %v", err)
             }
             for _, user := range users {
-                usrCreated = user.Created
+                usrTimestamp = user.Timestamp
                 v1.CacheUsers.Set(user.Login, user)
             }
             log.Printf("[info] loaded users from dbase (%d)", len(users))

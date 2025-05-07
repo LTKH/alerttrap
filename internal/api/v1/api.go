@@ -15,8 +15,10 @@ import (
     "strconv"
     "errors"
     "regexp"
+    //"strings"
     "io/ioutil"
     "encoding/json"
+    "github.com/ltkh/alerttrap/internal/db"
     "github.com/ltkh/alerttrap/internal/cache"
     "github.com/ltkh/alerttrap/internal/config"
     "github.com/ltkh/alerttrap/internal/ldap"
@@ -36,6 +38,8 @@ var (
         WriteBufferSize: 1024,
         CheckOrigin:     func(r *http.Request) bool { return true },
     }
+
+    ipRegexp, _ = regexp.Compile("^(.*):[0-9]+$")
 )
 
 type Api struct {
@@ -89,6 +93,10 @@ type Alert struct {
     Labels       map[string]interface{}    `json:"labels"`
     Annotations  map[string]interface{}    `json:"annotations"`
     GeneratorURL string                    `json:"generatorURL"`
+}
+
+type Actions struct {
+    ActionsArray  []config.Action          `json:"actions"`
 }
 
 func initReverseProxy() {
@@ -178,6 +186,21 @@ func checkLabels(labels map[string]interface{}, matchers [][]config.Matcher) boo
     }
 
     return false
+}
+
+func getObject(r *http.Request) string {
+    IPAddress := r.Header.Get("X-Real-Ip")
+    if IPAddress == "" {
+        IPAddress = r.Header.Get("X-Forwarded-For")
+    } 
+    if IPAddress == "" {
+        remAddr := ipRegexp.FindStringSubmatch(r.RemoteAddr)
+        if len(remAddr) > 1 { IPAddress = remAddr[1] }
+    } 
+    if IPAddress == "" { 
+        IPAddress = "unknown" 
+    }
+    return IPAddress
 }
 
 func getRules(nodes []*config.Node) (map[string]config.MatchingRule) {
@@ -384,14 +407,14 @@ func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
                 api.Actions <- &config.Action{
                     Login:        user.Login,
                     Action:       "request via proxy",
-                    Object:       "",
-                    Attributes:   map[string]string{
+                    Object:       getObject(r),
+                    Attributes:   map[string]interface{}{
                         "method": r.Method,
                         "url":    r.Header.Get("X-Custom-URL"),
                         "path":   r.URL.Path,
                     },
-                    Description:  "",
-                    Created:      time.Now().UTC().Unix(),
+                    Description:  r.URL.Path,
+                    Timestamp:    time.Now().UTC().Unix(),
                 }
             }
 
@@ -440,6 +463,8 @@ func (api *Api) SetAlerts(data Alerts) {
         if value.Status != "resolved" {
             if value.Labels["severity"] != nil {
                 value.State = value.Labels["severity"].(string)
+            } else {
+                value.State = value.Status
             }
         } else {
             value.State = value.Status
@@ -765,18 +790,23 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    action := &config.Action{
+        Login:        username,
+        Object:       "",
+        Attributes:   map[string]interface{}{},
+        Description:  "",
+        Timestamp:    time.Now().UTC().Unix(),
+    }
+
     if username == api.Conf.Global.Security.AdminUser {
         user, code, err := api.Authentication(username, password, r)
         if err != nil {
             if len(api.Actions) < 10000 {
-                api.Actions <- &config.Action{
-                    Login:        username,
-                    Action:       "failed login attempt",
-                    Object:       "",
-                    Attributes:   map[string]string{},
-                    Description:  "",
-                    Created:      time.Now().UTC().Unix(),
-                }
+                action.Action = "failed login attempt"
+                action.Object = getObject(r)
+                action.Attributes["error"] = err.Error()
+                action.Description = "failed attempt to login to current interface"
+                api.Actions <- action
             }
 
             w.WriteHeader(code)
@@ -784,6 +814,12 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
             return
         }
 
+        if len(api.Actions) < 10000 {
+            action.Action = "successful login"
+            action.Object = getObject(r)
+            action.Description = "successful attempt to login to the current interface"
+            api.Actions <- action
+        }
         w.WriteHeader(200)
         w.Write(encodeResp(&Resp{Status:"success", Data:user}))
         return
@@ -815,14 +851,11 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         ok, usr, err := clnt.Authenticate(username, password)
         if !ok {
             if len(api.Actions) < 10000 {
-                api.Actions <- &config.Action{
-                    Login:        username,
-                    Action:       "failed login attempt",
-                    Object:       "",
-                    Attributes:   map[string]string{},
-                    Description:  err.Error(),
-                    Created:      time.Now().UTC().Unix(),
-                }
+                action.Action = "failed login attempt"
+                action.Object = getObject(r)
+                action.Attributes["error"] = err.Error()
+                action.Description = "failed attempt to login to current interface"
+                api.Actions <- action
             }
 
             log.Printf("[error] user authenticating %s: %+v", username, err)
@@ -842,6 +875,12 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
             user.Email = usr[api.Conf.Global.Auth.Ldap.Attributes["email"]]
         }
 
+        if len(api.Actions) < 10000 {
+            action.Action = "successful login"
+            action.Object = getObject(r)
+            action.Description = "successful attempt to login to the current interface"
+            api.Actions <- action
+        }
         if len(api.Users) < 10000 {
             api.Users <- &user
         }
@@ -856,4 +895,90 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
     log.Printf("[error] user authenticating %s", username)
     w.WriteHeader(403)
     w.Write(encodeResp(&Resp{Status:"error", Error:"Invalid username or password", Data:make(map[string]string, 0)}))
+}
+
+func (api *Api) ApiActions(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+
+    if r.Method == "GET" {
+        _, code, err := api.Authentication("", "", r)
+        if err != nil {
+            w.WriteHeader(code)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        // Connection to data base
+        client, err := db.NewClient(api.Conf.Global.DB) 
+        if err != nil {
+            log.Printf("[error] connect to db: %v", err)
+            w.WriteHeader(500)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+        // Get params
+        action := r.URL.Query().Get("action")
+        // Loading actions
+        actions, err := client.LoadActions(action)
+        if err != nil {
+            log.Printf("[error] loading actions: %v", err)
+            w.WriteHeader(500)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+        client.Close()
+
+        if len(actions) == 0 {
+            actions = make([]config.Action, 0)
+        }
+
+        w.WriteHeader(200)
+        w.Write(encodeResp(&Resp{Status:"success", Data:actions}))
+        return
+    }
+
+    if r.Method == "DELETE" {
+        _, code, err := api.Authentication("", "", r)
+        if err != nil {
+            w.WriteHeader(code)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        w.WriteHeader(200)
+        w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
+        return
+    }
+
+    if r.Method == "POST" {
+
+        actions := Actions{}
+
+        body, err := ioutil.ReadAll(r.Body)
+        if err != nil {
+            log.Printf("[error] %v - %s", err, r.URL.Path)
+            w.WriteHeader(400)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        if err := json.Unmarshal(body, &actions); err != nil {
+            log.Printf("[error] %v - %s", err, r.URL.Path)
+            w.WriteHeader(400)
+            w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+            return
+        }
+
+        for _, act := range actions.ActionsArray {
+            if len(api.Actions) < 10000 {
+                api.Actions <- &act
+            }
+        }
+
+        w.WriteHeader(204)
+        return
+    }
+
+    w.WriteHeader(405)
+    w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed", Data:make(map[string]string, 0)}))
 }

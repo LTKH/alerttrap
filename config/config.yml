@@ -3,6 +3,7 @@ global:
   cert_key:           ""
   alerts_limit:       5000
   alerts_delete:      600
+  alerts_resolve:     300
   web_dir:            "web"
   
   db:
@@ -114,6 +115,15 @@ menu:
           - id: "test"
             name: "Test"
 
+  - id: "logging"
+    name: "Logging"
+    class: "fas fa-list"
+    nodes:
+      - id: "actions"
+        name: "Actions"
+        options:
+          actions: ["%|all","failed login attempt"]
+
 templates:
   - url_matcher: "^/404.html"
     target_page: "/404.html"
@@ -135,6 +145,8 @@ templates:
     target_page: "/templates/alerts/alerts.html"
   - url_matcher: "^/monitoring.*"
     target_page: "/templates/alerts/alerts.html"
+  - url_matcher: "^/logging/actions"
+    target_page: "/templates/logging/actions.html"
   - url_matcher: "^/etcdkeeper/.*/apps/[^/]+$"
     target_page: "/templates/etcd/editor.html"
   - url_matcher: "^/etcdkeeper"
