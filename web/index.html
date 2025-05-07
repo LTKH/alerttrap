@@ -103,6 +103,20 @@
 <script type="text/javascript" src="/assets/plugins/gritter/js/jquery.gritter.js"></script>
 
 <script>
+    function getLevel(state) {
+        switch (state) {
+            case 'firing':
+            case 'critical':
+            case 'error':
+                return 'firing'; 
+            case 'warning':
+                return 'warning';
+            case 'resolved':
+                return 'resolved';
+        }
+        return 'unknown';
+    }
+
     var Updates = class {
         
         templates = [];
@@ -121,21 +135,6 @@
                         }
                     },
                     success: function(jsn) {
-
-                        function getLevel(state) {
-                            switch (state) {
-                                case 'firing':
-                                case 'critical':
-                                case 'error':
-                                    return 'firing'; 
-                                case 'warning':
-                                    return 'warning';
-                                case 'resolved':
-                                    return 'resolved';
-                            }
-                            return 'unknown';
-                        }
-
                         updates.results[nkey] = jsn;
                         var alerts = [];
 
