@@ -149,7 +149,7 @@ func main() {
         // Connection to data base
         client, err := db.NewClient(cfg) 
         if err != nil {
-            log.Printf("[error] connect to db: %v", err)
+            log.Fatalf("[error] connect to db: %v", err)
         }
 
         for usr := range apiV1.Users {
@@ -164,7 +164,7 @@ func main() {
         // Connection to data base
         client, err := db.NewClient(cfg) 
         if err != nil {
-            log.Printf("[error] connect to db: %v", err)
+            log.Fatalf("[error] connect to db: %v", err)
         }
 
         for act := range apiV1.Actions {
@@ -172,6 +172,7 @@ func main() {
                 log.Printf("[error] %v", err)
             }
         }
+
     }(cfg.Global.DB)
 
     // Delete old records
@@ -180,7 +181,7 @@ func main() {
             // Connection to data base
             client, err := db.NewClient(cfg) 
             if err != nil {
-                log.Printf("[error] connect to db: %v", err)
+                log.Fatalf("[error] connect to db: %v", err)
             }
 
             // Cleaning old alerts

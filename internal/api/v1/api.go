@@ -78,7 +78,7 @@ type Resp struct {
 
 type Alerts struct {
     Position     int64                     `json:"position"`
-    AlertsArray  []Alert                   `json:"alerts"`
+    Array        []Alert                   `json:"alerts"`
 }
 
 type Alert struct {
@@ -96,7 +96,7 @@ type Alert struct {
 }
 
 type Actions struct {
-    ActionsArray  []config.Action          `json:"actions"`
+    Array        []config.Action           `json:"actions"`
 }
 
 func initReverseProxy() {
@@ -287,7 +287,7 @@ func New(conf *config.Config) (*Api, error) {
     ConfigMenu.Set(conf.Menu)
     ConfigTmpl.Set(conf.Templates)
     
-    return &Api{ Conf: conf, Users: make(chan *cache.User, 10000), Actions: make(chan *config.Action, 10000) }, nil
+    return &Api{ Conf: conf, Users: make(chan *cache.User, 1000), Actions: make(chan *config.Action, 1000) }, nil
 }
 
 func (api *Api) Authentication(username, password string, r *http.Request) (cache.User, int, error) {
@@ -403,7 +403,7 @@ func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
         }
     
         if r.Header.Get("X-Custom-URL") != "" {
-            if len(api.Actions) < 10000 {
+            if len(api.Actions) < 1000 {
                 api.Actions <- &config.Action{
                     Login:        user.Login,
                     Action:       "request via proxy",
@@ -434,12 +434,11 @@ func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
 }
 
 func addAlert(id string, alert cache.Alert) {
-
     CacheAlerts.Set(id, alert)
 }
 
-func (api *Api) SetAlerts(data Alerts) {
-    for _, value := range data.AlertsArray {
+func (api *Api) SetAlerts(alerts Alerts) {
+    for _, value := range alerts.Array {
 
         for _, ext := range api.Conf.ExtensionRules {
             for _, mrs := range ext.Matchers {
@@ -560,19 +559,19 @@ func (api *Api) ApiAlerts(w http.ResponseWriter, r *http.Request) {
             alert.Annotations  = a.Annotations
             alert.GeneratorURL = a.GeneratorURL
 
-            alerts.AlertsArray = append(alerts.AlertsArray, alert)
+            alerts.Array = append(alerts.Array, alert)
 
             if a.ActiveAt > alerts.Position {
                 alerts.Position  = a.ActiveAt
             }
             
-            if len(alerts.AlertsArray) >= matchRule.Limit {
+            if len(alerts.Array) >= matchRule.Limit {
                 continue
             }
         }
 
-        if len(alerts.AlertsArray) == 0 {
-            alerts.AlertsArray = make([]Alert, 0)
+        if len(alerts.Array) == 0 {
+            alerts.Array = make([]Alert, 0)
         } else {
             if matchRule.Limit == api.Conf.Global.AlertsLimit {
                 warnings := []string{}
@@ -685,19 +684,19 @@ func (api *Api) Api2Alerts(w http.ResponseWriter, r *http.Request) {
             alert.Annotations  = a.Annotations
             alert.GeneratorURL = a.GeneratorURL
 
-            alerts.AlertsArray = append(alerts.AlertsArray, alert)
+            alerts.Array = append(alerts.Array, alert)
 
             if a.ActiveAt > alerts.Position {
                 alerts.Position  = a.ActiveAt
             }
             
-            if len(alerts.AlertsArray) >= matchRule.Limit {
+            if len(alerts.Array) >= matchRule.Limit {
                 continue
             }
         }
 
-        if len(alerts.AlertsArray) == 0 {
-            alerts.AlertsArray = make([]Alert, 0)
+        if len(alerts.Array) == 0 {
+            alerts.Array = make([]Alert, 0)
         } else {
             if matchRule.Limit == api.Conf.Global.AlertsLimit {
                 warnings := []string{}
@@ -760,7 +759,7 @@ func (api *Api) Api2Alerts(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        go api.SetAlerts(Alerts{AlertsArray: alerts})
+        go api.SetAlerts(Alerts{Array: alerts})
 
         w.WriteHeader(200)
         w.Write(encodeResp(&Resp{Status:"success", Data:make(map[string]string, 0)}))
@@ -769,6 +768,12 @@ func (api *Api) Api2Alerts(w http.ResponseWriter, r *http.Request) {
 
     w.WriteHeader(405)
     w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed", Data:make(map[string]string, 0)}))
+}
+
+func (api *Api) SetUser(user *cache.User){
+    if len(api.Users) < 1000 {
+        api.Users <- user
+    }
 }
 
 func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
@@ -801,7 +806,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
     if username == api.Conf.Global.Security.AdminUser {
         user, code, err := api.Authentication(username, password, r)
         if err != nil {
-            if len(api.Actions) < 10000 {
+            if len(api.Actions) < 1000 {
                 action.Action = "failed login attempt"
                 action.Object = getObject(r)
                 action.Attributes["error"] = err.Error()
@@ -814,7 +819,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        if len(api.Actions) < 10000 {
+        if len(api.Actions) < 1000 {
             action.Action = "successful login"
             action.Object = getObject(r)
             action.Description = "successful attempt to login to the current interface"
@@ -850,7 +855,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
 
         ok, usr, err := clnt.Authenticate(username, password)
         if !ok {
-            if len(api.Actions) < 10000 {
+            if len(api.Actions) < 1000 {
                 action.Action = "failed login attempt"
                 action.Object = getObject(r)
                 action.Attributes["error"] = err.Error()
@@ -875,16 +880,14 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
             user.Email = usr[api.Conf.Global.Auth.Ldap.Attributes["email"]]
         }
 
-        if len(api.Actions) < 10000 {
+        if len(api.Actions) < 1000 {
             action.Action = "successful login"
             action.Object = getObject(r)
             action.Description = "successful attempt to login to the current interface"
             api.Actions <- action
         }
-        if len(api.Users) < 10000 {
-            api.Users <- &user
-        }
 
+        api.SetUser(&user)
         CacheUsers.Set(username, user)
 
         w.WriteHeader(200)
@@ -895,6 +898,12 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
     log.Printf("[error] user authenticating %s", username)
     w.WriteHeader(403)
     w.Write(encodeResp(&Resp{Status:"error", Error:"Invalid username or password", Data:make(map[string]string, 0)}))
+}
+
+func (api *Api) SetAction(action *config.Action){
+    if len(api.Actions) < 1000 {
+        api.Actions <- action
+    }
 }
 
 func (api *Api) ApiActions(w http.ResponseWriter, r *http.Request) {
@@ -969,9 +978,9 @@ func (api *Api) ApiActions(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        for _, act := range actions.ActionsArray {
-            if len(api.Actions) < 10000 {
-                api.Actions <- &act
+        for _, act := range actions.Array {
+            if len(api.Actions) < 1000 {
+                api.SetAction(&act)
             }
         }
 
