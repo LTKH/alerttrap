@@ -74,6 +74,7 @@ type Ldap struct {
     BindPass         string                  `yaml:"bind_pass"`
     UserFilter       string                  `yaml:"user_filter"`
     Attributes       map[string]string       `yaml:"attributes"`
+    SSLSkipVerify    bool                    `yaml:"ssl_skip_verify"`
 }
 
 type Node struct {   

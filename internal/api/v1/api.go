@@ -44,8 +44,8 @@ var (
 
 type Api struct {
     Conf         *config.Config
-    Users        chan *cache.User
-    Actions      chan *config.Action
+    Users        chan cache.User
+    Actions      chan config.Action
 }
 
 type Change struct {
@@ -287,7 +287,7 @@ func New(conf *config.Config) (*Api, error) {
     ConfigMenu.Set(conf.Menu)
     ConfigTmpl.Set(conf.Templates)
     
-    return &Api{ Conf: conf, Users: make(chan *cache.User, 1000), Actions: make(chan *config.Action, 1000) }, nil
+    return &Api{ Conf: conf, Users: make(chan cache.User, 1000), Actions: make(chan config.Action, 1000) }, nil
 }
 
 func (api *Api) Authentication(username, password string, r *http.Request) (cache.User, int, error) {
@@ -404,7 +404,7 @@ func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
     
         if r.Header.Get("X-Custom-URL") != "" {
             if len(api.Actions) < 1000 {
-                api.Actions <- &config.Action{
+                api.Actions <- config.Action{
                     Login:        user.Login,
                     Action:       "request via proxy",
                     Object:       getObject(r),
@@ -770,12 +770,6 @@ func (api *Api) Api2Alerts(w http.ResponseWriter, r *http.Request) {
     w.Write(encodeResp(&Resp{Status:"error", Error:"Method Not Allowed", Data:make(map[string]string, 0)}))
 }
 
-func (api *Api) SetUser(user *cache.User){
-    if len(api.Users) < 1000 {
-        api.Users <- user
-    }
-}
-
 func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
 
@@ -795,7 +789,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    action := &config.Action{
+    action := config.Action{
         Login:        username,
         Object:       "",
         Attributes:   map[string]interface{}{},
@@ -850,6 +844,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
             BindPassword: api.Conf.Global.Auth.Ldap.BindPass,
             UserFilter:   api.Conf.Global.Auth.Ldap.UserFilter,
             Attributes:   attributes,
+            SkipTLS:      api.Conf.Global.Auth.Ldap.SSLSkipVerify,
         }
         defer clnt.Close()
 
@@ -887,7 +882,10 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
             api.Actions <- action
         }
 
-        api.SetUser(&user)
+        if len(api.Users) < 1000 {
+            api.Users <- user
+        }
+
         CacheUsers.Set(username, user)
 
         w.WriteHeader(200)
@@ -898,12 +896,6 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
     log.Printf("[error] user authenticating %s", username)
     w.WriteHeader(403)
     w.Write(encodeResp(&Resp{Status:"error", Error:"Invalid username or password", Data:make(map[string]string, 0)}))
-}
-
-func (api *Api) SetAction(action *config.Action){
-    if len(api.Actions) < 1000 {
-        api.Actions <- action
-    }
 }
 
 func (api *Api) ApiActions(w http.ResponseWriter, r *http.Request) {
@@ -978,9 +970,9 @@ func (api *Api) ApiActions(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        for _, act := range actions.Array {
+        for _, action := range actions.Array {
             if len(api.Actions) < 1000 {
-                api.SetAction(&act)
+                api.Actions <- action
             }
         }
 

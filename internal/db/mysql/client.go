@@ -394,6 +394,7 @@ func (db *Client) LoadActions(action string) ([]config.Action, error) {
         if err := json.Unmarshal(attributes, &action.Attributes); err != nil {
             return nil, err
         }
+        action.Created = time.Unix(action.Timestamp, 0)
         result = append(result, action) 
     }
 

@@ -153,7 +153,7 @@ func main() {
         }
 
         for usr := range apiV1.Users {
-            if err := client.SaveUser(*usr); err != nil {
+            if err := client.SaveUser(usr); err != nil {
                 log.Printf("[error] %v", err)
             }
         }
@@ -168,7 +168,7 @@ func main() {
         }
 
         for act := range apiV1.Actions {
-            if err := client.SaveAction(*act); err != nil {
+            if err := client.SaveAction(act); err != nil {
                 log.Printf("[error] %v", err)
             }
         }

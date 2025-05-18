@@ -76,11 +76,11 @@
                 for (var key in jsn.data) {
                     var value = jsn.data[key];
                     var state = "ok";
-                    if (typeof value.attributes.error !== 'undefined') {
-                        state = "firing";
-                    }
                     if (typeof value.attributes.warnings !== 'undefined') {
                         state = "warning";
+                    }
+                    if (typeof value.attributes.error !== 'undefined') {
+                        state = "firing";
                     }
 
                     actions.push({
