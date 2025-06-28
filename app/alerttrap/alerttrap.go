@@ -120,9 +120,10 @@ func main() {
         }
     }()
 
-    // Enabled listen port
+    // Main links
     http.Handle("/metrics", promhttp.Handler())
     http.HandleFunc("/-/healthy", apiV1.ApiHealthy)
+    // Other links
     http.HandleFunc("/api/v1/auth", apiV1.ApiAuth)
     http.HandleFunc("/api/v1/menu", apiV1.ApiMenu)
     http.HandleFunc("/api/v1/tmpl", apiV1.ApiTmpl)

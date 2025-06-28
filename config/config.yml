@@ -125,6 +125,8 @@ menu:
           actions: ["%|all","failed login attempt"]
 
 templates:
+  - url_matcher: "^/etcdkeeper"
+    target_url:  "http://etcdkeeper:9100"
   - url_matcher: "^/404.html"
     target_page: "/404.html"
   - url_matcher: "^/kubernetes/alerts.*"
@@ -147,10 +149,10 @@ templates:
     target_page: "/templates/alerts/alerts.html"
   - url_matcher: "^/logging/actions"
     target_page: "/templates/logging/actions.html"
-  - url_matcher: "^/etcdkeeper/.*/apps/[^/]+$"
-    target_page: "/templates/etcd/editor.html"
-  - url_matcher: "^/etcdkeeper"
-    target_page: "/templates/etcd/apps.html"
+  #- url_matcher: "^/etcdkeeper/.*/apps/[^/]+$"
+  #  target_page: "/templates/etcd/editor.html"
+  #- url_matcher: "^/etcdkeeper"
+  #  target_page: "/templates/etcd/apps.html"
   - url_matcher: "^/.*"
     target_page: "/templates/main.html"
 

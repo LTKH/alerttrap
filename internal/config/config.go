@@ -29,6 +29,7 @@ type Config struct {
 type Tmpl struct {
     UrlMatcher   string                      `yaml:"url_matcher" json:"url_matcher"`
     TargetPage   string                      `yaml:"target_page" json:"target_page"`
+    TargetUrl    string                      `yaml:"target_url" json:"target_url"`
 }
 
 type Global struct {
@@ -234,7 +235,7 @@ func getEnv(value string) string {
     if len(value) > 0 && string(value[0]) == "$" {
         val, ok := os.LookupEnv(strings.TrimPrefix(value, "$"))
         if !ok {
-            log.Printf("[error] no value found for %v", value)
+            log.Fatalf("[error] no value found for %v", value)
             return ""
         }
         return val

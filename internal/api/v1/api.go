@@ -393,44 +393,66 @@ func (api *Api) ApiTmpl(w http.ResponseWriter, r *http.Request) {
 
 func (api *Api) ApiIndex(w http.ResponseWriter, r *http.Request){
     match, _ := regexp.MatchString("^/(|[a-z0-9]+.html|assets/.*)$", r.URL.Path)
+    if match {
+        if _, err := os.Stat(api.Conf.Global.WebDir+r.URL.Path); err == nil {
+            http.ServeFile(w, r, api.Conf.Global.WebDir+r.URL.Path)
+        } else {
+            w.WriteHeader(404)
+        }
+        return
+    }
 
-    if !match {
-        user, code, err := api.Authentication("", "", r)
+    user, code, err := api.Authentication("", "", r)
+    if err != nil {
+        w.WriteHeader(code)
+        w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
+        return
+    }
+
+    targetUrl := r.Header.Get("X-Custom-URL")
+    for _, tmpl := range api.Conf.Templates {
+        if tmpl.TargetUrl == "" {
+            continue
+        }
+        match, err := regexp.MatchString(tmpl.UrlMatcher, r.URL.Path)
         if err != nil {
-            w.WriteHeader(code)
+            w.WriteHeader(400)
             w.Write(encodeResp(&Resp{Status:"error", Error:err.Error(), Data:make(map[string]string, 0)}))
             return
         }
-    
-        if r.Header.Get("X-Custom-URL") != "" {
-            if len(api.Actions) < 1000 {
-                api.Actions <- config.Action{
-                    Login:        user.Login,
-                    Action:       "request via proxy",
-                    Object:       getObject(r),
-                    Attributes:   map[string]interface{}{
-                        "method": r.Method,
-                        "url":    r.Header.Get("X-Custom-URL"),
-                        "path":   r.URL.Path,
-                    },
-                    Description:  r.URL.Path,
-                    Timestamp:    time.Now().UTC().Unix(),
-                }
-            }
-
-            r.Header.Set("proxy-target-url", r.Header.Get("X-Custom-URL"))
-            getReverseProxy().ServeHTTP(w, r)
-            return
+        if match {
+            targetUrl = tmpl.TargetUrl
         }
+    }
+
+    if targetUrl != "" {
+        if len(api.Actions) < 1000 {
+            api.Actions <- config.Action{
+                Login:        user.Login,
+                Action:       "request via proxy",
+                Object:       getObject(r),
+                Attributes:   map[string]interface{}{
+                    "method": r.Method,
+                    "url":    targetUrl,
+                    "path":   r.URL.Path,
+                },
+                Description:  r.URL.Path,
+                Timestamp:    time.Now().UTC().Unix(),
+            }
+        }
+
+        r.Header.Set("proxy-target-url", targetUrl)
+        getReverseProxy().ServeHTTP(w, r)
+        return
     }
 
     if _, err := os.Stat(api.Conf.Global.WebDir+r.URL.Path); err == nil {
         http.ServeFile(w, r, api.Conf.Global.WebDir+r.URL.Path)
     } else {
         index, _ := os.ReadFile(api.Conf.Global.WebDir+"/index.html")
-        w.WriteHeader(404)
         w.Write(index)
     }
+    return
 }
 
 func addAlert(id string, alert cache.Alert) {
