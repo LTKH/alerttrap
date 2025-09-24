@@ -1,0 +1,76 @@
+<!--h1 class="page-header mb-3 text-muted">Start</h1-->
+<div class="panel-body text-silver">
+    <div class="row">
+        <div class="col-xl">
+            <div class="alert alert-warning" role="alert">
+                <b>Сервис работает в тестовом режиме</b>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xl">
+            <div id="elements"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function makeId(length) {
+        var result           = '';
+        var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var charactersLength = characters.length;
+        for ( var i = 0; i < length; i++ ) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+
+    function addElement(id, object) {
+        console.log(object);
+        switch (object.type) {
+            case 'div':
+                const div = $(`<div id="${object.id}">${object.text}</div>`);
+                $('#'+id).append(div);
+                break;
+            case 'text':
+                const label = $(`<label class="form-label">${object.label}</label>`);
+                const input = $(`<input type="${object.type}" class="form-control" name="${object.name}" placeholder="${object.placeholder || ''}">`);
+                $('#'+id).append(label, input);
+                break;
+            case 'form':
+                const formId = 'form-'+makeId(10);
+                const form = $(`<form id="${formId}" action="${object.action}"></form>`);
+                $('#'+id).append(form);
+                $.each(object.fields, function(i, object) {
+                    addElement(formId, object);
+                });
+                break;
+            case 'submit':
+                const submitBtn = $(`<div class="float-right"><button type="submit" class="btn btn-primary m-t-5">${object.text}</button></div>`);
+                $('#'+id).append(submitBtn);
+                break;
+        }
+    }
+
+    $(function() {
+        $.ajax({
+            url: window.location.pathname,
+            beforeSend: function(request) {
+                request.setRequestHeader("X-Custom-URL", "http://localhost:1880");
+            },
+            success: function(data, textStatus, jqXHR) {
+
+                var contentType = jqXHR.getResponseHeader('Content-Type');
+                if (contentType.includes("text/html")) {
+                    $('#elements').append(data);
+                }
+
+                if (contentType.includes("application/json")) {
+                    $.each(data, function(i, object) {
+                        addElement('elements', object);
+                    });
+                }
+            }
+        });
+    });
+</script>

@@ -868,7 +868,7 @@ func (api *Api) ApiLogin(w http.ResponseWriter, r *http.Request) {
             Attributes:   attributes,
             SkipTLS:      api.Conf.Global.Auth.Ldap.SSLSkipVerify,
         }
-        defer clnt.Close()
+        //defer clnt.Close()
 
         ok, usr, err := clnt.Authenticate(username, password)
         if !ok {

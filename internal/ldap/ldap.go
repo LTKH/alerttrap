@@ -15,8 +15,7 @@ type LDAPClient struct {
     GroupFilter        string // e.g. "(memberUid=%s)"
     Host               string
     ServerName         string
-    UserFilter         string // e.g. "(uid=%s)"
-    Conn               *ldap.Conn
+    UserFilter         string // e.g. "(uid=%s)"      
     Port               int
     UseSSL             bool
     SkipTLS            bool
@@ -24,61 +23,55 @@ type LDAPClient struct {
 }
 
 // Connect connects to the ldap backend.
-func (lc *LDAPClient) Connect() error {
-    if lc.Conn == nil {
-        var l *ldap.Conn
-        var err error
-        address := fmt.Sprintf("%s:%d", lc.Host, lc.Port)
-        if !lc.UseSSL {
-            l, err = ldap.Dial("tcp", address)
-            if err != nil {
-                return err
-            }
+func (lc *LDAPClient) Connect() (*ldap.Conn, error) {
+    //var conn *ldap.Conn
+    //var err error
+    address := fmt.Sprintf("%s:%d", lc.Host, lc.Port)
+    config := &tls.Config{InsecureSkipVerify: true}
 
-            // Reconnect with TLS
-            if lc.SkipTLS {
-                err = l.StartTLS(&tls.Config{InsecureSkipVerify: true})
-                if err != nil {
-                    return err
-                }
-            }
-        } else {
-            config := &tls.Config{
-                InsecureSkipVerify: lc.SkipTLS,
-                ServerName:         lc.ServerName,
-            }
-            if lc.ClientCertificates != nil && len(lc.ClientCertificates) > 0 {
-                config.Certificates = lc.ClientCertificates
-            }
-            l, err = ldap.DialTLS("tcp", address, config)
-            if err != nil {
-                return err
-            }
+    if lc.UseSSL {
+        config = &tls.Config{
+            InsecureSkipVerify: lc.SkipTLS,
+            ServerName:         lc.ServerName,
         }
-
-        lc.Conn = l
+        if lc.ClientCertificates != nil && len(lc.ClientCertificates) > 0 {
+            config.Certificates = lc.ClientCertificates
+        }
     }
-    return nil
+
+    
+    conn, err := ldap.DialTLS("tcp", address, config)
+    if err != nil {
+        return nil, err
+    }
+
+    // Reconnect with TLS
+    //if lc.SkipTLS {
+    //    err = conn.StartTLS(&tls.Config{InsecureSkipVerify: true})
+    //    if err != nil {
+    //        return nil, err
+    //    }
+    //}
+
+    return conn, nil
 }
 
 // Close closes the ldap backend connection.
-func (lc *LDAPClient) Close() {
-    if lc.Conn != nil {
-        lc.Conn.Close()
-        lc.Conn = nil
-    }
-}
+//func (conn *ldap.Conn) Close() {
+//    conn.Close()
+//}
 
 // Authenticate authenticates the user against the ldap backend.
 func (lc *LDAPClient) Authenticate(username, password string) (bool, map[string]string, error) {
-    err := lc.Connect()
+    conn, err := lc.Connect()
     if err != nil {
         return false, nil, err
     }
+    defer conn.Close()
 
     // First bind with a read only user
     if lc.BindDN != "" && lc.BindPassword != "" {
-        err := lc.Conn.Bind(lc.BindDN, lc.BindPassword)
+        err := conn.Bind(lc.BindDN, lc.BindPassword)
         if err != nil {
             return false, nil, err
         }
@@ -94,7 +87,7 @@ func (lc *LDAPClient) Authenticate(username, password string) (bool, map[string]
         nil,
     )
 
-    sr, err := lc.Conn.Search(searchRequest)
+    sr, err := conn.Search(searchRequest)
     if err != nil {
         return false, nil, err
     }
@@ -114,14 +107,14 @@ func (lc *LDAPClient) Authenticate(username, password string) (bool, map[string]
     }
 
     // Bind as the user to verify their password
-    err = lc.Conn.Bind(userDN, password)
+    err = conn.Bind(userDN, password)
     if err != nil {
         return false, user, err
     }
 
     // Rebind as the read only user for any further queries
     if lc.BindDN != "" && lc.BindPassword != "" {
-        err = lc.Conn.Bind(lc.BindDN, lc.BindPassword)
+        err = conn.Bind(lc.BindDN, lc.BindPassword)
         if err != nil {
             return false, user, err
         }
@@ -132,10 +125,11 @@ func (lc *LDAPClient) Authenticate(username, password string) (bool, map[string]
 
 // GetGroupsOfUser returns the group for a user.
 func (lc *LDAPClient) GetGroupsOfUser(username string) ([]string, error) {
-    err := lc.Connect()
+    conn, err := lc.Connect()
     if err != nil {
         return nil, err
     }
+    defer conn.Close()
 
     searchRequest := ldap.NewSearchRequest(
         lc.Base,
@@ -144,13 +138,16 @@ func (lc *LDAPClient) GetGroupsOfUser(username string) ([]string, error) {
         []string{"cn"}, // can it be something else than "cn"?
         nil,
     )
-    sr, err := lc.Conn.Search(searchRequest)
+
+    sr, err := conn.Search(searchRequest)
     if err != nil {
         return nil, err
     }
+
     groups := []string{}
     for _, entry := range sr.Entries {
         groups = append(groups, entry.GetAttributeValue("cn"))
     }
+
     return groups, nil
 }

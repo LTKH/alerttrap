@@ -124,6 +124,10 @@ menu:
         options:
           actions: ["%|all","failed login attempt"]
 
+  - id: "nodered"
+    name: "NodeRed"
+    class: "fa fa-sitemap"
+
 templates:
   - url_matcher: "^/etcdkeeper"
     target_url:  "http://etcdkeeper:9100"
@@ -149,6 +153,8 @@ templates:
     target_page: "/templates/alerts/alerts.html"
   - url_matcher: "^/logging/actions"
     target_page: "/templates/logging/actions.html"
+  - url_matcher: "^/nodered"
+    target_page: "/templates/nodered/index.html"
   #- url_matcher: "^/etcdkeeper/.*/apps/[^/]+$"
   #  target_page: "/templates/etcd/editor.html"
   #- url_matcher: "^/etcdkeeper"
