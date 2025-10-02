@@ -60,7 +60,7 @@ menu:
 
   - id: "vmetrics"
     name: "VMetrics"
-    class: "fa fa-chart-area"
+    class: "fa fa-chart-bar"
     nodes:
       - id: "targets"
         name: "Targets"
@@ -73,7 +73,7 @@ menu:
 
   - id: "alertmanager"
     name: "Alertmanager"
-    class: "fa fa-th-large"
+    class: "fa fa-bell"
     nodes:
       - id: "alerts"
         name: "Alerts"
@@ -95,7 +95,7 @@ menu:
 
   - id: "testing"
     name: "Testing"
-    class: "fas fa-list"
+    class: "fas fa-tasks"
     nodes:
       - id: "testing"
         name: "Testing"
@@ -117,7 +117,7 @@ menu:
 
   - id: "logging"
     name: "Logging"
-    class: "fas fa-list"
+    class: "fas fa-file-alt"
     nodes:
       - id: "actions"
         name: "Actions"
@@ -126,7 +126,7 @@ menu:
 
   - id: "nodered"
     name: "NodeRed"
-    class: "fa fa-sitemap"
+    class: "fa fa-project-diagram"
 
 templates:
   - url_matcher: "^/etcdkeeper"

@@ -26,11 +26,19 @@
     }
 
     function addElement(id, object) {
-        console.log(object);
+        //console.log(object);
         switch (object.type) {
+            case 'header':
+                const header = $(`<div><h1>${object.text}</h1></div>`);
+                $('#'+id).append(header);
+                break;
             case 'div':
                 const div = $(`<div id="${object.id}">${object.text}</div>`);
                 $('#'+id).append(div);
+                break;
+            case 'link':
+                const link = $(`<div><a style="${object.style || ''}" href="${object.href}">${object.text}</a></div>`);
+                $('#'+id).append(link);
                 break;
             case 'text':
                 const label = $(`<label class="form-label">${object.label}</label>`);
@@ -55,6 +63,7 @@
     $(function() {
         $.ajax({
             url: window.location.pathname,
+            timeout: 20000,
             beforeSend: function(request) {
                 request.setRequestHeader("X-Custom-URL", "http://localhost:1880");
             },
@@ -70,6 +79,15 @@
                         addElement('elements', object);
                     });
                 }
+            },
+            error: function(xhr, status, error) {
+                if (status === 'timeout') {
+                    //console.error('Ошибка: запрос превысил время ожидания');
+                    alert('Превышено время ожидания запроса. Попробуйте позже.');
+                } 
+                //else {
+                //    console.error('Ошибка запроса:', error);
+                //}
             }
         });
     });
